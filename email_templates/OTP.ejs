@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Hefgro</title>
+    </head>
+    <body
+        style="
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            height: 100%;
+        "
+    >
+        <!--  theme color & img & body of content -->
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+                <td align="center">
+                    <!-- app theme color content -->
+                    <div
+                        width="100%"
+                        style="
+                            display: flex;
+                            height: 10.85em;
+                            background-color: rgba(2, 107, 147, 1);
+                            position: relative;
+                        "
+                    ></div>
+
+                    <!-- img and body of content -->
+                    <div style="margin-top: -10em; position: absolute">
+                        <table
+                            width="80%"
+                            border="0"
+                            cellspacing="0"
+                            cellpadding="0"
+                            style="
+                                border: .1px solid rgba(66, 70, 81, 0.2); 
+                                box-shadow: 0.4em 0.6em 0.9em rgba(0, 0, 0, 0.1);
+                                background-color: #fff;
+                                padding: 0% 6% 3%;
+                                margin-bottom: 1%;
+                                position: absolute;
+                            "
+                        >
+                            <div
+                                style="
+                                    display: flex;
+                                    justify-content: center;
+                                    align-self: center;
+                                    align-items: center;
+                                    align-content: center;
+                                    width: 100%;
+                                "
+                            >
+                                <img
+                                    src="cid:Mailbox.png"
+                                    alt="Example Image"
+                                    style="
+                                        max-width: 40%;
+                                        height: auto;
+                                        display: block;
+                                        margin: 0 auto;
+                                        justify-content: center;
+                                        align-self: center;
+                                        align-items: center;
+                                        align-content: center;
+                                    "
+                                />
+                            </div>
+
+                            <tr>
+                                <td>
+                                    <p
+                                        style="
+                                            margin: 1% 0;
+                                            font-size: 1.571em;
+                                            
+                                        "
+                                    >
+                                        Hello, <%=username %>!
+                                    </p>
+                                    <p
+                                        style="
+                                            margin: 5% 0;
+                                            font-size: 1.571em;
+                                            
+                                        "
+                                    >
+                                        Please use this OTP below on Hefgro Website to complete your
+                                        sign-up procedures and verify your
+                                        account.
+                                    </p>
+                                    <h1
+                                        style="
+                                            font-size: 3.42em;
+                                            text-align: center;
+                                        "
+                                    >
+                                        <%= otp %>
+                                    </h1>
+                                    <p style="margin: 1% 0; font-size: 1.571em">
+                                        If you didn’t request this, you can
+                                        ignore this email or let us know.
+                                    </p>
+                                    <p style="margin: 1% 0; font-size: 1.571em">
+                                        Thanks!
+                                    </p>
+                                    <p style="margin: 1% 0; font-size: 1.571em">
+                                        Hefgro Team
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- contact Support Content -->
+        <div style="display: flex">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                    <td align="center">
+                        <table
+                            width="80%"
+                            border="0"
+                            cellspacing="0"
+                            cellpadding="0"
+                            bgcolor="#D6E3E8"
+                            style="border: .1px solid  rgba(66, 70, 81, 0.2);"
+                        >
+                            <tr>
+                                <td align="center" style="padding: 2em 0">
+                                    <p
+                                        style="font-size: 1.571em"
+                                    >
+                                        If you have any questions, please
+                                        <span style="color: #027193"
+                                            >contact Support</span
+                                        >.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- APP icon & privacy policy,help,contact Content -->
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+                <td align="center">
+                    <table
+                        width="80%"
+                        border="0"
+                        cellspacing="0"
+                        cellpadding="0"
+                        align="flex-start"
+                    >
+                        <tr></tr>
+                            <td>
+                                <div
+                                style="display: flex; align-items: flex-start;  width: 100%;  max-height: 10%;">
+                                
+                                    <img
+                                        src="cid:logo.png"
+                                        alt="App Image"
+                                        style="
+                                            max-width: 30%;
+                                            height: auto;
+                                            display: block;
+                                        "
+                                    />
+                                </div>
+                                <p
+                                    style="
+                                        margin: 0 0 10% 0;
+                                        font-size: 1.14285714em;
+                                        color: rgba(66, 70, 81, 0.3);
+                                    "
+                                >
+                                    <a
+                                        href="#"
+                                        style="
+                                            color: #027193;
+                                            text-decoration: none;
+                                            margin: 0 2% 0 0;
+                                        "
+                                        >Privacy Policy</a
+                                    >
+                                    |
+                                    <a
+                                        href="#"
+                                        style="
+                                            color: #027193;
+                                            text-decoration: none;
+                                            margin: 0 2% 0 2%;
+                                        "
+                                        >Help</a
+                                    >
+                                    |
+                                    <a
+                                        href="#"
+                                        style="
+                                            color: #027193;
+                                            text-decoration: none;
+                                            margin: 0 2% 0 2%;
+                                        "
+                                        >About Us</a
+                                    >
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <style>
+          /* Media query for smaller screens */
+          @media screen and (max-width: 600px) {
+              p {
+                  font-size: .5em; /* Adjust the font size for smaller screens */
+              }
+          }
+      </style>
+    </body>
+</html>
