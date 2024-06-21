@@ -4,8 +4,8 @@ const Schema = mongoose.Schema;
 const docterSchema = new Schema({
   name: {
     type: String,
-    required: true,
-    unique: true,
+    required: false,
+    
   },
   availablity: {
     type: String,
@@ -44,7 +44,9 @@ dob:{
 availability: [{
   type: mongoose.Schema.Types.ObjectId,
   ref: 'Availability'
-}]
+}],
+otp: { type: String, required: false },
+
  
 
  

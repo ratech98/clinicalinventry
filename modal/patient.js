@@ -4,11 +4,12 @@ const Schema = mongoose.Schema;
 const patientSchema = new Schema({
   name: {
     type: String,
-    required: true,
-    unique: true,
+    required: false,
+
   },
  mobile_number:{
-    type:Number
+    type:Number,
+    
    },
    address:{
     type:String
@@ -29,6 +30,9 @@ const patientSchema = new Schema({
     type:String
   },
   dob:{
+    type:String
+  },
+  otp:{
     type:String
   }
   

@@ -183,6 +183,50 @@ const updateAvailability = async (req, res) => {
   }
 };
 
+const sendDoctorOtp = async (req, res) => {
+  const { mobile_number } = req.body;
+  const otp = "1234";  
+
+  try {
+    await doctor.findOneAndUpdate(
+      { mobile_number },
+      { mobile_number, otp },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    // Code to send OTP via SMS
+
+    res.status(200).json({ message: 'OTP sent successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const verifyDoctorOtp = async (req, res) => {
+  const { mobile_number, otp } = req.body;
+
+  try {
+    const doctors = await doctor.findOne({ mobile_number });
+
+    if (!doctors) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (otp !== doctors.otp) {
+      return res.status(400).json({ error: 'Invalid OTP' });
+    }
+
+    doctors.otpVerified = true;
+    await doctors.save();
+
+    // const token = signInToken(doctors);
+
+    res.status(200).json({ message: 'OTP verified successfully',  doctors });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 module.exports = { 
                 addDoctor, 
@@ -195,5 +239,7 @@ module.exports = {
                 addClinicToDoctor,
                 addAvailability,
                 updateAvailability,
-                getClinicDetailsByDoctorId
+                getClinicDetailsByDoctorId,
+                sendDoctorOtp,
+                verifyDoctorOtp
                 };

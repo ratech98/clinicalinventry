@@ -11,7 +11,7 @@ dotenv.config();
 
 const sendOtp = async (req, res) => {
   const { mobile_number } = req.body;
-  const otp = "1234";  // Ideally, you should use generateOtp() to generate the OTP
+  const otp = "1234";  
 
   try {
     await Clinic.findOneAndUpdate(

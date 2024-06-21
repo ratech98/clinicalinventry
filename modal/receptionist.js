@@ -4,8 +4,8 @@ const Schema = mongoose.Schema;
 const receptionistSchema = new Schema({
   name: {
     type: String,
-    required: true,
-    unique: true,
+    required: false,
+    
   },
   availablity: {
     type: String,
@@ -36,7 +36,9 @@ age:{
 },
 dob:{
   type:String
-}
+},
+otp: { type: String, required: false },
+
  
 },{timestamps:true}
 );

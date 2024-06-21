@@ -1,5 +1,7 @@
 const { errormesaages } = require("../errormessages");
+const { Availability } = require("../modal/availablity");
 const Clinic = require("../modal/clinic.");
+const doctor = require("../modal/doctor");
 
 require("dotenv").config();
 // const bucketName = process.env.BUCKET_NAME;
@@ -81,10 +83,49 @@ const verify_clinic=async (req, res) => {
   }
 }
 
+const getDoctorsAndAvailabilityByClinic = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { specilaist } = req.query; 
+    const today = new Date().toISOString().split('T')[0]; 
+
+    const doctorQuery = { clinic: id };
+    if (specilaist) {
+      doctorQuery.specilaist = specilaist;
+    }
+    console.log(doctorQuery,specilaist)
+    const doctors = await doctor.find(doctorQuery).populate('availability');
+
+    if (!doctors.length) {
+      return res.status(404).json({ message: 'No doctors found for this clinic' });
+    }
+
+    const doctorAvailabilityPromises = doctors.map(async (doctor) => {
+      const availability = await Availability.findOne({
+        doctor: doctor._id,
+        clinic: id,
+        date: today
+      });
+      return {
+        doctor: doctor.name,
+        specialist: doctor.specilaist,
+        status:true
+      };
+    });
+
+    const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
+
+    res.status(200).json(doctorAvailability);
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
 module.exports = { addClinic,
                    getAllClinics, 
                    getClinicById, 
                    updateClinic, 
                    deleteClinic ,
-                   verify_clinic
+                   verify_clinic,
+                   getDoctorsAndAvailabilityByClinic
                   };

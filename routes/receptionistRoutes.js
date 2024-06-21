@@ -1,5 +1,5 @@
 const express = require('express');
-const { addReceptionist, getAllReceptionists, getReceptionistById, updateReceptionist, deleteReceptionist, updateReceptionistStatus, updateReceptionistVerify, addClinicToReceptionist, addReceptionistAvailability, updateReceptionistAvailability, getReceptionists, getClinicDetailsByreceptionistId } = require('../controller/receptionist.');
+const { addReceptionist, getAllReceptionists, getReceptionistById, updateReceptionist, deleteReceptionist, updateReceptionistStatus, updateReceptionistVerify, addClinicToReceptionist, addReceptionistAvailability, updateReceptionistAvailability, getReceptionists, getClinicDetailsByreceptionistId, sendReceptionistOtp, verifyReceptionistOtp } = require('../controller/receptionist.');
 const { updateAvailability } = require('../controller/doctorController');
 
 const router = express.Router();
@@ -18,5 +18,7 @@ router.put('/receptionists/verify/:id',updateReceptionistVerify)
 router.post('/update_receptionist_clinic',addClinicToReceptionist)
 router.post('/addreceptionist_avaiablity',addReceptionistAvailability)
 router.put('/updatereceptionist_availablity',updateReceptionistAvailability)
+router.post('/sendotp/receptionist',sendReceptionistOtp)
+router.post('/verifyotp/receptionist',verifyReceptionistOtp)
 
 module.exports=router

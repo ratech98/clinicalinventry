@@ -1,5 +1,5 @@
 const express = require('express');
-const { addDoctor, getAllDoctors, getDoctorById, updateDoctor, deleteDoctor, updateDoctorAvailabilitty, updateDoctorVerify, addClinicToDoctor, addAvailability, updateAvailability, getClinicDetailsByDoctorId } = require('../controller/doctorController');
+const { addDoctor, getAllDoctors, getDoctorById, updateDoctor, deleteDoctor, updateDoctorAvailabilitty, updateDoctorVerify, addClinicToDoctor, addAvailability, updateAvailability, getClinicDetailsByDoctorId, sendDoctorOtp, verifyDoctorOtp } = require('../controller/doctorController');
 const { isAuth } = require('../config/auth');
 const router = express.Router();
 
@@ -15,6 +15,8 @@ router.put('/doctors/verify/:id', updateDoctorVerify);
 router.post('/update_clinic_to_doctor',addClinicToDoctor)
 router.post('/adddoctor_availablity',addAvailability)
 router.put('/updatedoctor_availablity',updateAvailability)
+router.post('/sendotp/doctor',sendDoctorOtp)
+router.post('/verifyotp/doctor',verifyDoctorOtp)
 
 
 

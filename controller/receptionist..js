@@ -205,6 +205,52 @@ const updateReceptionistAvailability = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+const sendReceptionistOtp = async (req, res) => {
+  const { mobile_number } = req.body;
+  const otp = "1234";  
+
+  try {
+    await Receptionist.findOneAndUpdate(
+      { mobile_number },
+      { mobile_number, otp },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    // Code to send OTP via SMS
+
+    res.status(200).json({ message: 'OTP sent successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const verifyReceptionistOtp = async (req, res) => {
+  const { mobile_number, otp } = req.body;
+
+  try {
+    const receptionist = await Receptionist.findOne({ mobile_number });
+
+    if (!receptionist) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (otp !== receptionist.otp) {
+      return res.status(400).json({ error: 'Invalid OTP' });
+    }
+
+    receptionist.otpVerified = true;
+    await receptionist.save();
+
+    // const token = signInToken(receptionist);
+
+    res.status(200).json({ message: 'OTP verified successfully', receptionist });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
 module.exports = { addReceptionist, 
                     getAllReceptionists, 
                     getReceptionistById, 
@@ -216,5 +262,7 @@ module.exports = { addReceptionist,
                     addReceptionistAvailability,
                     updateReceptionistAvailability,
                     getReceptionists,
-                    getClinicDetailsByreceptionistId
+                    getClinicDetailsByreceptionistId,
+                    sendReceptionistOtp,
+                    verifyReceptionistOtp
                     };
