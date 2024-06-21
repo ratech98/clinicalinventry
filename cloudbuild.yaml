@@ -1,0 +1,14 @@
+steps:
+  # Install dependencies
+  - name: 'gcr.io/cloud-builders/npm'
+    args: ['install']
+  
+  # # # Build the application
+  # - name: 'gcr.io/cloud-builders/npm'
+  #   args: ['start']
+
+  #  - name: 'gcr.io/cloud-builders/npm'
+  #     args: ['install', '-g', 'pm2']
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: ['app', 'deploy', 'app.yaml']
