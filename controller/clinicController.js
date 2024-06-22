@@ -55,6 +55,7 @@ const updateClinic = async (req, res) => {
     const sanitizedFilename = originalFilename.replace(/[^a-zA-Z0-9.]/g, '_');
     const imagePath = `clinic_certificates/${Date.now()}_${sanitizedFilename}`;
     await gcsStorage.bucket(bucketName).file(imagePath).save(req.file.buffer);
+   req.body.certificate=`https://storage.googleapis.com/${bucketName}/${imagePath}`
 
     const clinic = await Clinic.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!clinic) {
