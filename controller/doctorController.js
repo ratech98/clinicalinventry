@@ -3,6 +3,10 @@ const { errormesaages } = require("../errormessages");
 const { Availability } = require("../modal/availablity");
 const Clinic = require("../modal/clinic.");
 const doctor = require("../modal/doctor");
+const { Storage } = require("@google-cloud/storage");
+const gcsStorage = new Storage();
+const bucketName = process.env.bucketName;
+
 
 require("dotenv").config();
 
@@ -56,6 +60,19 @@ const getDoctorById = async (req, res) => {
 
 const updateDoctor = async (req, res) => {
   try {
+    const files = req.files;
+    const uploadedFiles = {};
+    for (const fieldName in files) {
+      if (Object.hasOwnProperty.call(files, fieldName)) {
+        const file = files[fieldName][0]; 
+        const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
+        const imagePath = `docter_certificates/${Date.now()}_${sanitizedFilename}`;
+        await gcsStorage.bucket(bucketName).file(imagePath).save(file.buffer);
+        uploadedFiles[
+          fieldName
+        ] = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
+      }
+    }
     const doctors = await doctor.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('clinic');
     if (!doctors) {
       return res.status(400).json({ error: errormesaages[1002], errorcode: 1002 });
