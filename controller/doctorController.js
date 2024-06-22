@@ -73,7 +73,9 @@ const updateDoctor = async (req, res) => {
         ] = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
       }
     }
-    const doctors = await doctor.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('clinic');
+    const updateData = { ...req.body, ...uploadedFiles };
+
+    const doctors = await doctor.findByIdAndUpdate(req.params.id, updateData, { new: true }).populate('clinic');
     if (!doctors) {
       return res.status(400).json({ error: errormesaages[1002], errorcode: 1002 });
     }
