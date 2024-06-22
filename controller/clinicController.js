@@ -2,8 +2,13 @@ const { errormesaages } = require("../errormessages");
 const { Availability } = require("../modal/availablity");
 const Clinic = require("../modal/clinic.");
 const doctor = require("../modal/doctor");
+const { Storage } = require("@google-cloud/storage");
 
 require("dotenv").config();
+const bucketName = process.env.bucketName;
+const gcsStorage = new Storage();
+
+
 // const bucketName = process.env.BUCKET_NAME;
 // const gcsStorage = new Storage();
 
@@ -45,6 +50,12 @@ const getClinicById = async (req, res) => {
 
 const updateClinic = async (req, res) => {
   try {
+
+    const originalFilename = req.file.originalname;
+    const sanitizedFilename = originalFilename.replace(/[^a-zA-Z0-9.]/g, '_');
+    const imagePath = `clinic_certificates/${Date.now()}_${sanitizedFilename}`;
+    await gcsStorage.bucket(bucketName).file(imagePath).save(req.file.buffer);
+
     const clinic = await Clinic.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!clinic) {
       return res.status(400).json({ error:errormesaages[1001],errorcode:1001  });

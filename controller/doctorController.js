@@ -6,6 +6,7 @@ const doctor = require("../modal/doctor");
 const { Storage } = require("@google-cloud/storage");
 const gcsStorage = new Storage();
 const bucketName = process.env.bucketName;
+require("dotenv").config();
 
 
 require("dotenv").config();
