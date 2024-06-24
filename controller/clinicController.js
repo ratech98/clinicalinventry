@@ -119,8 +119,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
         date: today
       });
       return {
-        doctor: doctor.name,
-        specialist: doctor.specilaist,
+        doctor: doctors,
         status:true
       };
     });

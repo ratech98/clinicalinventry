@@ -250,7 +250,16 @@ const verifyReceptionistOtp = async (req, res) => {
   }
 };
 
-
+const getReceptionistsByClinic = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const receptionists = await Receptionist.find({ clinic: id }).populate('clinic');
+    res.status(200).json(receptionists);
+  } catch (error) {
+    console.error('Error fetching receptionists:', error);
+    res.status(500).json({ message: 'Error fetching receptionists', error });
+  }
+};
 module.exports = { addReceptionist, 
                     getAllReceptionists, 
                     getReceptionistById, 
@@ -264,5 +273,6 @@ module.exports = { addReceptionist,
                     getReceptionists,
                     getClinicDetailsByreceptionistId,
                     sendReceptionistOtp,
-                    verifyReceptionistOtp
+                    verifyReceptionistOtp,
+                    getReceptionistsByClinic
                     };
