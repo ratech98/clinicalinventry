@@ -37,7 +37,10 @@ const getAllClinics = async (req, res) => {
 
 const getClinicById = async (req, res) => {
   try {
-    const clinic = await Clinic.findById(req.params.id);
+
+    const id=req.user._id
+    console.log("id",id)
+    const clinic = await Clinic.findById(id);
     if (!clinic) {
       return res.status(404).json({ error:errormesaages[1001],errorcode:1001 });
     }

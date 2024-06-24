@@ -3,6 +3,7 @@ const { addClinic, getAllClinics, getClinicById, updateClinic, deleteClinic, ver
 const router = express.Router();
 
 const multer = require('multer');
+const { isAuth } = require('../config/auth');
 
 const multerStorage = multer.memoryStorage(); 
 const upload = multer({
@@ -19,7 +20,7 @@ const upload = multer({
 router.post('/addclinic', addClinic);
 router.get('/clinics', getAllClinics);
 
-router.get('/clinics/:id', getClinicById);
+router.get('/clinic',isAuth, getClinicById);
 router.put('/clinics/:id',upload, updateClinic);
 router.delete('/clinics/:id', deleteClinic);
 router.put('/verify-admin/:id', verify_clinic);
