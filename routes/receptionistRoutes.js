@@ -8,7 +8,7 @@ const router = express.Router();
 router.post('/receptionists', addReceptionist);
 router.get('/receptionists', getAllReceptionists);
 router.get('/clinic/receptionists',getReceptionists );
-router.get('/receptionists/clinic', getClinicDetailsByreceptionistId);
+router.post('/receptionists/clinic', getClinicDetailsByreceptionistId);
 router.get('/receptionists/:id', getReceptionistById);
 router.put('/receptionists/:id', updateReceptionist);
 router.delete('/receptionists/:id', deleteReceptionist);

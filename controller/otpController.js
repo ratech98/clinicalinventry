@@ -26,7 +26,7 @@ const sendOtp = async (req, res) => {
     //   to: mobile_number,
     // });
 
-    res.status(200).json({ message: 'OTP sent successfully' });
+    res.status(200).json({ success:true, message: 'OTP sent successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
