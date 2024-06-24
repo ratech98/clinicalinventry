@@ -147,7 +147,7 @@ const addClinicToReceptionist = async (req, res) => {
     receptionist.clinic.push(clinic._id);
     await receptionist.save();
 
-    res.status(200).json({ message: 'Clinic added to receptionist successfully', receptionist });
+    res.status(200).json({ success: true, message: 'Clinic added to receptionist successfully', receptionist });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -177,7 +177,7 @@ const addReceptionistAvailability = async (req, res) => {
 
     await availability.save();
 
-    res.status(201).json({ message: 'Availability added successfully', availability });
+    res.status(200).json({ success: true, message: 'Availability added successfully', availability });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -200,7 +200,7 @@ const updateReceptionistAvailability = async (req, res) => {
 
     await availability.save();
 
-    res.status(200).json({ message: 'Receptionist availability updated successfully', availability });
+    res.status(200).json({ success: true, message: 'Receptionist availability updated successfully', availability });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -244,7 +244,7 @@ const verifyReceptionistOtp = async (req, res) => {
 
     // const token = signInToken(receptionist);
 
-    res.status(200).json({ message: 'OTP verified successfully', receptionist });
+    res.status(200).json({ success: true, message: 'OTP verified successfully', receptionist });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -254,7 +254,7 @@ const getReceptionistsByClinic = async (req, res) => {
   try {
     const { id } = req.params;
     const receptionists = await Receptionist.find({ clinic: id }).populate('clinic');
-    res.status(200).json(receptionists);
+    res.status(200).json({ success: true,message:"fetch receptionist successfully",receptionists});
   } catch (error) {
     console.error('Error fetching receptionists:', error);
     res.status(500).json({ message: 'Error fetching receptionists', error });

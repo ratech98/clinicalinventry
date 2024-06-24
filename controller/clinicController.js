@@ -126,7 +126,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
 
     const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
 
-    res.status(200).json(doctorAvailability);
+    res.status(200).json({ success: true,message:"doctors fetched successfully",doctorAvailability});
   } catch (error) {
     console.log(error)
     res.status(500).json({ message: 'Server error', error });

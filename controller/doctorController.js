@@ -140,7 +140,7 @@ const addClinicToDoctor = async (req, res) => {
     doctors.clinic.push(clinic._id);
     await doctors.save();
 
-    res.status(200).json({ message: 'Clinic added to doctor successfully', doctors });
+    res.status(200).json({ success: true, message: 'Clinic added to doctor successfully', doctors });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -175,7 +175,7 @@ const addAvailability = async (req, res) => {
     await doctors.save();
     await clinic.save();
 
-    res.status(201).json({ message: 'Availability added successfully', availability });
+    res.status(201).json({ success: true, message: 'Availability added successfully', availability });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -197,7 +197,7 @@ const updateAvailability = async (req, res) => {
 
     await availability.save();
 
-    res.status(200).json({ message: 'Availability updated successfully', availability });
+    res.status(200).json({ success: true, message: 'Availability updated successfully', availability });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -216,7 +216,7 @@ const sendDoctorOtp = async (req, res) => {
 
     // Code to send OTP via SMS
 
-    res.status(200).json({ message: 'OTP sent successfully' });
+    res.status(200).json({ success: true, message: 'OTP sent successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -241,7 +241,7 @@ const verifyDoctorOtp = async (req, res) => {
 
     // const token = signInToken(doctors);
 
-    res.status(200).json({ message: 'OTP verified successfully',  doctors });
+    res.status(200).json({ success: true, message: 'OTP verified successfully',  doctors });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
