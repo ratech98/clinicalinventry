@@ -65,7 +65,7 @@ const verifyToken = async (req, res, next) => {
     const user = await Clinic.findById(decoded._id);
 
     if (!user) {
-      return res.status(401).send({ message: 'Unauthorized - User not found' });
+      return res.status(401).send({ message: 'Unauthorized - User not found ' });
     }
 
     // if (user.block) {
