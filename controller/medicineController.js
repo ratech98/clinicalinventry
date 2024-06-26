@@ -23,11 +23,10 @@ const addMedicine = async (req, res) => {
 const getAllMedicines = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
-
-    const MedicineModel = tenantDBConnection.model('Medicine');
+    
+    const MedicineModel = tenantDBConnection.model('Medicine', Medicine.schema);
     const medicines = await MedicineModel.find()
-      .populate('dosage_form')
-      .populate('dosage_unit');
+     
 
     res.json({ success: true, message: "Medicines fetched successfully", medicines });
   } catch (error) {
@@ -39,11 +38,10 @@ const getAllMedicines = async (req, res) => {
 const getMedicineById = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
-
-    const MedicineModel = tenantDBConnection.model('Medicine');
+    
+    const MedicineModel = tenantDBConnection.model('Medicine', Medicine.schema);
     const medicine = await MedicineModel.findById(req.params.id)
-      .populate('dosage_form')
-      .populate('dosage_unit');
+     
 
     if (!medicine) {
       return res.status(404).json({ error: "Medicine not found", errorcode: 1003 });

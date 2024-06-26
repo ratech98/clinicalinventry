@@ -19,7 +19,7 @@ const connectTenantDB = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET); 
     const userId = decoded._id;
-
+console.log()
     const tenant = await Clinic.findById(userId);
     if (!tenant) {
       return res.status(404).json({ message: "Tenant not found" });
@@ -31,29 +31,6 @@ const connectTenantDB = async (req, res, next) => {
       useUnifiedTopology: true,
     });
 
-    // Registering schemas on tenantDBConnection if not already registered
-    if (!tenantDBConnection.models.DosageForm) {
-      tenantDBConnection.model('DosageForm', new mongoose.Schema({
-        name: { type: String, required: true }
-      }));
-    }
-
-    if (!tenantDBConnection.models.DosageUnit) {
-      tenantDBConnection.model('DosageUnit', new mongoose.Schema({
-        name: { type: String, required: true }
-      }));
-    }
-
-    if (!tenantDBConnection.models.Medicine) {
-      tenantDBConnection.model('Medicine', new mongoose.Schema({
-        medicine_name: { type: String, required: true, unique: true },
-        dosage_form: [{ type: mongoose.Schema.Types.ObjectId, ref: 'DosageForm' }],
-        dosage_strength: { type: String },
-        dosage_unit: { type: mongoose.Schema.Types.ObjectId, ref: 'DosageUnit' },
-        status: { type: String, enum: ["Available", "OutofStock"] }
-      }, { timestamps: true }));
-    }
-
     console.log('Connected to tenant DB:', tenantDBURI);
     req.tenantDBConnection = tenantDBConnection;
     next();
@@ -62,7 +39,6 @@ const connectTenantDB = async (req, res, next) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
 
 
 

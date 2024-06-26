@@ -8,15 +8,13 @@ const medicineSchema = new Schema({
     unique: true,
   },
   dosage_form: [{
-    type:  mongoose.Schema.Types.ObjectId,
-    ref: 'DosageForm',
+    type:  String
   }],
   dosage_strength:{
     type:String
    },
    dosage_unit:{
-    type:  mongoose.Schema.Types.ObjectId,
-    ref: 'DosageUnit',
+    type:  String
    },
    status:{
     type:String,
