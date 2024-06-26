@@ -46,6 +46,8 @@ availability: [{
   ref: 'Availability'
 }],
 otp: { type: String, required: false },
+otpVerified: { type: Boolean, default: false },
+
 undergraduate_certificate:{type:String},
 postgraduate_certificate:{type:String}
 

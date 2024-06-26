@@ -38,6 +38,8 @@ dob:{
   type:String
 },
 otp: { type: String, required: false },
+otpVerified: { type: Boolean, default: false },
+
 
  
 },{timestamps:true}

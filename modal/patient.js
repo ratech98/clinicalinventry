@@ -42,6 +42,8 @@ const patientSchema = new Schema({
   otp: {
     type: String,
   },
+  otpVerified: { type: Boolean, default: false },
+
   temp: {
     type: String,
   },

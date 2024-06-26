@@ -166,7 +166,7 @@ const sendPatientOtp = async (req, res) => {
 
 
 
-    res.status(200).json({ message: 'OTP sent successfully',patients });
+    res.status(200).json({success:true, message: 'OTP sent successfully',patients });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -193,7 +193,7 @@ const verifyPatientOtp = async (req, res) => {
     patient.otpVerified = true;
     await patient.save();
 
-    res.status(200).json({ message: 'OTP verified successfully' });
+    res.status(200).json({success:true, message: 'OTP verified successfully' ,patient});
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
