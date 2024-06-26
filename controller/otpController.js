@@ -11,23 +11,46 @@ dotenv.config();
 
 const sendOtp = async (req, res) => {
   const { mobile_number } = req.body;
-  const otp = "123456";  
+  const otp = "123456"; // You can generate a random OTP here
 
   try {
-    await Clinic.findOneAndUpdate(
-      { mobile_number },
-      { mobile_number, otp },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+    let clinic = await Clinic.findOne({ mobile_number });
 
+    if (clinic) {
+    console.log("enrty")
+      if (clinic.block) {
+        return res.status(400).json({ success: false, message: 'Clinic is blocked, contact admin' });
+      }
+if(!clinic.adminVerified){
+  return res.status(400).json({ success: false, message: 'Clinic  not verified' });
+
+}
+      if (!clinic.otpVerified) {
+        return res.status(400).json({ success: false, message: 'Clinic mobile number is not verified' });
+      }
+
+      clinic.otp = otp;
+    } else {
+      clinic = new Clinic({
+        mobile_number,
+        otp,
+        otpVerified: false, 
+        block: false,
+      });
+    }
+
+    await clinic.save();
+
+    // Code to send OTP via SMS
     // await client.messages.create({
     //   body: `Your OTP code is ${otp}`,
     //   from: process.env.TWILIO_PHONE_NUMBER,
     //   to: mobile_number,
     // });
 
-    res.status(200).json({ success:true, message: 'OTP sent successfully' });
+    res.status(200).json({ success: true, message: 'OTP sent successfully' });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: error.message });
   }
 };

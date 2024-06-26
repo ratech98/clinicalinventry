@@ -223,13 +223,11 @@ const updateDoctorAvailabilitty = async (req, res) => {
   const { availabilityId, doctorId, clinicId, days, slots } = req.body;
 
   try {
-    // Check if availability exists
     const availability = await Availability.findById(availabilityId);
     if (!availability) {
       return res.status(404).json({ error: 'Availability not found' });
     }
 
-    // Transform slots array into the required format
     const formattedSlots = {};
     slots.forEach(slot => {
       if (slot in timeSlotsSchema.obj) {
@@ -237,9 +235,8 @@ const updateDoctorAvailabilitty = async (req, res) => {
       }
     });
 
-    // Check for overlapping slots with existing availability for the same doctor across all clinics
     const overlappingAvailability = await Availability.find({
-      _id: { $ne: availabilityId }, // Exclude the current availability being updated
+      _id: { $ne: availabilityId },
       doctor: doctorId,
       days: { $in: days }
     });
@@ -252,13 +249,11 @@ const updateDoctorAvailabilitty = async (req, res) => {
       }
     }
 
-    // Update availability document
     availability.doctor = doctorId;
     availability.clinic = clinicId;
     availability.days = days;
     availability.slots = { ...availability.slots, ...formattedSlots };
 
-    // Save updated availability
     await availability.save();
 
     res.status(200).json({ success: true, message: 'Availability updated successfully', availability });
@@ -267,8 +262,43 @@ const updateDoctorAvailabilitty = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+const sendDoctorOtpForLogin = async (req, res) => {
+  const { mobile_number } = req.body;
+  const otp = "1234"; 
 
-module.exports = { addDoctorAvailability, updateDoctorAvailability };
+  try {
+    const doctorData = await doctor.findOneAndUpdate(
+      { mobile_number },
+      { $set: { otp } },
+    );
+
+
+    if (!doctorData) {
+      return res.status(404).json({ success: false, message: 'Receptionist not found' });
+    }
+
+    if (!doctorData.otpVerified) {
+      return res.status(400).json({ success: false, message: 'Your mobile number is not verified' });
+    }
+    if(!doctorData.verify){
+      return res.status(400).json({ success: false, message: 'you are not verified by admin,contact admin' });
+    
+    }
+
+    if (doctorData.block) {
+      return res.status(400).json({ success: false, message: 'You are blocked by admin, contact admin' });
+    }
+
+    await doctorData.save();
+
+    // Code to send OTP via SMS
+    // sendOtpSms(mobile_number, otp); // Uncomment and implement this function
+
+    res.status(200).json({ success: true, message: 'OTP sent successfully', doctor: doctorData });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 
 
@@ -372,5 +402,6 @@ module.exports = {
                 sendDoctorOtp,
                 verifyDoctorOtp,
                 verifyDoctorClinic,
-               blockOrUnblockDoctor
+               blockOrUnblockDoctor,
+               sendDoctorOtpForLogin
                 };

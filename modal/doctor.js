@@ -18,11 +18,7 @@ const doctorSchema = new Schema({
     type: String,
     required: false,
   },
-  availability: {
-    type: String,
-    enum: ["available", "onleave"],
-    default: "available"
-  },
+
   specialist: {
     type: String,
   },

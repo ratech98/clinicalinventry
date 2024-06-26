@@ -115,6 +115,44 @@ const updateReceptionistVerify = async (req, res) => {
 
 
 
+const sendReceptionistOtpForLogin = async (req, res) => {
+  const { mobile_number } = req.body;
+  const otp = "1234";
+
+  try {
+
+
+
+    const receptionist = await Receptionist.findOneAndUpdate(
+      { mobile_number },
+      { mobile_number, otp},
+    );
+
+    if (!receptionist) {
+      return res.status(404).json({ success: false, message: 'Receptionist not found' });
+    }
+
+    if (!receptionist.otpVerified) {
+      return res.status(400).json({ success: false, message: 'Your mobile number is not verified' });
+    }
+    if(!receptionist.verify){
+      return res.status(400).json({ success: false, message: 'you are not verified by admin,contact admin' });
+    
+    }
+    if (receptionist.block) {
+      return res.status(400).json({ success: false, message: 'You are blocked by admin, contact admin' });
+    }
+
+    await receptionist.save();
+
+    // Code to send OTP via SMS
+    // sendOtpSms(mobile_number, otp); // Uncomment and implement this function
+
+    res.status(200).json({ success: true, message: 'OTP sent successfully and clinic set', receptionist });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 
 const sendReceptionistOtp = async (req, res) => {
@@ -211,5 +249,6 @@ module.exports = {
   sendReceptionistOtp,
   verifyReceptionistOtp,
   getReceptionistsByClinic,
-  blockOrUnblockReceptionist
+  blockOrUnblockReceptionist,
+  sendReceptionistOtpForLogin
 };
