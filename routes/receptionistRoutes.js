@@ -15,9 +15,8 @@ router.delete('/receptionists/:id', deleteReceptionist);
 
 router.put('/receptionists/staus/:id',updateReceptionistStatus)
 router.put('/receptionists/verify/:id',updateReceptionistVerify)
-router.post('/update_receptionist_clinic',addClinicToReceptionist)
-router.post('/addreceptionist_avaiablity',addReceptionistAvailability)
-router.put('/updatereceptionist_availablity',updateReceptionistAvailability)
+// router.post('/update_receptionist_clinic',addClinicToReceptionist)
+
 router.post('/sendotp/receptionist',sendReceptionistOtp)
 router.post('/verifyotp/receptionist',verifyReceptionistOtp)
 router.get('/receptionist/clinic/:id',getReceptionistsByClinic)

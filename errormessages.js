@@ -2,7 +2,10 @@
     1001:"clinic not found",
     1002:"doctor not found",
     1003:"medicine not found",
-    1004:"receptionist not found"
+    1004:"receptionist not found",
+    1005:"Dosageform not found",
+    1006:"Dosage unit not found"
+
   }
 
   module.exports={errormesaages}

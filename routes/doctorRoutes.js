@@ -1,5 +1,5 @@
 const express = require('express');
-const { addDoctor, getAllDoctors, getDoctorById, updateDoctor, deleteDoctor, updateDoctorAvailabilitty, updateDoctorVerify, addClinicToDoctor, addAvailability, updateAvailability, getClinicDetailsByDoctorId, sendDoctorOtp, verifyDoctorOtp } = require('../controller/doctorController');
+const { addDoctor, getAllDoctors, getDoctorById, updateDoctor, deleteDoctor, updateDoctorAvailabilitty, updateDoctorVerify, addClinicToDoctor, addAvailability, updateAvailability, getClinicDetailsByDoctorId, sendDoctorOtp, verifyDoctorOtp, verifyDoctorClinic, updateDoctorAvailability, addDoctorAvailability } = require('../controller/doctorController');
 const { isAuth } = require('../config/auth');
 const router = express.Router();
 const multer = require('multer');
@@ -21,11 +21,11 @@ router.get('/doctors/clinic', getClinicDetailsByDoctorId);
 router.get('/doctors/:id', getDoctorById);
 router.put('/doctors/:id',upload, updateDoctor);
 router.delete('/doctors/:id', deleteDoctor);
-router.put('/doctors/status/:id', updateDoctorAvailabilitty);
-router.put('/doctors/verify/:id', updateDoctorVerify);
+router.put('/doctors/status/:id', updateDoctorAvailability);
+router.put('/doctors/verify/clinic', verifyDoctorClinic);
 router.post('/update_clinic_to_doctor',addClinicToDoctor)
-router.post('/adddoctor_availablity',addAvailability)
-router.put('/updatedoctor_availablity',updateAvailability)
+router.post('/adddoctor_availablity',addDoctorAvailability)
+router.put('/updatedoctor_availablity',updateDoctorAvailabilitty)
 router.post('/sendotp/doctor',sendDoctorOtp)
 router.post('/verifyotp/doctor',verifyDoctorOtp)
 

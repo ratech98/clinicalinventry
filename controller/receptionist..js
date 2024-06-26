@@ -5,8 +5,6 @@ const Receptionist = require("../modal/receptionist");
 
 const addReceptionist = async (req, res) => {
   try {
-    
-
     const receptionist = await Receptionist.create(req.body);
     res.status(201).json({ success: true, message: "Receptionist added successfully", receptionist });
   } catch (error) {
@@ -17,9 +15,7 @@ const addReceptionist = async (req, res) => {
 
 const getAllReceptionists = async (req, res) => {
   try {
-  
-
-    const receptionists = await Receptionist.find();
+    const receptionists = await Receptionist.find().populate('clinic');
     res.json({ success: true, message: "Receptionists fetched successfully", receptionists });
   } catch (error) {
     console.error(error);
@@ -29,9 +25,7 @@ const getAllReceptionists = async (req, res) => {
 
 const getReceptionists = async (req, res) => {
   try {
-  
-
-    const receptionists = await Receptionist.find({clinic:req.body.clinic}).populate('clinic');
+    const receptionists = await Receptionist.find({ clinic: req.body.clinic }).populate('clinic');
     res.json({ success: true, message: "Receptionists fetched successfully", receptionists });
   } catch (error) {
     console.error(error);
@@ -41,26 +35,24 @@ const getReceptionists = async (req, res) => {
 
 const getClinicDetailsByreceptionistId = async (req, res) => {
   try {
-      const receptionist = await Receptionist.findById(req.body.id).populate('clinic');
-      if (!receptionist) {
-        return res.status(404).json({ error: 'receptionist not found' });
-      }
-  
-      const clinics = receptionist.clinic;
-      res.status(200).json({ success: true, message: 'Clinic details fetched successfully', clinics });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Internal Server Error' });
+    const receptionist = await Receptionist.findById(req.body.id).populate('clinic');
+    if (!receptionist) {
+      return res.status(404).json({ error: 'Receptionist not found' });
     }
-  };
+
+    const clinic = receptionist.clinic;
+    res.status(200).json({ success: true, message: 'Clinic details fetched successfully', clinic });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
 const getReceptionistById = async (req, res) => {
   try {
- 
-
-    const receptionist = await Receptionist.findById(req.params.id);
+    const receptionist = await Receptionist.findById(req.params.id).populate('clinic');
     if (!receptionist) {
-      return res.status(404).json({ error: errormesaages[1004], errorcode: 1004});
+      return res.status(404).json({ error: errormesaages[1004], errorcode: 1004 });
     }
     res.json({ success: true, message: "Receptionist fetched successfully", receptionist });
   } catch (error) {
@@ -71,11 +63,9 @@ const getReceptionistById = async (req, res) => {
 
 const updateReceptionist = async (req, res) => {
   try {
-  
-
     const receptionist = await Receptionist.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!receptionist) {
-      return res.status(400).json({error: errormesaages[1004], errorcode: 1004 });
+      return res.status(400).json({ error: errormesaages[1004], errorcode: 1004 });
     }
     res.status(200).json({ success: true, message: "Receptionist updated successfully", receptionist });
   } catch (error) {
@@ -86,11 +76,9 @@ const updateReceptionist = async (req, res) => {
 
 const deleteReceptionist = async (req, res) => {
   try {
-
-
     const receptionist = await Receptionist.findByIdAndDelete(req.params.id);
     if (!receptionist) {
-      return res.status(400).json({error: errormesaages[1004], errorcode: 1004 });
+      return res.status(400).json({ error: errormesaages[1004], errorcode: 1004 });
     }
     res.json({ success: true, message: "Receptionist deleted successfully" });
   } catch (error) {
@@ -101,9 +89,20 @@ const deleteReceptionist = async (req, res) => {
 
 const updateReceptionistStatus = async (req, res) => {
   try {
-    
+    const receptionist = await Receptionist.findByIdAndUpdate(req.params.id, { availability: req.body.availability }, { new: true });
+    if (!receptionist) {
+      return res.status(400).json({ error: errormesaages[1004], errorcode: 1004 });
+    }
+    res.status(200).json({ success: true, message: "Receptionist status updated successfully", receptionist });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
-    const receptionist = await Receptionist.findByIdAndUpdate(req.params.id, { availablity: req.body.availablity }, { new: true });
+const updateReceptionistVerify = async (req, res) => {
+  try {
+    const receptionist = await Receptionist.findByIdAndUpdate(req.params.id, { verify: req.body.verify }, { new: true });
     if (!receptionist) {
       return res.status(400).json({ error: errormesaages[1004], errorcode: 1004 });
     }
@@ -115,111 +114,26 @@ const updateReceptionistStatus = async (req, res) => {
 };
 
 
-const updateReceptionistVerify = async (req, res) => {
-  try {
 
 
-    const receptionist = await Receptionist.findByIdAndUpdate(req.params.id, { verify: req.body.verify }, { new: true });
-    if (!receptionist) {
-      return res.status(400).json({error: errormesaages[1004], errorcode: 1004  });
-    }
-    res.status(200).json({ success: true, message: "Receptionist status updated successfully", receptionist });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
-
-const addClinicToReceptionist = async (req, res) => {
-  const { receptionistId, clinicId } = req.body;
-
-  try {
-    const receptionist = await Receptionist.findById(receptionistId);
-    if (!receptionist) {
-      return res.status(404).json({ error: 'Receptionist not found' });
-    }
-
-    const clinic = await Clinic.findById(clinicId);
-    if (!clinic) {
-      return res.status(404).json({ error: 'Clinic not found' });
-    }
-
-    receptionist.clinic.push(clinic._id);
-    await receptionist.save();
-
-    res.status(200).json({ success: true, message: 'Clinic added to receptionist successfully', receptionist });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-const addReceptionistAvailability = async (req, res) => {
-  const { receptionistId, clinicId, date, startTime, endTime } = req.body;
-
-  try {
-    const receptionist = await Receptionist.findById(receptionistId);
-    if (!receptionist) {
-      return res.status(404).json({ error: 'Receptionist not found' });
-    }
-
-    const clinic = await Clinic.findById(clinicId);
-    if (!clinic) {
-      return res.status(404).json({ error: 'Clinic not found' });
-    }
-
-    const availability = new ReceptionistAvailability({
-      receptionist: receptionistId,
-      clinic: clinicId,
-      date,
-      startTime,
-      endTime
-    });
-
-    await availability.save();
-
-    res.status(200).json({ success: true, message: 'Availability added successfully', availability });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-const updateReceptionistAvailability = async (req, res) => {
-
-  const { date, startTime, endTime,id } = req.body;
-
-  try {
-    const availability = await ReceptionistAvailability.findById(id);
-    if (!availability) {
-      return res.status(404).json({ error: 'Receptionist availability not found' });
-    }
-
-    // Update the availability fields
-    if (date) availability.date = date;
-    if (startTime) availability.startTime = startTime;
-    if (endTime) availability.endTime = endTime;
-
-    await availability.save();
-
-    res.status(200).json({ success: true, message: 'Receptionist availability updated successfully', availability });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
 
 const sendReceptionistOtp = async (req, res) => {
-  const { mobile_number } = req.body;
-  const otp = "1234";  
+  const { mobile_number, clinicId } = req.body;
+  const otp = "1234";
 
   try {
-    await Receptionist.findOneAndUpdate(
+    const receptionist = await Receptionist.findOneAndUpdate(
       { mobile_number },
-      { mobile_number, otp },
+      { mobile_number, otp, clinic: clinicId },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    // Code to send OTP via SMS
+    await receptionist.save();
 
-    res.status(200).json({ message: 'OTP sent successfully' });
+    // Code to send OTP via SMS
+    // sendOtpSms(mobile_number, otp); // Uncomment and implement this function
+
+    res.status(200).json({ success: true, message: 'OTP sent successfully and clinic set', receptionist });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -242,8 +156,6 @@ const verifyReceptionistOtp = async (req, res) => {
     receptionist.otpVerified = true;
     await receptionist.save();
 
-    // const token = signInToken(receptionist);
-
     res.status(200).json({ success: true, message: 'OTP verified successfully', receptionist });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -254,25 +166,25 @@ const getReceptionistsByClinic = async (req, res) => {
   try {
     const { id } = req.params;
     const receptionists = await Receptionist.find({ clinic: id }).populate('clinic');
-    res.status(200).json({ success: true,message:"fetch receptionist successfully",receptionists});
+    res.status(200).json({ success: true, message: "fetch receptionist successfully", receptionists });
   } catch (error) {
     console.error('Error fetching receptionists:', error);
     res.status(500).json({ message: 'Error fetching receptionists', error });
   }
 };
-module.exports = { addReceptionist, 
-                    getAllReceptionists, 
-                    getReceptionistById, 
-                    updateReceptionist,
-                     deleteReceptionist, 
-                     updateReceptionistStatus, 
-                    updateReceptionistVerify,
-                    addClinicToReceptionist,
-                    addReceptionistAvailability,
-                    updateReceptionistAvailability,
-                    getReceptionists,
-                    getClinicDetailsByreceptionistId,
-                    sendReceptionistOtp,
-                    verifyReceptionistOtp,
-                    getReceptionistsByClinic
-                    };
+
+module.exports = {
+  addReceptionist,
+  getAllReceptionists,
+  getReceptionistById,
+  updateReceptionist,
+  deleteReceptionist,
+  updateReceptionistStatus,
+  updateReceptionistVerify,
+  
+  getReceptionists,
+  getClinicDetailsByreceptionistId,
+  sendReceptionistOtp,
+  verifyReceptionistOtp,
+  getReceptionistsByClinic
+};

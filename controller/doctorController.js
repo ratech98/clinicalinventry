@@ -1,6 +1,6 @@
 
 const { errormesaages } = require("../errormessages");
-const { Availability } = require("../modal/availablity");
+const { Availability, timeSlotsSchema } = require("../modal/availablity");
 const Clinic = require("../modal/clinic.");
 const doctor = require("../modal/doctor");
 const { Storage } = require("@google-cloud/storage");
@@ -23,7 +23,7 @@ const addDoctor = async (req, res) => {
 
 const getAllDoctors = async (req, res) => {
   try {
-    const doctors = await doctor.find().populate('clinic');
+    const doctors = await doctor.find().populate('clinics.clinicId');
     res.json({ success: true, message: "Doctors fetched successfully", doctors });
   } catch (error) {
     console.error(error);
@@ -31,14 +31,15 @@ const getAllDoctors = async (req, res) => {
   }
 };
 
+
 const getClinicDetailsByDoctorId = async (req, res) => {
-try {
-    const doctors = await doctor.findById(req.body.doctorId).populate('clinic');
+  try {
+    const doctors = await doctor.findById(req.body.doctorId).populate('clinics.clinicId');
     if (!doctors) {
       return res.status(404).json({ error: 'Doctor not found' });
     }
 
-    const clinics = doctors.clinic;
+    const clinics = doctors.clinics;
     res.status(200).json({ success: true, message: 'Clinic details fetched successfully', clinics });
   } catch (error) {
     console.error(error);
@@ -46,11 +47,12 @@ try {
   }
 };
 
+
 const getDoctorById = async (req, res) => {
   try {
-    const doctors = await doctor.findById(req.params.id).populate('clinic');
+    const doctors = await doctor.findById(req.params.id).populate('clinics.clinicId');
     if (!doctors) {
-      return res.status(404).json({ error:  errormesaages[1002], errorcode: 1002 });
+      return res.status(404).json({ error: 'Doctor not found' });
     }
     res.json({ success: true, message: "Doctor fetched successfully", doctors });
   } catch (error) {
@@ -58,6 +60,7 @@ const getDoctorById = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 const updateDoctor = async (req, res) => {
   try {
@@ -86,7 +89,7 @@ const updateDoctor = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-const updateDoctorAvailabilitty = async (req, res) => {
+const updateDoctorAvailability = async (req, res) => {
   try {
     const doctors = await doctor.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('clinic');
     if (!doctors) {
@@ -98,16 +101,29 @@ const updateDoctorAvailabilitty = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-const updateDoctorVerify = async (req, res) => {
+const verifyDoctorClinic = async (req, res) => {
+  const { doctorId, clinicId,verify } = req.body;
+
   try {
-    const doctors = await doctor.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('clinic');
+    const doctors = await doctor.findById(doctorId);
+
     if (!doctors) {
-      return res.status(400).json({ error: errormesaages[1002], errorcode: 1002 });
+      return res.status(404).json({ error: 'Doctor not found' });
     }
-    res.status(200).json({ success: true, message: "Doctor updated successfully", doctors });
+
+    const clinic = doctors.clinics.find(c => c.clinicId.toString() === clinicId);
+
+    if (!clinic) {
+      return res.status(404).json({ error: 'Clinic not found for this doctor' });
+    }
+
+    clinic.verified = verify;
+
+    await doctors.save();
+
+    res.status(200).json({ success: true, message: 'Clinic verified successfully', doctors });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 const deleteDoctor = async (req, res) => {
@@ -146,8 +162,8 @@ const addClinicToDoctor = async (req, res) => {
   }
 };
 
-const addAvailability = async (req, res) => {
-  const { doctorId, clinicId, date, startTime, endTime } = req.body;
+const addDoctorAvailability = async (req, res) => {
+  const { doctorId, clinicId, days, slots } = req.body;
 
   try {
     const doctors = await doctor.findById(doctorId);
@@ -160,92 +176,162 @@ const addAvailability = async (req, res) => {
       return res.status(404).json({ error: 'Clinic not found' });
     }
 
+    const existingAvailability = await Availability.findOne({
+      doctor: doctorId,
+      clinic: { $ne: clinicId }, // Exclude current clinic
+      days: days,
+      slots: slots.reduce((acc, slot) => {
+        acc[slot] = true; // Convert array of slots to object format
+        return acc;
+      }, {})
+    });
+
+    if (existingAvailability) {
+      return res.status(400).json({ error: 'Doctor already has availability with the same slots for another clinic' });
+    }
+
+    // Transform slots array into the required format
+    const formattedSlots = {};
+    slots.forEach(slot => {
+      if (slot in timeSlotsSchema.obj) {
+        formattedSlots[slot] = true; // Set selected slots to true
+      }
+    });
+
+    // Create new availability document
     const availability = new Availability({
       doctor: doctorId,
       clinic: clinicId,
-      date,
-      startTime,
-      endTime
+      days: days,
+      slots: formattedSlots
     });
 
+    // Save availability
     await availability.save();
-
-    doctors.availability.push(availability._id);
-    clinic.availability.push(availability._id);
-    await doctors.save();
-    await clinic.save();
 
     res.status(201).json({ success: true, message: 'Availability added successfully', availability });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
-};
+}; 
 
-const updateAvailability = async (req, res) => {
 
-  const { date, startTime, endTime,id } = req.body;
+
+
+const updateDoctorAvailabilitty = async (req, res) => {
+  const { availabilityId, doctorId, clinicId, days, slots } = req.body;
 
   try {
-    const availability = await Availability.findById(id);
+    // Check if availability exists
+    const availability = await Availability.findById(availabilityId);
     if (!availability) {
       return res.status(404).json({ error: 'Availability not found' });
     }
 
-    if (date) availability.date = date;
-    if (startTime) availability.startTime = startTime;
-    if (endTime) availability.endTime = endTime;
+    // Transform slots array into the required format
+    const formattedSlots = {};
+    slots.forEach(slot => {
+      if (slot in timeSlotsSchema.obj) {
+        formattedSlots[slot] = true; // Set selected slots to true
+      }
+    });
 
+    // Check for overlapping slots with existing availability for the same doctor across all clinics
+    const overlappingAvailability = await Availability.find({
+      _id: { $ne: availabilityId }, // Exclude the current availability being updated
+      doctor: doctorId,
+      days: { $in: days }
+    });
+
+    for (const existingAvailability of overlappingAvailability) {
+      for (const slot in formattedSlots) {
+        if (existingAvailability.slots[slot]) {
+          return res.status(400).json({ error: `Slot ${slot} on ${existingAvailability.days} overlaps with existing availability in another clinic` });
+        }
+      }
+    }
+
+    // Update availability document
+    availability.doctor = doctorId;
+    availability.clinic = clinicId;
+    availability.days = days;
+    availability.slots = { ...availability.slots, ...formattedSlots };
+
+    // Save updated availability
     await availability.save();
 
     res.status(200).json({ success: true, message: 'Availability updated successfully', availability });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
+module.exports = { addDoctorAvailability, updateDoctorAvailability };
+
+
+
+
+
+
+
+
 const sendDoctorOtp = async (req, res) => {
-  const { mobile_number } = req.body;
-  const otp = "1234";  
+  const { mobile_number, clinicId } = req.body;
+  const otp = "1234"; // You can generate a random OTP here
 
   try {
-    await doctor.findOneAndUpdate(
+    const doctorData = await doctor.findOneAndUpdate(
       { mobile_number },
-      { mobile_number, otp },
+      { $set: { otp } },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    // Code to send OTP via SMS
+    const clinicExists = doctorData.clinics.some(c => c.clinicId.toString() === clinicId);
+    if (!clinicExists) {
+      doctorData.clinics.push({ clinicId, verified: false });
+    }
 
-    res.status(200).json({ success: true, message: 'OTP sent successfully' });
+    await doctorData.save();
+
+    // Code to send OTP via SMS
+    // sendOtpSms(mobile_number, otp); // Uncomment and implement this function
+
+    res.status(200).json({ success: true, message: 'OTP sent successfully and clinic processed', doctor: doctorData });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 const verifyDoctorOtp = async (req, res) => {
   const { mobile_number, otp } = req.body;
 
   try {
-    const doctors = await doctor.findOne({ mobile_number });
+    const doctorData = await doctor.findOne({ mobile_number });
 
-    if (!doctors) {
-      return res.status(404).json({ error: 'User not found' });
+    if (!doctorData) {
+      return res.status(404).json({ error: 'Doctor not found' });
     }
 
-    if (otp !== doctors.otp) {
+    if (otp !== doctorData.otp) {
       return res.status(400).json({ error: 'Invalid OTP' });
     }
 
-    doctors.otpVerified = true;
-    await doctors.save();
+    doctorData.otpVerified = true;
 
-    // const token = signInToken(doctors);
+    await doctorData.save();
 
-    res.status(200).json({ success: true, message: 'OTP verified successfully',  doctors });
+    res.status(200).json({ success: true, message: 'OTP verified successfully', doctor: doctorData });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
+
+
+
 
 
 module.exports = { 
@@ -254,12 +340,14 @@ module.exports = {
                 getDoctorById,
                  updateDoctor, 
                  deleteDoctor ,
-                updateDoctorAvailabilitty,
-                updateDoctorVerify,
+                updateDoctorAvailability,
+           
                 addClinicToDoctor,
-                addAvailability,
-                updateAvailability,
+                addDoctorAvailability,
+                updateDoctorAvailabilitty,
                 getClinicDetailsByDoctorId,
                 sendDoctorOtp,
-                verifyDoctorOtp
+                verifyDoctorOtp,
+                verifyDoctorClinic,
+
                 };

@@ -8,11 +8,15 @@ const medicineSchema = new Schema({
     unique: true,
   },
   dosage_form: [{
-    type: String,
-    enum:["liquid","tablet"]
+    type:  mongoose.Schema.Types.ObjectId,
+    ref: 'DosageForm',
   }],
   dosage_strength:{
     type:String
+   },
+   dosage_unit:{
+    type:  mongoose.Schema.Types.ObjectId,
+    ref: 'DosageUnit',
    },
    status:{
     type:String,
@@ -23,6 +27,35 @@ const medicineSchema = new Schema({
 },{timestamps:true}
 );
 
+
+
 const Medicine = mongoose.model('Medicine', medicineSchema);
 
-module.exports = Medicine;
+
+
+
+
+const dosageUnitSchema = new Schema({
+  unit_name: {
+    type: String,
+    required: true,
+    unique: true,
+  }
+
+}, { timestamps: true });
+
+const DosageUnit = mongoose.model('DosageUnit', dosageUnitSchema);
+
+const dosageFormSchema = new Schema({
+  form_name: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+ 
+}, { timestamps: true });
+
+const DosageForm = mongoose.model('DosageForm', dosageFormSchema);
+
+
+module.exports ={ Medicine,DosageUnit,DosageForm}
