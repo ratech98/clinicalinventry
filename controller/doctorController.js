@@ -330,6 +330,29 @@ const verifyDoctorOtp = async (req, res) => {
 };
 
 
+const blockOrUnblockDoctor = async (req, res) => {
+  const { id } = req.params;
+  const { block, reason } = req.body;
+
+  try {
+    let doctors;
+    if (block) {
+      doctors = await doctor.findByIdAndUpdate(id, { block: true, block_reason: reason }, { new: true });
+    } else {
+      doctors = await doctor.findByIdAndUpdate(id, { block: false, unblock_reason: reason }, { new: true });
+    }
+
+    if (!doctors) {
+      return res.status(404).json({ error: 'Doctor not found' });
+    }
+
+    const action = block ? 'blocked' : 'unblocked';
+    res.json({ success: true, message: `Doctor ${action} successfully`, doctors });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
 
 
@@ -349,5 +372,5 @@ module.exports = {
                 sendDoctorOtp,
                 verifyDoctorOtp,
                 verifyDoctorClinic,
-
+               blockOrUnblockDoctor
                 };

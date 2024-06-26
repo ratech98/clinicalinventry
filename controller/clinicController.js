@@ -101,15 +101,15 @@ const verify_clinic=async (req, res) => {
 const getDoctorsAndAvailabilityByClinic = async (req, res) => {
   try {
     const { id } = req.params;
-    const { specilaist } = req.query; 
-    const today = new Date().toISOString().split('T')[0]; 
+    const { specialist } = req.query;
+    const today = new Date().toISOString().split('T')[0];
 
-    const doctorQuery = { clinic: id };
-    if (specilaist) {
-      doctorQuery.specilaist = specilaist;
+    const doctorQuery = { 'clinics.clinicId': id };
+    if (specialist) {
+      doctorQuery.specialist = specialist;
     }
-    console.log(doctorQuery,specilaist)
-    const doctors = await doctor.find(doctorQuery).populate('availability');
+
+    const doctors = await doctor.find(doctorQuery);
 
     if (!doctors.length) {
       return res.status(404).json({ message: 'No doctors found for this clinic' });
@@ -118,28 +118,55 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
       const availability = await Availability.findOne({
         doctor: doctor._id,
-        clinic: id,
+        'clinic.clinicId': id,
         date: today
       });
+
       return {
-        doctor: doctors,
-        status:true
+        doctor,
+        availability: availability ? availability.status : 'unavailable' // Assuming availability.status or similar
       };
     });
 
     const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
 
-    res.status(200).json({ success: true,message:"doctors fetched successfully",doctorAvailability});
+    res.status(200).json({ success: true, message: 'Doctors fetched successfully', doctorAvailability });
   } catch (error) {
-    console.log(error)
+    console.error(error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+const blockOrUnblockClinic = async (req, res) => {
+  const { id } = req.params;
+  const { block, reason } = req.body;
+
+  try {
+    let clinic;
+    if (block) {
+      clinic = await Clinic.findByIdAndUpdate(id, { block: true, block_reason: reason }, { new: true });
+    } else {
+      clinic = await Clinic.findByIdAndUpdate(id, { block: false, unblock_reason: reason }, { new: true });
+    }
+
+    if (!clinic) {
+      return res.status(404).json({ error: 'Clinic not found' });
+    }
+
+    const action = block ? 'blocked' : 'unblocked';
+    res.json({ success: true, message: `Clinic ${action} successfully`, clinic });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 module.exports = { addClinic,
                    getAllClinics, 
                    getClinicById, 
                    updateClinic, 
                    deleteClinic ,
                    verify_clinic,
-                   getDoctorsAndAvailabilityByClinic
+                   getDoctorsAndAvailabilityByClinic,
+                   blockOrUnblockClinic
                   };
