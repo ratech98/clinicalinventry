@@ -11,6 +11,7 @@ const upload = multer({
 }).fields([
   { name: 'undergraduate_certificate', maxCount: 1 },
   { name: 'postgraduate_certificate', maxCount: 1 },
+  {name:'profile',maxCount:1}
  
 ]);
 

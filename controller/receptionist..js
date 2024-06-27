@@ -2,6 +2,11 @@ const { errormesaages } = require("../errormessages");
 const { ReceptionistAvailability } = require("../modal/availablity");
 const Clinic = require("../modal/clinic.");
 const Receptionist = require("../modal/receptionist");
+const { Storage } = require("@google-cloud/storage");
+
+require("dotenv").config();
+const bucketName = process.env.bucketName;
+const gcsStorage = new Storage();
 
 const addReceptionist = async (req, res) => {
   try {
@@ -62,7 +67,13 @@ const getReceptionistById = async (req, res) => {
 };
 
 const updateReceptionist = async (req, res) => {
+
   try {
+    const originalFilename = req.file.originalname;
+    const sanitizedFilename = originalFilename.replace(/[^a-zA-Z0-9.]/g, '_');
+    const imagePath = `receptionst/${Date.now()}_${sanitizedFilename}`;
+    await gcsStorage.bucket(bucketName).file(imagePath).save(req.file.buffer);
+   req.body.certificate=`https://storage.googleapis.com/${bucketName}/${imagePath}`
     const receptionist = await Receptionist.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!receptionist) {
       return res.status(400).json({ error: errormesaages[1004], errorcode: 1004 });
