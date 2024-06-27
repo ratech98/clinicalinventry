@@ -79,7 +79,7 @@ const updateDoctor = async (req, res) => {
     }
     const updateData = { ...req.body, ...uploadedFiles };
 
-    const doctors = await doctor.findByIdAndUpdate(req.params.id, updateData, { new: true }).populate('clinic');
+    const doctors = await doctor.findByIdAndUpdate(req.params.id, updateData, { new: true })
     if (!doctors) {
       return res.status(400).json({ error: errormesaages[1002], errorcode: 1002 });
     }
