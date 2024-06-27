@@ -73,7 +73,7 @@ const updateReceptionist = async (req, res) => {
     const sanitizedFilename = originalFilename.replace(/[^a-zA-Z0-9.]/g, '_');
     const imagePath = `receptionst/${Date.now()}_${sanitizedFilename}`;
     await gcsStorage.bucket(bucketName).file(imagePath).save(req.file.buffer);
-   req.body.certificate=`https://storage.googleapis.com/${bucketName}/${imagePath}`
+   req.body.profile=`https://storage.googleapis.com/${bucketName}/${imagePath}`
     const receptionist = await Receptionist.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!receptionist) {
       return res.status(400).json({ error: errormesaages[1004], errorcode: 1004 });
