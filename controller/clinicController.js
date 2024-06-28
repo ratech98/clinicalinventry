@@ -152,7 +152,19 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
 
     const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
 
-    res.status(200).json({ success: true, message: 'Doctors fetched successfully', doctorAvailability });
+    // Count doctors by availability status
+    const totalDoctorsCount = doctors.length;
+    const availableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'available').length;
+    const unavailableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'unavailable').length;
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Doctors fetched successfully', 
+      totalDoctorsCount,
+      availableDoctorsCount,
+      unavailableDoctorsCount,
+      doctorAvailability 
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error });

@@ -19,13 +19,18 @@ const addPatient = async (req, res) => {
 // Get All Patients
 const getAllPatients = async (req, res) => {
   try {
+    
     const { tenantDBConnection } = req;
-    const { mobile_number } = req.query;
+    const { mobile_number,appointment_date } = req.query;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const mainDBConnection = mongoose.connection;
     let query = {};
     if (mobile_number) {
       query.mobile_number = { $regex: mobile_number, $options: 'i' };
+    }
+
+    if (appointment_date) {
+      query['appointment_history.appointment_date'] = appointment_date;
     }
     const patients = await PatientModel.find(query).populate({
       path: 'appointment_history.doctor',
@@ -41,6 +46,7 @@ const getAllPatients = async (req, res) => {
 // Get Patients by Doctor ID
 const getPatients = async (req, res) => {
   try {
+    
     const { tenantDBConnection } = req;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const mainDBConnection = mongoose.connection;
@@ -312,6 +318,47 @@ const addFollowUpAppointment = async (req, res) => {
 };
 
 
+const getPatientsWithTodayAppointments = async (req, res) => {
+  try {
+    const today = new Date().toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).split('/').join('-'); // Format as "DD-MM-YYYY"
+
+    const { tenantDBConnection } = req;
+    const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
+
+    const patients = await PatientModel.aggregate([
+      {
+        $unwind: '$appointment_history' // Flatten the appointment_history array
+      },
+      {
+        $match: {
+          'appointment_history.appointment_date': today
+        }
+      },
+      {
+        $group: {
+          _id: '$_id', // Group by patient id
+          name: { $first: '$name' }, // Retrieve patient details
+          mobile_number: { $first: '$mobile_number' },
+          address: { $first: '$address' },
+          appointment_history: { $push: '$appointment_history' } // Collect matching appointments
+        }
+      }
+    ]);
+
+    res.status(200).json({ success: true, message: 'Patients with today\'s appointments fetched successfully', patients });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+
+
 module.exports = {
   addPatient,
   getAllPatients,
@@ -324,5 +371,6 @@ module.exports = {
   updateAppointmentWithPrescription,
   getPrescription,
   addAppointmentWithToken,
-  addFollowUpAppointment
+  addFollowUpAppointment,
+  getPatientsWithTodayAppointments
 };
