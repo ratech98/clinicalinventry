@@ -1,5 +1,5 @@
 const { errormesaages } = require("../errormessages");
-const { Availability } = require("../modal/availablity");
+const Availability = require("../modal/availablity");
 const Clinic = require("../modal/clinic.");
 const doctor = require("../modal/doctor");
 const { Storage } = require("@google-cloud/storage");
@@ -98,6 +98,20 @@ const verify_clinic=async (req, res) => {
   }
 }
 
+
+const verify_clinic_certificate=async (req, res) => {
+  try {
+    const clinic = await Clinic.findOneAndUpdate(
+      { _id: req.params.id },
+      req?.body ,
+      { new: true }
+    );
+    res.status(200).json({ success: true, message: 'certificate verified successfully', clinic });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
 const getDoctorsAndAvailabilityByClinic = async (req, res) => {
   try {
     const { id } = req.params;
@@ -117,14 +131,22 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
 
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
       const availability = await Availability.findOne({
-        doctor: doctor._id,
-        'clinic.clinicId': id,
-        date: today
+        doctorId: doctor._id,
+        'availabilities.date': today,
+        'clinicId': id
       });
+
+      let availabilityStatus = 'unavailable';
+      if (availability) {
+        const todayAvailability = availability.availabilities.find(avail => avail.date.toISOString().split('T')[0] === today);
+        if (todayAvailability) {
+          availabilityStatus = 'available';
+        }
+      }
 
       return {
         doctor,
-        availability: availability ? availability.status : 'unavailable' // Assuming availability.status or similar
+        availability: availabilityStatus
       };
     });
 
@@ -136,6 +158,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 const blockOrUnblockClinic = async (req, res) => {
   const { id } = req.params;
@@ -168,5 +191,6 @@ module.exports = { addClinic,
                    deleteClinic ,
                    verify_clinic,
                    getDoctorsAndAvailabilityByClinic,
-                   blockOrUnblockClinic
+                   blockOrUnblockClinic,
+                   verify_clinic_certificate
                   };

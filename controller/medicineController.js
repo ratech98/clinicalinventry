@@ -25,7 +25,7 @@ const getAllMedicines = async (req, res) => {
     const { tenantDBConnection } = req;
     
     const MedicineModel = tenantDBConnection.model('Medicine', Medicine.schema);
-    const medicines = await MedicineModel.find()
+    const medicines = await MedicineModel.find().populate()
      
 
     res.json({ success: true, message: "Medicines fetched successfully", medicines });

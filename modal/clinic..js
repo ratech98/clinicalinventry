@@ -16,7 +16,7 @@ const clinicSchema = new mongoose.Schema({
   otp: { type: String, required: false },
   otpVerified: { type: Boolean, default: false },
   adminVerified: { type: Boolean, default: false },
-  certificate1Verified: { type: Boolean, default: false },
+  certificateVerified: { type: Boolean, default: false },
   certificate2Verified: { type: Boolean, default: false },
   certificate3Verified: { type: Boolean, default: false },
   dbUri: { type: String },

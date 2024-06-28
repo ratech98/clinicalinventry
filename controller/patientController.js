@@ -89,28 +89,15 @@ const updatePatient = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
     const { id } = req.params;
-    const { appointment_date, time, reason, doctor, updateAppointmentId } = req.body;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
-    const patient = await PatientModel.findById(id);
+    
+    // Find the patient by ID and update the fields from req.body
+    const patient = await PatientModel.findByIdAndUpdate(id, req.body, { new: true });
+
     if (!patient) {
-      return res.status(400).json({ error: "Patient not found", errorcode: 1005 });
+      return res.status(404).json({ error: "Patient not found", errorcode: 1005 });
     }
-    if (updateAppointmentId) {
-      const appointmentIndex = patient.appointment_history.findIndex(
-        (appointment) => appointment._id.toString() === updateAppointmentId
-      );
-      if (appointmentIndex !== -1) {
-        patient.appointment_history[appointmentIndex].appointment_date = appointment_date;
-        patient.appointment_history[appointmentIndex].time = time;
-        patient.appointment_history[appointmentIndex].reason = reason;
-        patient.appointment_history[appointmentIndex].doctor = doctor;
-      } else {
-        return res.status(404).json({ error: "Appointment not found", errorcode: 1006 });
-      }
-    } else {
-      patient.appointment_history.push({ appointment_date, time, reason, doctor });
-    }
-    await patient.save();
+    
     res.status(200).json({ success: true, message: "Patient updated successfully", patient });
   } catch (error) {
     console.error(error);
@@ -175,28 +162,48 @@ const verifyPatientOtp = async (req, res) => {
   }
 };
 
-// Update Appointment with Prescription
 const updateAppointmentWithPrescription = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
-    const { patientId, appointmentId, prescription } = req.body;
+    const { patientId, appointmentId, prescription, medicines } = req.body;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
+    
     const patient = await PatientModel.findById(patientId);
     if (!patient) {
       return res.status(404).json({ error: "Patient not found", errorcode: 1005 });
     }
+
     const appointment = patient.appointment_history.id(appointmentId);
     if (!appointment) {
       return res.status(404).json({ error: "Appointment not found", errorcode: 1006 });
     }
+
+    if (medicines && Array.isArray(medicines)) {
+      appointment.medicines = medicines.map(medicine => ({
+        name: medicine.name,
+        dosage: medicine.dosage,
+        timings: {
+          morning: !!medicine.timings?.morning,
+          afternoon: !!medicine.timings?.afternoon,
+          evening: !!medicine.timings?.evening,
+          beforeFood: !!medicine.timings?.beforeFood,
+          afterFood: !!medicine.timings?.afterFood
+        }
+      }));
+    } else {
+      return res.status(400).json({ error: "Medicines should be an array", errorcode: 1007 });
+    }
+
     appointment.prescription = prescription;
     await patient.save();
-    res.status(200).json({ success: true, message: "Prescription added successfully", patient });
+
+    res.status(200).json({ success: true, message: "Prescription and medicines added successfully", patient });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 // Get Prescription
 const getPrescription = async (req, res) => {
@@ -204,20 +211,106 @@ const getPrescription = async (req, res) => {
     const { tenantDBConnection } = req;
     const { patientId, appointmentId } = req.body;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
+    
     const patient = await PatientModel.findById(patientId);
     if (!patient) {
       return res.status(404).json({ error: "Patient not found", errorcode: 1005 });
     }
+
     const appointment = patient.appointment_history.id(appointmentId);
     if (!appointment) {
       return res.status(404).json({ error: "Appointment not found", errorcode: 1006 });
     }
-    res.status(200).json({ success: true, message: "Prescription fetched successfully", prescription: appointment.prescription });
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Prescription fetched successfully", 
+      prescription: appointment.prescription,
+      medicines: appointment.medicines
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+const addAppointmentWithToken = async (req, res) => {
+  try {
+    const { tenantDBConnection } = req;
+    const { patientId, appointment_date, time, reason, doctorId, temp, Bp } = req.body;
+
+    const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
+    const patient = await PatientModel.findById(patientId);
+
+    if (!patient) {
+      return res.status(404).json({ error: "Patient not found", errorcode: 1005 });
+    }
+
+    const tokenCount = patient.appointment_history.filter(a => a.appointment_date === appointment_date).length;
+    const newTokenNumber = tokenCount + 1;
+
+    const newAppointment = {
+      appointment_date,
+      time,
+      reason,
+      doctor: doctorId,
+      token_number: newTokenNumber,
+      temp,
+      Bp
+    };
+
+    patient.appointment_history.push(newAppointment);
+    await patient.save();
+
+    res.status(201).json({ success: true, message: "Appointment added successfully", patient });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const addFollowUpAppointment = async (req, res) => {
+  try {
+    const { tenantDBConnection } = req;
+    const { patientId, previousAppointmentId, appointment_date, time, reason, doctorId, temp, Bp } = req.body;
+
+    const PatientModel = tenantDBConnection.model('Patient',Patient.schema);
+    const patient = await PatientModel.findById(patientId);
+
+    if (!patient) {
+      return res.status(404).json({ error: "Patient not found", errorcode: 1005 });
+    }
+
+    const previousAppointment = patient.appointment_history.id(previousAppointmentId);
+
+    if (!previousAppointment) {
+      return res.status(404).json({ error: "Previous appointment not found", errorcode: 1006 });
+    }
+
+    const tokenCount = patient.appointment_history.filter(a => a.appointment_date === appointment_date).length;
+    const newTokenNumber = tokenCount + 1;
+
+    const newAppointment = {
+      appointment_date,
+      time,
+      reason,
+      doctor: doctorId,
+      token_number: newTokenNumber,
+      follow_up_from: previousAppointmentId,
+      temp,
+      Bp
+    };
+
+    patient.appointment_history.push(newAppointment);
+    await patient.save();
+
+    res.status(201).json({ success: true, message: "Follow-up appointment added successfully", patient });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 
 module.exports = {
   addPatient,
@@ -229,5 +322,7 @@ module.exports = {
   sendPatientOtp,
   verifyPatientOtp,
   updateAppointmentWithPrescription,
-  getPrescription
+  getPrescription,
+  addAppointmentWithToken,
+  addFollowUpAppointment
 };
