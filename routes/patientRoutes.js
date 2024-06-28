@@ -16,7 +16,7 @@ router.post('/sendotp/patient',isAuth,connectTenantDB,sendPatientOtp)
 router.post('/verifyotp/patient',isAuth,connectTenantDB,verifyPatientOtp)
 router.post('/appointment/prescription',isAuth,connectTenantDB,updateAppointmentWithPrescription)
 router.get('/appointment/prescription',isAuth,connectTenantDB,getPrescription)
-router.get('/patients/today', isAuth,connectTenantDB,todayappointment);
+// router.get('/patients/today', isAuth,connectTenantDB,todayappointment);
   
 
 
