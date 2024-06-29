@@ -25,15 +25,26 @@ const getAllMedicines = async (req, res) => {
     const { tenantDBConnection } = req;
     
     const MedicineModel = tenantDBConnection.model('Medicine', Medicine.schema);
-    const medicines = await MedicineModel.find().populate()
-     
+    
+    const filters = {};
+
+    if (req.query.dosage_form) {
+      filters.dosage_form = req.query.dosage_form;
+    }
+
+    if (req.query.status) {
+      filters.status = req.query.status;
+    }
+
+    const medicines = await MedicineModel.find(filters);
 
     res.json({ success: true, message: "Medicines fetched successfully", medicines });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-};
+}
+
 
 const getMedicineById = async (req, res) => {
   try {
@@ -59,7 +70,7 @@ const updateMedicine = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
     
-    const MedicineModel = tenantDBConnection.model('Medicine');
+    const MedicineModel = tenantDBConnection.model('Medicine',Medicine.schema);
 
     const medicine = await MedicineModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!medicine) {
@@ -90,4 +101,11 @@ const deleteMedicine = async (req, res) => {
 };
 
 
-module.exports = { addMedicine, getAllMedicines, getMedicineById, updateMedicine, deleteMedicine };
+
+module.exports = { addMedicine,
+                    getAllMedicines, 
+                    getMedicineById, 
+                    updateMedicine, 
+                    deleteMedicine 
+                   
+                  };

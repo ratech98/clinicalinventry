@@ -8,6 +8,7 @@ const {
   blockAdmin,
   getAdminList,
 } = require("../controller/adminController");
+const { updateMedicineStatus } = require("../controller/medicineController");
 
 const multerStorage = multer.memoryStorage();
 const upload = multer({

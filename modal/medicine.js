@@ -18,7 +18,8 @@ const medicineSchema = new Schema({
    },
    status:{
     type:String,
-    enum:["Available","OutofStock"]
+    enum:["Available","OutofStock"],
+    default:"Available"
    }
  
  
