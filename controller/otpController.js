@@ -18,16 +18,16 @@ const sendOtp = async (req, res) => {
 
     if (clinic) {
     console.log("enrty")
-      if (clinic.block) {
-        return res.status(400).json({ success: false, message: 'Clinic is blocked, contact admin' });
-      }
-if(!clinic.adminVerified){
-  return res.status(400).json({ success: false, message: 'Clinic  not verified' });
+//       if (clinic.block) {
+//         return res.status(400).json({ success: false, message: 'Clinic is blocked, contact admin' });
+//       }
+// if(!clinic.adminVerified){
+//   return res.status(400).json({ success: false, message: 'Clinic  not verified' });
 
-}
-      if (!clinic.otpVerified) {
-        return res.status(400).json({ success: false, message: 'Clinic mobile number is not verified' });
-      }
+// }
+//       if (!clinic.otpVerified) {
+//         return res.status(400).json({ success: false, message: 'Clinic mobile number is not verified' });
+//       }
 
       clinic.otp = otp;
     } else {

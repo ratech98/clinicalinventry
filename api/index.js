@@ -9,6 +9,8 @@ const medicineRouter = require('../routes/medicineRoutes');
 const otpRouter = require('../routes/otpRoutes');
 const patientRouter = require('../routes/patientRoutes');
 const receptionistRouter = require('../routes/receptionistRoutes');
+const staffRoleRouter=require('../routes/staffRoleRoutes')
+const adminRouter=require('../routes/adminRoutes')
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -29,6 +31,9 @@ app.use('/', medicineRouter);
 app.use('/', otpRouter);
 app.use('/', patientRouter);
 app.use('/', receptionistRouter);
+
+app.use('/',adminRouter)
+app.use('/',staffRoleRouter)
 
 app.get("/", (req, res) => {
   res.send("Server up!");
