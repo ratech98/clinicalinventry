@@ -112,18 +112,30 @@ const verify_clinic_certificate=async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 }
+
+
 const getDoctorsAndAvailabilityByClinic = async (req, res) => {
   try {
     const { id } = req.params;
-    const { specialist } = req.query;
+    const { specialist, recently_joined, onleave, page = 1, limit = 10 } = req.query;
     const today = new Date().toISOString().split('T')[0];
 
     const doctorQuery = { 'clinics.clinicId': id };
     if (specialist) {
       doctorQuery.specialist = specialist;
     }
+    if (recently_joined) {
+      doctorQuery["clinics.verified"] = false;
+    }
 
-    const doctors = await doctor.find(doctorQuery);
+    const totalDoctors = await doctor.countDocuments(doctorQuery);
+    const totalPages = Math.ceil(totalDoctors / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+
+    const doctors = await doctor.find(doctorQuery)
+      .limit(limit)
+      .skip(startIndex);
 
     if (!doctors.length) {
       return res.status(404).json({ message: 'No doctors found for this clinic' });
@@ -133,7 +145,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
       const availability = await Availability.findOne({
         doctorId: doctor._id,
         'availabilities.date': today,
-        'clinicId': id
+        clinicId: id
       });
 
       let availabilityStatus = 'unavailable';
@@ -152,24 +164,36 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
 
     const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
 
-    // Count doctors by availability status
-    const totalDoctorsCount = doctors.length;
-    const availableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'available').length;
-    const unavailableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'unavailable').length;
+    let filteredDoctorAvailability = doctorAvailability;
+    if (onleave) {
+      filteredDoctorAvailability = doctorAvailability.filter(doc => doc.availability === 'unavailable');
+    }
 
-    res.status(200).json({ 
-      success: true, 
-      message: 'Doctors fetched successfully', 
-      totalDoctorsCount,
+    const availableDoctorsCount = filteredDoctorAvailability.filter(doc => doc.availability === 'available').length;
+    const unavailableDoctorsCount = filteredDoctorAvailability.filter(doc => doc.availability === 'unavailable').length;
+
+    res.status(200).json({
+      success: true,
+      message: 'Doctors fetched successfully',
+      totalDoctorsCount: totalDoctors,
       availableDoctorsCount,
       unavailableDoctorsCount,
-      doctorAvailability 
+      totalCount: totalDoctors,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages,
+      startIndex: startIndex + 1,
+      endIndex: endIndex > totalDoctors ? totalDoctors : endIndex,
+      currentPage: parseInt(page),
+      doctorAvailability: filteredDoctorAvailability,
+      
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 
 const blockOrUnblockClinic = async (req, res) => {

@@ -23,9 +23,8 @@ const addMedicine = async (req, res) => {
 const getAllMedicines = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
-    
     const MedicineModel = tenantDBConnection.model('Medicine', Medicine.schema);
-    
+
     const filters = {};
 
     if (req.query.dosage_form) {
@@ -35,15 +34,40 @@ const getAllMedicines = async (req, res) => {
     if (req.query.status) {
       filters.status = req.query.status;
     }
+    if (req.query.medicine_name) {
+      filters.medicine_name = { $regex: req.query.medicine_name, $options: 'i' };
+    }
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
 
-    const medicines = await MedicineModel.find(filters);
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
 
-    res.json({ success: true, message: "Medicines fetched successfully", medicines });
+    const totalMedicines = await MedicineModel.countDocuments(filters);
+    const totalPages = Math.ceil(totalMedicines / limit);
+
+    const medicines = await MedicineModel.find(filters)
+      .skip(startIndex)
+      .limit(limit);
+
+    res.json({
+      success: true,
+      message: "Medicines fetched successfully",
+      medicines,
+      totalCount: totalMedicines,
+      page,
+      limit,
+      totalPages,
+      startIndex: startIndex + 1,
+      endIndex: endIndex > totalMedicines ? totalMedicines : endIndex,
+      currentPage: page
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-}
+};
+
 
 
 const getMedicineById = async (req, res) => {

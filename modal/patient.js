@@ -43,6 +43,10 @@ const appointmentSchema = new Schema({
   temp: { type: String },
   Bp: { type: String }
 });
+const diagnoseReportSchema = new Schema({
+  report_name: { type: String },
+  diagnose_report:{ type: String }
+});
 
 // Patient schema
 const patientSchema = new Schema({
@@ -55,6 +59,8 @@ const patientSchema = new Schema({
   dob: { type: String },
   otp: { type: String },
   otpVerified: { type: Boolean, default: false },
+  diagnose_reports: [diagnoseReportSchema],
+
 }, { timestamps: true });
 
 const Patient = mongoose.model('Patient', patientSchema);

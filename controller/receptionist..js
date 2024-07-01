@@ -214,13 +214,50 @@ const verifyReceptionistOtp = async (req, res) => {
 const getReceptionistsByClinic = async (req, res) => {
   try {
     const { id } = req.params;
-    const receptionists = await Receptionist.find({ clinic: id }).populate('clinic');
-    res.status(200).json({ success: true, message: "fetch receptionist successfully", receptionists });
+    const { recently_joined, onleave, page = 1, limit = 10 } = req.query;
+
+    let receptionistQuery = { clinic: id };
+
+    if (recently_joined === 'true') {
+      receptionistQuery.verify = false;
+    }
+
+    if (onleave === 'true') {
+      receptionistQuery.availability = 'onleave'; 
+    }
+
+    const totalReceptionists = await Receptionist.countDocuments(receptionistQuery);
+    const totalPages = Math.ceil(totalReceptionists / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+
+    const receptionists = await Receptionist.find(receptionistQuery)
+      .limit(limit)
+      .skip(startIndex)
+      .populate('clinic');
+
+    if (!receptionists.length) {
+      return res.status(404).json({ message: 'No receptionists found for this clinic' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Fetched receptionists successfully',
+      receptionists,
+      totalCount: totalReceptionists,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages,
+      startIndex: startIndex + 1,
+      endIndex: endIndex > totalReceptionists ? totalReceptionists : endIndex,
+      currentPage: parseInt(page)
+    });
   } catch (error) {
     console.error('Error fetching receptionists:', error);
     res.status(500).json({ message: 'Error fetching receptionists', error });
   }
 };
+
 
 const blockOrUnblockReceptionist = async (req, res) => {
   const { id } = req.params;

@@ -1,10 +1,19 @@
 const express = require('express');
-const { addPatient, getAllPatients, getPatientById, updatePatient, deletePatient, getPatients, sendPatientOtp, verifyPatientOtp, updateAppointmentWithPrescription, getPrescription, todayappointment, addAppointmentWithToken, addFollowUpAppointment, getPatientsWithTodayAppointments } = require('../controller/patientController');
+const { addPatient, getAllPatients, getPatientById, updatePatient, deletePatient, getPatients, sendPatientOtp, verifyPatientOtp, updateAppointmentWithPrescription, getPrescription, todayappointment, addAppointmentWithToken, addFollowUpAppointment, getPatientsWithTodayAppointments, upload_diagnose_report, get_diagnose_report } = require('../controller/patientController');
 const { isAuth } = require('../config/auth');
 const { connectTenantDB } = require('../config/db');
 const { sendDoctorOtp } = require('../controller/doctorController');
 const router = express.Router();
+const multer = require('multer');
 
+const multerStorage = multer.memoryStorage(); 
+const upload = multer({
+    storage: multerStorage,
+    fileFilter: (req, file, cb) => {
+      console.log("file found");
+      cb(null, true);
+    }
+  }).single('diagnose_report');
 
 router.post('/patients',isAuth,connectTenantDB, addPatient);
 router.get('/patients',isAuth,connectTenantDB, getAllPatients);
@@ -20,7 +29,9 @@ router.post('/add_appointment',isAuth,connectTenantDB,addAppointmentWithToken)
 router.post('/followup/appointment',isAuth,connectTenantDB,addFollowUpAppointment)
 router.get('/patients/today', isAuth,connectTenantDB,getPatientsWithTodayAppointments);
   
-
-
+router.post('/upload_diagnose_report/:patientId',isAuth,connectTenantDB, upload,upload_diagnose_report );
+// Route to get diagnose reports for a specific patient
+router.get('/diagnose_reports/:patientId',isAuth,connectTenantDB,get_diagnose_report );
+  
 
 module.exports=router

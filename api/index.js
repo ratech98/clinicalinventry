@@ -11,6 +11,7 @@ const patientRouter = require('../routes/patientRoutes');
 const receptionistRouter = require('../routes/receptionistRoutes');
 const staffRoleRouter=require('../routes/staffRoleRoutes')
 const adminRouter=require('../routes/adminRoutes')
+const prescriptiontemplateRouter=require('../routes/prescriptionTemplaateRoutes')
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -31,7 +32,7 @@ app.use('/', medicineRouter);
 app.use('/', otpRouter);
 app.use('/', patientRouter);
 app.use('/', receptionistRouter);
-
+app.use('/',prescriptiontemplateRouter)
 app.use('/',adminRouter)
 app.use('/',staffRoleRouter)
 

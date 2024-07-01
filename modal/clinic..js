@@ -5,7 +5,7 @@ const Patient = require('../modal/patient'); // Adjust path if needed
 const Medicine = require('../modal/medicine'); // Adjust path if needed
 
 const clinicSchema = new mongoose.Schema({
-  clinic_name: { type: String, required: true }, // Make clinic_name required
+  clinic_name: { type: String}, 
   name: { type: String },
   email: { type: String, unique: true },
   mobile_number: { type: String, unique: true },

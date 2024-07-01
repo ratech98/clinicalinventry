@@ -2,6 +2,12 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Patient = require('../modal/patient');
+const { Storage } = require("@google-cloud/storage");
+
+require("dotenv").config();
+const bucketName = process.env.bucketName;
+const gcsStorage = new Storage();
+
 
 // Add Patient
 const addPatient = async (req, res) => {
@@ -266,9 +272,19 @@ const addAppointmentWithToken = async (req, res) => {
     };
 
     patient.appointment_history.push(newAppointment);
+
+    // if (diagnose_reports && diagnose_reports.length > 0) {
+    //   diagnose_reports.forEach(report => {
+    //     patient.diagnose_reports.push({
+    //       report_name: report.report_name,
+    //       diagnose_report: report.diagnose_report
+    //     });
+    //   });
+    // }
+
     await patient.save();
 
-    res.status(201).json({ success: true, message: "Appointment added successfully", patient });
+    res.status(201).json({ success: true, message: "Appointment and diagnose reports added successfully", patient });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -340,11 +356,11 @@ const getPatientsWithTodayAppointments = async (req, res) => {
       },
       {
         $group: {
-          _id: '$_id', // Group by patient id
-          name: { $first: '$name' }, // Retrieve patient details
+          _id: '$_id',
+          name: { $first: '$name' },
           mobile_number: { $first: '$mobile_number' },
           address: { $first: '$address' },
-          appointment_history: { $push: '$appointment_history' } // Collect matching appointments
+          appointment_history: { $push: '$appointment_history' } 
         }
       }
     ]);
@@ -356,8 +372,68 @@ const getPatientsWithTodayAppointments = async (req, res) => {
   }
 };
 
+const upload_diagnose_report =async (req, res) => {
+  try {
+    const { tenantDBConnection } = req;
+    const { patientId } = req.params;
+    const { report_name } = req.body;
 
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
 
+    const PatientModel = tenantDBConnection.model('Patient',Patient.schema);
+    const patient = await PatientModel.findById(patientId);
+
+    if (!patient) {
+      return res.status(404).json({ error: 'Patient not found', errorcode: 1005 });
+    }
+
+    const originalFilename = req.file.originalname;
+    const sanitizedFilename = originalFilename.replace(/[^a-zA-Z0-9.]/g, '_');
+    const imagePath = `receptionst/${Date.now()}_${sanitizedFilename}`;
+    await gcsStorage.bucket(bucketName).file(imagePath).save(req.file.buffer);
+    
+    const diagnoseReportUrl = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
+
+    const diagnoseReport = {
+      report_name,
+      diagnose_report: diagnoseReportUrl
+    };
+
+    patient.diagnose_reports.push(diagnoseReport);
+    await patient.save();
+
+    res.status(201).json({ success: true, message: 'Diagnose report uploaded successfully', patient });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+const get_diagnose_report=async (req, res) => {
+  try {
+    const { tenantDBConnection } = req;
+    if (!tenantDBConnection) {
+      return res.status(500).json({ error: 'Tenant DB connection is not set' });
+    }
+
+    const { patientId } = req.params;
+
+    const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
+    const patient = await PatientModel.findById(patientId);
+
+    if (!patient) {
+      return res.status(404).json({ error: 'Patient not found', errorcode: 1005 });
+    }
+
+    const diagnoseReports = patient.diagnose_reports;
+
+    res.status(200).json({ success: true, diagnoseReports });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
 
 module.exports = {
   addPatient,
@@ -372,5 +448,7 @@ module.exports = {
   getPrescription,
   addAppointmentWithToken,
   addFollowUpAppointment,
-  getPatientsWithTodayAppointments
+  getPatientsWithTodayAppointments,
+  upload_diagnose_report,
+  get_diagnose_report
 };
