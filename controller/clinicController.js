@@ -3,6 +3,7 @@ const Availability = require("../modal/availablity");
 const Clinic = require("../modal/clinic.");
 const doctor = require("../modal/doctor");
 const { Storage } = require("@google-cloud/storage");
+const Template = require("../modal/prescriptiontemplate");
 
 require("dotenv").config();
 const bucketName = process.env.bucketName;
@@ -91,6 +92,13 @@ const verify_clinic=async (req, res) => {
       { adminVerified: true },
       { new: true }
     );
+    if (clinic) {
+      var newTemplate = new Template({
+        clinic_id: clinic._id,
+        logo: '',
+        dynamicFields: []  
+      })}
+      await newTemplate.save();
     res.status(200).json({ success: true, message: 'Admin verified successfully', clinic });
   } catch (error) {
     console.error(error);

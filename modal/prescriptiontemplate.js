@@ -2,36 +2,34 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const defaultStyles = {
-    font: 'Arial',
-    size: '12px',
-    color: '#000000',
-    align: 'left'
+  font: 'Arial',
+  size: '12px',
+  color: '#000000',
+  align: 'left',
+  font_weight: 'Bold'
 };
 
 const fieldSchema = new Schema({
-    name: { type: String, required: true },
-    styles: {
-        type: {
-            font: { type: String, default: defaultStyles.font },
-            size: { type: String, default: defaultStyles.size },
-            color: { type: String, default: defaultStyles.color },
-            align: { type: String, default: defaultStyles.align }
-        },
-        default: defaultStyles
-    }
-});
+  _id: { type: Schema.Types.ObjectId, auto: true },  // Ensure _id is of type ObjectId
+  name: { type: String, required: true },
+  value: { type: String },
+  styles: {
+    type: {
+      font: { type: String, default: defaultStyles.font },
+      size: { type: String, default: defaultStyles.size },
+      color: { type: String, default: defaultStyles.color },
+      align: { type: String, default: defaultStyles.align },
+      font_weight: { type: String, default: defaultStyles.font_weight }
+    },
+    default: defaultStyles
+  }
+}, { _id: false });
 
 const TemplatedetailsSchema = new Schema({
-    clinic_id: { type: Schema.Types.ObjectId }, 
-    logo:{type:String},
-    clinic_name: fieldSchema,
-    clinic_address: fieldSchema,
-    clinic_gst: fieldSchema,
-    clinic_contact: fieldSchema,
-    doctor_name: fieldSchema,
-    doctor_specialist: fieldSchema,
-    doctor_degree: fieldSchema,
-    doctor_work: fieldSchema
+  clinic_id: { type: Schema.Types.ObjectId },
+  logo: { type: String },
+  dynamicFields: [fieldSchema]
 });
-const Template=mongoose.model('Template', TemplatedetailsSchema);
-module.exports = Template
+
+const Template = mongoose.model('Template', TemplatedetailsSchema);
+module.exports = Template;

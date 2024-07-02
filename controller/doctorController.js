@@ -313,10 +313,10 @@ const sendDoctorOtpForLogin = async (req, res) => {
     if (!doctorData.otpVerified) {
       return res.status(400).json({ success: false, message: 'Your mobile number is not verified' });
     }
-    if(!doctorData.verify){
-      return res.status(400).json({ success: false, message: 'you are not verified by admin,contact admin' });
+    // if(!doctorData.verify){
+    //   return res.status(400).json({ success: false, message: 'you are not verified by admin,contact admin' });
     
-    }
+    // }
 
     if (doctorData.block) {
       return res.status(400).json({ success: false, message: 'You are blocked by admin, contact admin' });
