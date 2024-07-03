@@ -74,7 +74,7 @@ const verifyOtp = async (req, res) => {
 
     const token = signInToken(clinic);
 
-    res.status(200).json({ message: 'OTP verified successfully', token, clinic });
+    res.status(200).json({success:true, message: 'OTP verified successfully', token, clinic });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -94,7 +94,7 @@ const generateToken = async (req, res) => {
 
     const token = signInToken(clinic);
 
-    res.status(200).json({ message: 'token generated successfully', token, clinic });
+    res.status(200).json({sucess:true, message: 'token generated successfully', token, clinic });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

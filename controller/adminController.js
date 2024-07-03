@@ -52,7 +52,7 @@ console.log(admin)
     await admin.save();
 
 
-    res.status(200).json({ message: "OTP verified successfully",  admin });
+    res.status(200).json({success:true, message: "OTP verified successfully",  admin });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

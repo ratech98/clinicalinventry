@@ -124,12 +124,67 @@ const deleteMedicine = async (req, res) => {
   }
 };
 
+const importMedicinesData = async (req, res) => {
+  try {
+    const { tenantDBConnection } = req;
+    const MedicineModel = tenantDBConnection.model('Medicine', Medicine.schema);
+
+    if (!req.files || !req.files.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const file = req.files.file[0];
+    const buffer = file.buffer;
+
+    const workbook = xlsx.read(buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = xlsx.utils.sheet_to_json(worksheet);
+
+    const medicines = jsonData.map(item => ({
+      medicine_name: item.medicine_name,
+      dosage_form: item.dosage_form ? item.dosage_form.split(',') : [],
+      dosage_strength: item.dosage_strength,
+      dosage_unit: item.dosage_unit,
+      status: item.status || "Available",
+    }));
+
+    const missingFields = [];
+
+    await Promise.all(
+      medicines.map(async (medicine) => {
+        try {
+          if (!medicine.medicine_name) {
+            missingFields.push('Unnamed Medicine');
+            return;
+          }
+          await MedicineModel.create(medicine);
+        } catch (error) {
+          console.error(error);
+          missingFields.push(medicine.medicine_name || 'Unnamed Medicine');
+        }
+      })
+    );
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        error: `Some medicines were not imported due to missing required fields or other issues: ${missingFields.join(", ")}`
+      });
+    }
+
+    res.status(200).json({ success: true, message: "Medicines imported successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 
 module.exports = { addMedicine,
                     getAllMedicines, 
                     getMedicineById, 
                     updateMedicine, 
-                    deleteMedicine 
+                    deleteMedicine ,
+                    importMedicinesData
                    
                   };
