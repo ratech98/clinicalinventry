@@ -41,7 +41,7 @@ const verifyOtp = async (req, res) => {
     const admin = await Admin.findOne({ phone });
 console.log(admin)
     if (!admin) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({success:false, error: "User not found" });
     }
 
     if (otp !== admin.otp) {
@@ -72,7 +72,7 @@ const updateAdmin = async (req, res) => {
     const admin = await Admin.findById(id);
 
     if (!admin) {
-      return res.status(404).json({ error: "Admin not found" });
+      return res.status(404).json({success:false, error: "Admin not found" });
     }
 
     admin.name = name || admin.name;
@@ -103,7 +103,7 @@ const blockAdmin = async (req, res) => {
     const admin = await Admin.findById(id);
 
     if (!admin) {
-      return res.status(404).json({ error: "Admin not found" });
+      return res.status(404).json({success:false, error: "Admin not found" });
     }
 
     admin.block = block;

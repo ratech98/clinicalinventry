@@ -36,7 +36,7 @@ const getClinicDetailsByDoctorId = async (req, res) => {
   try {
     const doctors = await doctor.findById(req.body.doctorId).populate('clinics.clinicId');
     if (!doctors) {
-      return res.status(404).json({ error: 'Doctor not found' });
+      return res.status(404).json({success:false, error: 'Doctor not found' });
     }
 
     const clinics = doctors.clinics;
@@ -52,7 +52,7 @@ const getDoctorById = async (req, res) => {
   try {
     const doctors = await doctor.findById(req.params.id).populate('clinics.clinicId');
     if (!doctors) {
-      return res.status(404).json({ error: 'Doctor not found' });
+      return res.status(404).json({ success:false,error: 'Doctor not found' });
     }
     res.json({ success: true, message: "Doctor fetched successfully", doctors });
   } catch (error) {
@@ -81,7 +81,7 @@ const updateDoctor = async (req, res) => {
 
     const doctors = await doctor.findByIdAndUpdate(req.params.id, updateData, { new: true })
     if (!doctors) {
-      return res.status(400).json({ error: errormesaages[1002], errorcode: 1002 });
+      return res.status(400).json({success:false, error: errormesaages[1002], errorcode: 1002 });
     }
     res.status(200).json({ success: true, message: "Doctor updated successfully", doctors });
   } catch (error) {
@@ -108,13 +108,13 @@ const verifyDoctorClinic = async (req, res) => {
     const doctors = await doctor.findById(doctorId);
 
     if (!doctors) {
-      return res.status(404).json({ error: 'Doctor not found' });
+      return res.status(404).json({success:false, error: 'Doctor not found' });
     }
 
     const clinic = doctors.clinics.find(c => c.clinicId.toString() === clinicId);
 
     if (!clinic) {
-      return res.status(404).json({ error: 'Clinic not found for this doctor' });
+      return res.status(404).json({success:false, error: 'Clinic not found for this doctor' });
     }
 
     clinic.verified = verify;
@@ -130,7 +130,7 @@ const deleteDoctor = async (req, res) => {
   try {
     const doctor = await doctor.findByIdAndDelete(req.params.id);
     if (!doctor) {
-      return res.status(400).json({ error:  errormesaages[1002], errorcode: 1002 });
+      return res.status(400).json({success:false, error:  errormesaages[1002], errorcode: 1002 });
     }
     res.json({ success: true, message: "Doctor deleted successfully" });
   } catch (error) {
@@ -145,12 +145,12 @@ const addClinicToDoctor = async (req, res) => {
   try {
     const doctors = await doctor.findById(doctorId);
     if (!doctors) {
-      return res.status(404).json({ error: 'Doctor not found' });
+      return res.status(404).json({success:false, error: 'Doctor not found' });
     }
 
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
-      return res.status(404).json({ error: 'Clinic not found' });
+      return res.status(404).json({success:false, error: 'Clinic not found' });
     }
 
     doctors.clinic.push(clinic._id);
@@ -168,12 +168,12 @@ const addDoctorAvailability = async (req, res) => {
   try {
     const doctors = await doctor.findById(doctorId);
     if (!doctors) {
-      return res.status(404).json({ error: 'Doctor not found' });
+      return res.status(404).json({success:false, error: 'Doctor not found' });
     }
 
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
-      return res.status(404).json({ error: 'Clinic not found' });
+      return res.status(404).json({success:false, error: 'Clinic not found' });
     }
 
     const nextOccurrences = calculateNextOccurrences(days);
@@ -192,7 +192,7 @@ const addDoctorAvailability = async (req, res) => {
       });
 // console.log(existingAvailability)
       if (existingAvailability) {
-        return res.status(400).json({
+        return res.status(400).json({success:false,
           error: `Doctor already has availability on ${availability.date} for one of the provided slots`
         });
       }
@@ -259,7 +259,7 @@ const updateDoctorAvailabilitty = async (req, res) => {
   try {
     const availability = await Availability.findById(availabilityId);
     if (!availability) {
-      return res.status(404).json({ error: 'Availability not found' });
+      return res.status(404).json({success:false, error: 'Availability not found' });
     }
 
     const nextOccurrences = calculateNextOccurrences(days);
@@ -277,7 +277,7 @@ const updateDoctorAvailabilitty = async (req, res) => {
         'availabilities.slots.timeSlot': { $in: slots }
       });
       if (existingAvailability) {
-        return res.status(400).json({ error: `Doctor has overlapping availability on ${newAvailability.date}` });
+        return res.status(400).json({success:false, error: `Doctor has overlapping availability on ${newAvailability.date}` });
       }
     }
 
@@ -375,11 +375,11 @@ const verifyDoctorOtp = async (req, res) => {
     const doctorData = await doctor.findOne({ mobile_number });
 
     if (!doctorData) {
-      return res.status(404).json({ error: 'Doctor not found' });
+      return res.status(404).json({success:false, error: 'Doctor not found' });
     }
 
     if (otp !== doctorData.otp) {
-      return res.status(400).json({ error: 'Invalid OTP' });
+      return res.status(400).json({ success:false,error: 'Invalid OTP' });
     }
 
     doctorData.otpVerified = true;
@@ -406,7 +406,7 @@ const blockOrUnblockDoctor = async (req, res) => {
     }
 
     if (!doctors) {
-      return res.status(404).json({ error: 'Doctor not found' });
+      return res.status(404).json({success:false, error: 'Doctor not found' });
     }
 
     const action = block ? 'blocked' : 'unblocked';

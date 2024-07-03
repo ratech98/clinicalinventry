@@ -79,7 +79,7 @@ const getMedicineById = async (req, res) => {
      
 
     if (!medicine) {
-      return res.status(404).json({ error: "Medicine not found", errorcode: 1003 });
+      return res.status(404).json({success:false, error: "Medicine not found", errorcode: 1003 });
     }
 
     res.json({ success: true, message: "Medicine fetched successfully", medicine });
@@ -98,7 +98,7 @@ const updateMedicine = async (req, res) => {
 
     const medicine = await MedicineModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!medicine) {
-      return res.status(400).json({ error: "Medicine not found", errorcode: 1003 });
+      return res.status(400).json({ success:false,error: "Medicine not found", errorcode: 1003 });
     }
     res.status(200).json({ success: true, message: "Medicine updated successfully", medicine });
   } catch (error) {
@@ -115,7 +115,7 @@ const deleteMedicine = async (req, res) => {
 
     const medicine = await MedicineModel.findByIdAndDelete(req.params.id);
     if (!medicine) {
-      return res.status(400).json({ error: errormesaages[1003], errorcode: 1003 });
+      return res.status(400).json({success:false, error: errormesaages[1003], errorcode: 1003 });
     }
     res.json({ success: true, message: "Medicine deleted successfully" });
   } catch (error) {
@@ -130,7 +130,7 @@ const importMedicinesData = async (req, res) => {
     const MedicineModel = tenantDBConnection.model('Medicine', Medicine.schema);
 
     if (!req.files || !req.files.file) {
-      return res.status(400).json({ error: "No file uploaded" });
+      return res.status(400).json({success:false, error: "No file uploaded" });
     }
 
     const file = req.files.file[0];

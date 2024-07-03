@@ -11,7 +11,7 @@ const gcsStorage = new Storage();
 const addReceptionist = async (req, res) => {
   try {
     const receptionist = await Receptionist.create(req.body);
-    res.status(201).json({ success: true, message: "Receptionist added successfully", receptionist });
+    res.status(200).json({ success: true, message: "Receptionist added successfully", receptionist });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -42,7 +42,7 @@ const getClinicDetailsByreceptionistId = async (req, res) => {
   try {
     const receptionist = await Receptionist.findById(req.body.id).populate('clinic');
     if (!receptionist) {
-      return res.status(404).json({ error: 'Receptionist not found' });
+      return res.status(404).json({success:false, error: 'Receptionist not found' });
     }
 
     const clinic = receptionist.clinic;
@@ -57,7 +57,7 @@ const getReceptionistById = async (req, res) => {
   try {
     const receptionist = await Receptionist.findById(req.params.id).populate('clinic');
     if (!receptionist) {
-      return res.status(404).json({ error: errormesaages[1004], errorcode: 1004 });
+      return res.status(404).json({success:false,error: errormesaages[1004], errorcode: 1004 });
     }
     res.json({ success: true, message: "Receptionist fetched successfully", receptionist });
   } catch (error) {
@@ -76,7 +76,7 @@ const updateReceptionist = async (req, res) => {
    req.body.profile=`https://storage.googleapis.com/${bucketName}/${imagePath}`
     const receptionist = await Receptionist.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!receptionist) {
-      return res.status(400).json({ error: errormesaages[1004], errorcode: 1004 });
+      return res.status(400).json({success:false, error: errormesaages[1004], errorcode: 1004 });
     }
     res.status(200).json({ success: true, message: "Receptionist updated successfully", receptionist });
   } catch (error) {
@@ -89,7 +89,7 @@ const deleteReceptionist = async (req, res) => {
   try {
     const receptionist = await Receptionist.findByIdAndDelete(req.params.id);
     if (!receptionist) {
-      return res.status(400).json({ error: errormesaages[1004], errorcode: 1004 });
+      return res.status(400).json({success:false, error: errormesaages[1004], errorcode: 1004 });
     }
     res.json({ success: true, message: "Receptionist deleted successfully" });
   } catch (error) {
@@ -102,7 +102,7 @@ const updateReceptionistStatus = async (req, res) => {
   try {
     const receptionist = await Receptionist.findByIdAndUpdate(req.params.id, { availability: req.body.availability }, { new: true });
     if (!receptionist) {
-      return res.status(400).json({ error: errormesaages[1004], errorcode: 1004 });
+      return res.status(400).json({ success:false,error: errormesaages[1004], errorcode: 1004 });
     }
     res.status(200).json({ success: true, message: "Receptionist status updated successfully", receptionist });
   } catch (error) {
@@ -115,7 +115,7 @@ const updateReceptionistVerify = async (req, res) => {
   try {
     const receptionist = await Receptionist.findByIdAndUpdate(req.params.id, { verify: req.body.verify }, { new: true });
     if (!receptionist) {
-      return res.status(400).json({ error: errormesaages[1004], errorcode: 1004 });
+      return res.status(400).json({success:false, error: errormesaages[1004], errorcode: 1004 });
     }
     res.status(200).json({ success: true, message: "Receptionist status updated successfully", receptionist });
   } catch (error) {

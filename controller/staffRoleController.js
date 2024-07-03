@@ -56,7 +56,7 @@ const getStaffRolesById = async (req, res) => {
     if (!StaffRoles) {
       return res
         .status(400)
-        .json({ error: errorMessages[1103], errorcode: 1103 });
+        .json({success:false, error: errorMessages[1103], errorcode: 1103 });
     }
     res.json({ success: true, message: "StaffRoles fetched successfully", StaffRoles });
   } catch (error) {
@@ -71,7 +71,7 @@ const updateStaffRoles = async (req, res) => {
     if (!StaffRoles) {
       return res
         .status(400)
-        .json({ error: errorMessages[1103], errorcode: 1103 });
+        .json({ success:false,error: errorMessages[1103], errorcode: 1103 });
     }
 
    
@@ -100,7 +100,7 @@ const deleteStaffRoles = async (req, res) => {
     if (!StaffRoles) {
       return res
         .status(400)
-        .json({ error: errorMessages[1103], errorcode: 1103 });
+        .json({success:false, error: errorMessages[1103], errorcode: 1103 });
     }
     res.json({ message: "StaffRoles deleted successfully" });
   } catch (error) {

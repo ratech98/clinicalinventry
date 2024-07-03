@@ -62,11 +62,11 @@ const verifyOtp = async (req, res) => {
     const clinic = await Clinic.findOne({ mobile_number });
 
     if (!clinic) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({success:false, error: 'User not found' });
     }
 
     if (otp !== clinic.otp) {
-      return res.status(400).json({ error: 'Invalid OTP' });
+      return res.status(400).json({success:false, error: 'Invalid OTP' });
     }
 
     clinic.otpVerified = true;
@@ -87,7 +87,7 @@ const generateToken = async (req, res) => {
     const clinic = await Clinic.find({_id:id});
 
     if (!clinic) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({success:false, error: 'User not found' });
     }
 
    

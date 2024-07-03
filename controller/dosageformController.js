@@ -35,7 +35,7 @@ const getDosageFormById = async (req, res) => {
     const DosageFormModel = tenantDBConnection.model('DosageForm', DosageForm.schema);
     const dosageForm = await DosageFormModel.findById(req.params.id);
     if (!dosageForm) {
-      return res.status(404).json({ error: errormesaages[1005], errorCode: 1005 });
+      return res.status(404).json({ success:false,error: errormesaages[1005], errorCode: 1005 });
     }
     res.json({ success: true, message: "Dosage form fetched successfully", dosageForm });
   } catch (error) {
@@ -51,7 +51,7 @@ const updateDosageForm = async (req, res) => {
     const DosageFormModel = tenantDBConnection.model('DosageForm', DosageForm.schema);
     const dosageForm = await DosageFormModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!dosageForm) {
-      return res.status(404).json({ error: errormesaages[1005], errorCode: 1005 });
+      return res.status(404).json({success:false, error: errormesaages[1005], errorCode: 1005 });
     }
     res.status(200).json({ success: true, message: "Dosage form updated successfully", dosageForm });
   } catch (error) {
@@ -67,7 +67,7 @@ const deleteDosageForm = async (req, res) => {
     const DosageFormModel = tenantDBConnection.model('DosageForm', DosageForm.schema);
     const dosageForm = await DosageFormModel.findByIdAndDelete(req.params.id);
     if (!dosageForm) {
-      return res.status(404).json({ error: errormesaages[1005], errorCode: 1005 });
+      return res.status(404).json({ success:false,error: errormesaages[1005], errorCode: 1005 });
     }
     res.json({ success: true, message: "Dosage form deleted successfully" });
   } catch (error) {

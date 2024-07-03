@@ -146,7 +146,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
       .skip(startIndex);
 
     if (!doctors.length) {
-      return res.status(404).json({ message: 'No doctors found for this clinic' });
+      return res.status(404).json({success:false, error: 'No doctors found for this clinic' });
     }
 
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
@@ -217,7 +217,7 @@ const blockOrUnblockClinic = async (req, res) => {
     }
 
     if (!clinic) {
-      return res.status(404).json({ error: 'Clinic not found' });
+      return res.status(404).json({ success:false,error: 'Clinic not found' });
     }
 
     const action = block ? 'blocked' : 'unblocked';

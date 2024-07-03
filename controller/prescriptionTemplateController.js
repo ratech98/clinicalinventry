@@ -13,7 +13,7 @@ const getTemplatesByClinicId = async (req, res) => {
         const templates = await Template.find({ clinic_id: clinicId });
 
         if (!templates || templates.length === 0) {
-            return res.status(404).json({ message: 'No templates found for this clinic ID' });
+            return res.status(404).json({success:false, message: 'No templates found for this clinic ID' });
         }
 
         res.json({success:true,message:"prescription template fetched successfully",templates});
@@ -33,7 +33,7 @@ const add_field_to_template = async (req, res) => {
         });
 
         if (fieldExists) {
-          return res.status(400).json({ error: 'Field name already exists in the template' });
+          return res.status(400).json({success:false, error: 'Field name already exists in the template' });
         } }
       if (template) {
         const newField = {
@@ -48,7 +48,7 @@ const add_field_to_template = async (req, res) => {
   
         res.status(200).json({ success: true, message: 'Field added successfully',template});
       } else {
-        res.status(404).json({ error: 'Template not found for the specified clinic' });
+        res.status(404).json({success:false, error: 'Template not found for the specified clinic' });
       }
     } catch (error) {
       console.error(error);
@@ -69,7 +69,7 @@ const add_field_to_template = async (req, res) => {
       console.log('Template before update:', template);
   
       if (!template) {
-        return res.status(404).json({ error: 'Field not found' });
+        return res.status(404).json({ success:false,error: 'Field not found' });
       }
   
       const updatedTemplate = await Template.findOneAndUpdate(
@@ -92,7 +92,7 @@ const add_field_to_template = async (req, res) => {
           templates: [updatedTemplate]
         });
       } else {
-        res.status(404).json({ error: 'Field not found' });
+        res.status(404).json({success:false, error: 'Field not found' });
       }
     } catch (error) {
       console.error('Error updating field:', error);
@@ -107,13 +107,13 @@ const add_field_to_template = async (req, res) => {
       const template = await Template.findOne({ clinic_id: clinicId });
   
       if (!template) {
-        return res.status(404).json({ error: 'Template not found for the specified clinic' });
+        return res.status(404).json({success:false, error: 'Template not found for the specified clinic' });
       }
   
       const fieldIndex = template.dynamicFields.findIndex(field => field._id.toString() === fieldId);
   
       if (fieldIndex === -1) {
-        return res.status(404).json({ error: 'Field not found in the template' });
+        return res.status(404).json({success:false, error: 'Field not found in the template' });
       }
   
       template.dynamicFields.pull({ _id:new mongoose.Types.ObjectId(fieldId) });

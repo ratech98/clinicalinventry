@@ -36,7 +36,7 @@ const getDosageUnitById = async (req, res) => {
     const DosageUnitModel = tenantDBConnection.model('DosageUnit', DosageUnit.schema);
     const dosageUnit = await DosageUnitModel.findById(req.params.id);
     if (!dosageUnit) {
-      return res.status(404).json({ error: errorMessages[1006], errorCode: 1006 });
+      return res.status(404).json({ success:false,error: errorMessages[1006], errorCode: 1006 });
     }
     res.json({ success: true, message: "Dosage unit fetched successfully", dosageUnit });
   } catch (error) {
@@ -52,7 +52,7 @@ const updateDosageUnit = async (req, res) => {
     const DosageUnitModel = tenantDBConnection.model('DosageUnit', DosageUnit.schema);
     const dosageUnit = await DosageUnitModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!dosageUnit) {
-      return res.status(404).json({ error: errorMessages[1006], errorCode: 1006 });
+      return res.status(404).json({success:false, error: errorMessages[1006], errorCode: 1006 });
     }
     res.status(200).json({ success: true, message: "Dosage unit updated successfully", dosageUnit });
   } catch (error) {
@@ -68,7 +68,7 @@ const deleteDosageUnit = async (req, res) => {
     const DosageUnitModel = tenantDBConnection.model('DosageUnit', DosageUnit.schema);
     const dosageUnit = await DosageUnitModel.findByIdAndDelete(req.params.id);
     if (!dosageUnit) {
-      return res.status(404).json({ error: errorMessages[1006], errorCode: 1006 });
+      return res.status(404).json({ success:false,error: errorMessages[1006], errorCode: 1006 });
     }
     res.json({ success: true, message: "Dosage unit deleted successfully" });
   } catch (error) {

@@ -80,7 +80,7 @@ const getPatientById = async (req, res) => {
       model: mainDBConnection.model('doctor')
     });
     if (!patient) {
-      return res.status(404).json({ error: "Patient not found", errorcode: 1005 });
+      return res.status(404).json({success:false, error: "Patient not found", errorcode: 1005 });
     }
     const totalVisits = patient.appointment_history.length;
     res.json({
@@ -107,7 +107,7 @@ const updatePatient = async (req, res) => {
     const patient = await PatientModel.findByIdAndUpdate(id, req.body, { new: true });
 
     if (!patient) {
-      return res.status(404).json({ error: "Patient not found", errorcode: 1005 });
+      return res.status(404).json({success:false, error: "Patient not found", errorcode: 1005 });
     }
     
     res.status(200).json({ success: true, message: "Patient updated successfully", patient });
@@ -124,7 +124,7 @@ const deletePatient = async (req, res) => {
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const patient = await PatientModel.findByIdAndDelete(req.params.id);
     if (!patient) {
-      return res.status(400).json({ error: "Patient not found", errorcode: 1005 });
+      return res.status(400).json({success:false, error: "Patient not found", errorcode: 1005 });
     }
     res.json({ success: true, message: "Patient deleted successfully" });
   } catch (error) {
@@ -160,10 +160,10 @@ const verifyPatientOtp = async (req, res) => {
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const patient = await PatientModel.findOne({ mobile_number });
     if (!patient) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({success:false, error: 'User not found' });
     }
     if (otp !== patient.otp) {
-      return res.status(400).json({ error: 'Invalid OTP' });
+      return res.status(400).json({success:false, error: 'Invalid OTP' });
     }
     patient.otpVerified = true;
     await patient.save();
@@ -182,7 +182,7 @@ const updateAppointmentWithPrescription = async (req, res) => {
     
     const patient = await PatientModel.findById(patientId);
     if (!patient) {
-      return res.status(404).json({ error: "Patient not found", errorcode: 1005 });
+      return res.status(404).json({success:false, error: "Patient not found", errorcode: 1005 });
     }
 
     const appointment = patient.appointment_history.id(appointmentId);
@@ -203,7 +203,7 @@ const updateAppointmentWithPrescription = async (req, res) => {
         }
       }));
     } else {
-      return res.status(400).json({ error: "Medicines should be an array", errorcode: 1007 });
+      return res.status(400).json({success:false, error: "Medicines should be an array", errorcode: 1007 });
     }
 
     appointment.prescription = prescription;
@@ -226,7 +226,7 @@ const getPrescription = async (req, res) => {
     
     const patient = await PatientModel.findById(patientId);
     if (!patient) {
-      return res.status(404).json({ error: "Patient not found", errorcode: 1005 });
+      return res.status(404).json({success:false, error: "Patient not found", errorcode: 1005 });
     }
 
     const appointment = patient.appointment_history.id(appointmentId);
@@ -255,7 +255,7 @@ const addAppointmentWithToken = async (req, res) => {
     const patient = await PatientModel.findById(patientId);
 
     if (!patient) {
-      return res.status(404).json({ error: "Patient not found", errorcode: 1005 });
+      return res.status(404).json({success:false, error: "Patient not found", errorcode: 1005 });
     }
 
     const tokenCount = patient.appointment_history.filter(a => a.appointment_date === appointment_date).length;
@@ -300,7 +300,7 @@ const addFollowUpAppointment = async (req, res) => {
     const patient = await PatientModel.findById(patientId);
 
     if (!patient) {
-      return res.status(404).json({ error: "Patient not found", errorcode: 1005 });
+      return res.status(404).json({success:false, error: "Patient not found", errorcode: 1005 });
     }
 
     const previousAppointment = patient.appointment_history.id(previousAppointmentId);
@@ -414,7 +414,7 @@ const get_diagnose_report=async (req, res) => {
   try {
     const { tenantDBConnection } = req;
     if (!tenantDBConnection) {
-      return res.status(500).json({ error: 'Tenant DB connection is not set' });
+      return res.status(500).json({success:false, error: 'Tenant DB connection is not set' });
     }
 
     const { patientId } = req.params;
@@ -423,7 +423,7 @@ const get_diagnose_report=async (req, res) => {
     const patient = await PatientModel.findById(patientId);
 
     if (!patient) {
-      return res.status(404).json({ error: 'Patient not found', errorcode: 1005 });
+      return res.status(404).json({success:false, error: 'Patient not found', errorcode: 1005 });
     }
 
     const diagnoseReports = patient.diagnose_reports;
