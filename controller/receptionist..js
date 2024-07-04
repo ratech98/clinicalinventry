@@ -176,6 +176,11 @@ const sendReceptionistOtp = async (req, res) => {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
       return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
     }
+    const existingReceptionist = await Receptionist.findOne({ mobile_number, clinic: clinicId });
+    if (existingReceptionist) {
+      return res.status(400).json({ success: false, message: 'Receptionist with this mobile number and clinic ID already exists' });
+    }
+
     const receptionist = await Receptionist.findOneAndUpdate(
       { mobile_number },
       { mobile_number, otp, clinic: clinicId },
@@ -187,7 +192,7 @@ const sendReceptionistOtp = async (req, res) => {
     // Code to send OTP via SMS
     // sendOtpSms(mobile_number, otp); // Uncomment and implement this function
 
-    res.status(200).json({ success: true, message: 'OTP sent successfully and clinic set', receptionist });
+    res.status(200).json({ success: true, message: 'OTP sent successfully ', receptionist });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -351,16 +351,22 @@ const sendDoctorOtp = async (req, res) => {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
       return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
     }
-    const doctorData = await doctor.findOneAndUpdate(
-      { mobile_number },
-      { $set: { otp } },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
 
-    const clinicExists = doctorData.clinics.some(c => c.clinicId.toString() === clinicId);
-    if (!clinicExists) {
-      doctorData.clinics.push({ clinicId, verified: false });
+    let doctorData = await doctor.findOne({ mobile_number });
+
+    // Check for duplicate clinic
+    if (doctorData) {
+      const clinicExists = doctorData.clinics.some(c => c.clinicId.toString() === clinicId);
+      if (clinicExists) {
+        return res.status(400).json({ success: false, message: 'Doctor with this mobile number and clinic ID already exists' });
+      }
+    } else {
+      // Create new doctor if not exists
+      doctorData = new doctor({ mobile_number, clinics: [] });
     }
+
+    doctorData.otp = otp;
+    doctorData.clinics.push({ clinicId, verified: false });
 
     await doctorData.save();
 
@@ -372,6 +378,7 @@ const sendDoctorOtp = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 const verifyDoctorOtp = async (req, res) => {

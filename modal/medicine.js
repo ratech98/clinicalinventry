@@ -5,7 +5,7 @@ const medicineSchema = new Schema({
   medicine_name: {
     type: String,
     required: true,
-    unique: true,
+   
   },
   dosage_form: [{
     type:  String
