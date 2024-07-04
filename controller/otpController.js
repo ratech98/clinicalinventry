@@ -18,6 +18,7 @@ const sendOtp = async (req, res) => {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
       return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
     }
+    
     if (clinic) {
     console.log("enrty")
 //       if (clinic.block) {
@@ -30,8 +31,8 @@ const sendOtp = async (req, res) => {
 //       if (!clinic.otpVerified) {
 //         return res.status(400).json({ success: false, message: 'Clinic mobile number is not verified' });
 //       }
+return res.status(400).json({ success: false, message: 'clinic with this Mobile number already exist' });
 
-      clinic.otp = otp;
     } else {
       clinic = new Clinic({
         mobile_number,
@@ -56,7 +57,49 @@ const sendOtp = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+const loginsendOtp = async (req, res) => {
+  const { mobile_number } = req.body;
+  const otp = "123456"; // You can generate a random OTP here
 
+  try {
+    let clinic = await Clinic.findOne({ mobile_number });
+    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+    }
+    if (clinic) {
+    console.log("enrty")
+//       if (clinic.block) {
+//         return res.status(400).json({ success: false, message: 'Clinic is blocked, contact admin' });
+//       }
+// if(!clinic.adminVerified){
+//   return res.status(400).json({ success: false, message: 'Clinic  not verified' });
+
+// }
+//       if (!clinic.otpVerified) {
+//         return res.status(400).json({ success: false, message: 'Clinic mobile number is not verified' });
+//       }
+
+      clinic.otp = otp;
+    } else {
+      return res.status(400).json({ success: false, message: 'Mobile number not exist' });
+
+    }
+
+    await clinic.save();
+
+    // Code to send OTP via SMS
+    // await client.messages.create({
+    //   body: `Your OTP code is ${otp}`,
+    //   from: process.env.TWILIO_PHONE_NUMBER,
+    //   to: mobile_number,
+    // });
+
+    res.status(200).json({ success: true, message: 'OTP sent successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
 const verifyOtp = async (req, res) => {
   const { mobile_number, otp } = req.body;
 
@@ -112,5 +155,6 @@ const generateToken = async (req, res) => {
 module.exports = {
   sendOtp,
   verifyOtp,
-  generateToken
+  generateToken,
+  loginsendOtp
 };
