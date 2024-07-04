@@ -64,7 +64,7 @@ const adminSchema = new mongoose.Schema(
       type: Date,
       
     },
-    otp:{type:Number},
+    otp:{type:String},
     verified:{type:Boolean,default:false},
     block:{type:Boolean,default:false},
     block_reason:{type:String},

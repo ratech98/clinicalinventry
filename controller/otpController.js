@@ -15,7 +15,9 @@ const sendOtp = async (req, res) => {
 
   try {
     let clinic = await Clinic.findOne({ mobile_number });
-
+    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+    }
     if (clinic) {
     console.log("enrty")
 //       if (clinic.block) {
@@ -59,6 +61,13 @@ const verifyOtp = async (req, res) => {
   const { mobile_number, otp } = req.body;
 
   try {
+    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+    }
+    if(!otp||otp===""){
+      return res.status(400).json({ success: false, message: 'otp is required and cannot be empty' });
+
+    }
     const clinic = await Clinic.findOne({ mobile_number });
 
     if (!clinic) {

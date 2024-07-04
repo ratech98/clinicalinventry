@@ -44,7 +44,7 @@ const connectTenantDB = async (req, res, next) => {
     }
 
     if (!tenant.dbUri) {
-      return res.status(400).json({ message: "Tenant does not have a database URI" });
+      return res.status(400).json({success:false, message: "Tenant does not have a database URI" });
     }
 
     let tenantDBConnection = tenantConnections[tenant._id];

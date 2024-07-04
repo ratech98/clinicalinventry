@@ -138,6 +138,9 @@ const sendPatientOtp = async (req, res) => {
   const { mobile_number } = req.body;
   const otp = "1234"; 
   try {
+    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+    }
     const { tenantDBConnection } = req;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const patient = await PatientModel.findOneAndUpdate(
@@ -156,6 +159,9 @@ const sendPatientOtp = async (req, res) => {
 const verifyPatientOtp = async (req, res) => {
   const { mobile_number, otp } = req.body;
   try {
+    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+    }
     const { tenantDBConnection } = req;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const patient = await PatientModel.findOne({ mobile_number });
@@ -284,7 +290,7 @@ const addAppointmentWithToken = async (req, res) => {
 
     await patient.save();
 
-    res.status(201).json({ success: true, message: "Appointment and diagnose reports added successfully", patient });
+    res.status(200).json({ success: true, message: "Appointment and diagnose reports added successfully", patient });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });

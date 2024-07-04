@@ -131,7 +131,9 @@ const sendReceptionistOtpForLogin = async (req, res) => {
   const otp = "1234";
 
   try {
-
+    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+    }
 
 
     const receptionist = await Receptionist.findOneAndUpdate(
@@ -171,6 +173,9 @@ const sendReceptionistOtp = async (req, res) => {
   const otp = "1234";
 
   try {
+    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+    }
     const receptionist = await Receptionist.findOneAndUpdate(
       { mobile_number },
       { mobile_number, otp, clinic: clinicId },
@@ -192,6 +197,13 @@ const verifyReceptionistOtp = async (req, res) => {
   const { mobile_number, otp } = req.body;
 
   try {
+    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+    }
+    if(!otp||otp===""){
+      return res.status(400).json({ success: false, message: 'otp is required and cannot be empty' });
+
+    }
     const receptionist = await Receptionist.findOne({ mobile_number });
 
     if (!receptionist) {
@@ -237,7 +249,7 @@ const getReceptionistsByClinic = async (req, res) => {
       .populate('clinic');
 
     if (!receptionists.length) {
-      return res.status(404).json({ message: 'No receptionists found for this clinic' });
+      return res.status(404).json({success:true, message: 'No receptionists found for this clinic' });
     }
 
     res.status(200).json({

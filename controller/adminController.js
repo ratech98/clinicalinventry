@@ -10,6 +10,9 @@ const sendOtp = async (req, res) => {
   const otp = "123456"; 
 
   try {
+    if (!phone || typeof phone !== 'string' || phone.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+    }
     let admin = await Admin.findOne({ phone });
 
     if (!admin) {
@@ -38,6 +41,12 @@ const verifyOtp = async (req, res) => {
   const { phone, otp } = req.body;
 
   try {
+    if (!phone || typeof phone !== 'string' || phone.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+    } if(!otp||otp===""){
+      return res.status(400).json({ success: false, message: 'otp is required and cannot be empty' });
+
+    }
     const admin = await Admin.findOne({ phone });
 console.log(admin)
     if (!admin) {

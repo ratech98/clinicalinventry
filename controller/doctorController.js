@@ -300,6 +300,9 @@ const sendDoctorOtpForLogin = async (req, res) => {
   const otp = "1234"; 
 
   try {
+    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+    }
     const doctorData = await doctor.findOneAndUpdate(
       { mobile_number },
       { $set: { otp } },
@@ -345,6 +348,9 @@ const sendDoctorOtp = async (req, res) => {
   const otp = "1234"; // You can generate a random OTP here
 
   try {
+    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+    }
     const doctorData = await doctor.findOneAndUpdate(
       { mobile_number },
       { $set: { otp } },
@@ -372,6 +378,13 @@ const verifyDoctorOtp = async (req, res) => {
   const { mobile_number, otp } = req.body;
 
   try {
+    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+    }
+    if(!otp||otp===""){
+      return res.status(400).json({ success: false, message: 'otp is required and cannot be empty' });
+
+    }
     const doctorData = await doctor.findOne({ mobile_number });
 
     if (!doctorData) {
