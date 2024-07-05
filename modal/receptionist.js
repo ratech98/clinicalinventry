@@ -51,6 +51,10 @@ const receptionistSchema = new Schema({
   certificate: {
     type: String
   },
+  certificate_verify:{
+    type:Boolean,
+    default:false
+  }
   
 
 }, { timestamps: true });

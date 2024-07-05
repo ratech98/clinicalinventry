@@ -464,6 +464,32 @@ const get_availability=async (req, res) => {
   }
 }
 
+const verify_certificate=async (req, res) => {
+  const updateFields = {};
+
+  if (req.body.undergraduate_certificate_verify !== undefined) {
+    updateFields.undergraduate_certificate_verify = req.body.undergraduate_certificate_verify;
+  }
+  if (req.body.postgraduate_certificate_verify !== undefined) {
+    updateFields.postgraduate_certificate_verify = req.body.postgraduate_certificate_verify;
+  }
+
+  try {
+    const doctors = await doctor.findByIdAndUpdate(
+      req.params.id,
+      updateFields,
+      { new: true }
+    );
+
+    if (!doctors) {
+      return res.status(404).json({ message: 'Doctor not found' });
+    }
+
+    res.status(200).json({ message: 'Certificate(s) verified', doctor });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
 
 module.exports = { 
                 addDoctor, 
@@ -482,5 +508,6 @@ module.exports = {
                 verifyDoctorClinic,
                blockOrUnblockDoctor,
                sendDoctorOtpForLogin,
-               get_availability
+               get_availability,
+               verify_certificate
                 };

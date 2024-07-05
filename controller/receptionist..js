@@ -309,6 +309,30 @@ const blockOrUnblockReceptionist = async (req, res) => {
   }
 };
 
+const verify_receptionist_certificate=async (req, res) => {
+  const updateFields = {};
+
+  if (req.body.certificate_verify !== undefined) {
+    updateFields.certificate_verify = req.body.certificate_verify;
+  }
+
+  try {
+    const receptionist = await Receptionist.findByIdAndUpdate(
+      req.params.id,
+      updateFields,
+      { new: true }
+    );
+
+    if (!receptionist) {
+      return res.status(404).json({ message: 'Receptionist not found' });
+    }
+
+    res.status(200).json({ message: 'Certificate verified', receptionist });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
 module.exports = {
   addReceptionist,
   getAllReceptionists,
@@ -324,5 +348,6 @@ module.exports = {
   verifyReceptionistOtp,
   getReceptionistsByClinic,
   blockOrUnblockReceptionist,
-  sendReceptionistOtpForLogin
+  sendReceptionistOtpForLogin,
+  verify_receptionist_certificate
 };

@@ -63,7 +63,12 @@ const doctorSchema = new Schema({
   postgraduate_certificate: {
     type: String
   },
-  
+  undergraduate_certificate_verify:{
+    type: Boolean, default: false
+  },
+  postgraduate_certificate_verify:{
+    type: Boolean, default: false
+  },
   block:{ type: Boolean, default: false },
   block_reason:{type:String,default:null},
   unblock_reason:{type:String,default:null}
