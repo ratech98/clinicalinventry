@@ -7,16 +7,13 @@ const multer = require('multer');
 
 const multerStorage = multer.memoryStorage(); 
 const upload = multer({
-    storage: multerStorage,
-    fileFilter: (req, file, cb) => {
-      if (file.mimetype.startsWith('image')) {
-          console.log("file found")
-        cb(null, true);
-      } else {
-        cb(new Error('Only images are allowed'));
-      }
-    }
-  }).single('profile'); 
+  storage: multerStorage,
+}).fields([
+  { name: 'certificate', maxCount: 1 },
+
+  {name:'profile',maxCount:1}
+ 
+]);
 
 router.post('/receptionists', addReceptionist);
 router.get('/receptionists', getAllReceptionists);

@@ -69,12 +69,21 @@ const getReceptionistById = async (req, res) => {
 const updateReceptionist = async (req, res) => {
 
   try {
-    const originalFilename = req.file.originalname;
-    const sanitizedFilename = originalFilename.replace(/[^a-zA-Z0-9.]/g, '_');
-    const imagePath = `receptionst/${Date.now()}_${sanitizedFilename}`;
-    await gcsStorage.bucket(bucketName).file(imagePath).save(req.file.buffer);
-   req.body.profile=`https://storage.googleapis.com/${bucketName}/${imagePath}`
-    const receptionist = await Receptionist.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const files = req.files;
+    const uploadedFiles = {};
+    for (const fieldName in files) {
+      if (Object.hasOwnProperty.call(files, fieldName)) {
+        const file = files[fieldName][0]; 
+        const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
+        const imagePath = `docter_certificates/${Date.now()}_${sanitizedFilename}`;
+        await gcsStorage.bucket(bucketName).file(imagePath).save(file.buffer);
+        uploadedFiles[
+          fieldName
+        ] = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
+      }
+    }
+    const updateData = { ...req.body, ...uploadedFiles };
+    const receptionist = await Receptionist.findByIdAndUpdate(req.params.id,updateData, { new: true });
     if (!receptionist) {
       return res.status(400).json({success:false, error: errormesaages[1004], errorcode: 1004 });
     }

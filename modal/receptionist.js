@@ -47,7 +47,11 @@ const receptionistSchema = new Schema({
   },
   block:{ type: Boolean, default: false },
   block_reason:{type:String,default:null},
-  unblock_reason:{type:String,default:null}
+  unblock_reason:{type:String,default:null},
+  certificate: {
+    type: String
+  },
+  
 
 }, { timestamps: true });
 
