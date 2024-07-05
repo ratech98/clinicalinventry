@@ -1,5 +1,5 @@
 const express = require('express');
-const { addDoctor, getAllDoctors, getDoctorById, updateDoctor, deleteDoctor, updateDoctorAvailabilitty, updateDoctorVerify, addClinicToDoctor, addAvailability, updateAvailability, getClinicDetailsByDoctorId, sendDoctorOtp, verifyDoctorOtp, verifyDoctorClinic, updateDoctorAvailability, addDoctorAvailability, blockOrUnblockDoctor, sendDoctorOtpForLogin } = require('../controller/doctorController');
+const { addDoctor, getAllDoctors, getDoctorById, updateDoctor, deleteDoctor, updateDoctorAvailabilitty, updateDoctorVerify, addClinicToDoctor, addAvailability, updateAvailability, getClinicDetailsByDoctorId, sendDoctorOtp, verifyDoctorOtp, verifyDoctorClinic, updateDoctorAvailability, addDoctorAvailability, blockOrUnblockDoctor, sendDoctorOtpForLogin, get_availability } = require('../controller/doctorController');
 const { isAuth } = require('../config/auth');
 const router = express.Router();
 const multer = require('multer');
@@ -31,6 +31,7 @@ router.post('/sendotp/doctor',sendDoctorOtp)
 router.post('/sendotp/doctor/login',sendDoctorOtpForLogin)
 router.post('/verifyotp/doctor',verifyDoctorOtp)
 router.post('/doctor/:id',blockOrUnblockDoctor)
+router.get('/get/availability',get_availability)
 
 
 

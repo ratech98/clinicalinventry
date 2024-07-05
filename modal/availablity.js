@@ -6,7 +6,7 @@ const slotSchema = new mongoose.Schema({
 }, { _id: false });
 
 const availabilitySchema = new mongoose.Schema({
-  doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor', required: true },
+  doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'doctor', required: true },
   clinicId: { type: mongoose.Schema.Types.ObjectId, ref: 'Clinic', required: true },
   availabilities: [{
     date: { type: Date, required: true },

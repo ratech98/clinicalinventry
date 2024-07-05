@@ -437,7 +437,32 @@ const blockOrUnblockDoctor = async (req, res) => {
   }
 };
 
+const get_availability=async (req, res) => {
+  try {
+    const { doctorId, clinicId, date, day } = req.query;
+    let query = {};
 
+    if (doctorId) {
+      query.doctorId = doctorId;
+    }
+    if (clinicId) {
+      query.clinicId = clinicId;
+    }
+    if (date) {
+      query['availabilities.date'] = new Date(date);
+    }
+    if (day) {
+      query['availabilities.day'] = day;
+    }
+
+    const availabilities = await Availability.find(query)
+    
+    res.json({ success: true, message: "Availabilities fetched successfully", availabilities });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
 
 
 module.exports = { 
@@ -456,5 +481,6 @@ module.exports = {
                 verifyDoctorOtp,
                 verifyDoctorClinic,
                blockOrUnblockDoctor,
-               sendDoctorOtpForLogin
+               sendDoctorOtpForLogin,
+               get_availability
                 };

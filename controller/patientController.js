@@ -25,12 +25,12 @@ const addPatient = async (req, res) => {
 // Get All Patients
 const getAllPatients = async (req, res) => {
   try {
-    
     const { tenantDBConnection } = req;
-    const { mobile_number,appointment_date } = req.query;
+    const { mobile_number, appointment_date, page = 1, limit = 10 } = req.query;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const mainDBConnection = mongoose.connection;
     let query = {};
+
     if (mobile_number) {
       query.mobile_number = { $regex: mobile_number, $options: 'i' };
     }
@@ -38,16 +38,38 @@ const getAllPatients = async (req, res) => {
     if (appointment_date) {
       query['appointment_history.appointment_date'] = appointment_date;
     }
-    const patients = await PatientModel.find(query).populate({
-      path: 'appointment_history.doctor',
-      model: mainDBConnection.model('doctor')
+
+    const totalPatients = await PatientModel.countDocuments(query);
+    const totalPages = Math.ceil(totalPatients / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+
+    const patients = await PatientModel.find(query)
+      .populate({
+        path: 'appointment_history.doctor',
+        model: mainDBConnection.model('doctor'),
+      })
+      .skip(startIndex)
+      .limit(parseInt(limit));
+
+    res.json({
+      success: true,
+      message: "Patients fetched successfully",
+      totalCount: totalPatients,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages,
+      startIndex: startIndex + 1,
+      endIndex: endIndex > totalPatients ? totalPatients : endIndex,
+      currentPage: parseInt(page),
+      patients,
     });
-    res.json({ success: true, message: "Patients fetched successfully", patients });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 // Get Patients by Doctor ID
 const getPatients = async (req, res) => {
