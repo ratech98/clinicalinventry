@@ -460,7 +460,7 @@ const get_availability=async (req, res) => {
     res.json({ success: true, message: "Availabilities fetched successfully", availabilities });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({success:false, error: "Internal Server Error" });
   }
 }
 
@@ -482,12 +482,12 @@ const verify_certificate=async (req, res) => {
     );
 
     if (!doctors) {
-      return res.status(404).json({ message: 'Doctor not found' });
+      return res.status(404).json({success:false, message: 'Doctor not found' });
     }
 
-    res.status(200).json({ message: 'Certificate(s) verified', doctor });
+    res.status(200).json({success:true, message: 'Certificate(s) verified', doctor });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({success:false, message: error.message });
   }
 }
 

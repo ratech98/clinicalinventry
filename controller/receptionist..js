@@ -324,10 +324,10 @@ const verify_receptionist_certificate=async (req, res) => {
     );
 
     if (!receptionist) {
-      return res.status(404).json({ message: 'Receptionist not found' });
+      return res.status(404).json({success:false, message: 'Receptionist not found' });
     }
 
-    res.status(200).json({ message: 'Certificate verified', receptionist });
+    res.status(200).json({success:true, message: 'Certificate verified', receptionist });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
