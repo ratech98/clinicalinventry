@@ -24,7 +24,7 @@ router.get('/clinic',isAuth, getClinicById);
 router.get('/clinic/:id', getClinicId);
 router.put('/clinics/:id',upload, updateClinic);
 router.delete('/clinics/:id', deleteClinic);
-router.put('/verify-admin/:id', verify_clinic);
+router.get('/verify-admin/:id', verify_clinic);
 router.put('/verify_clinic/:id', verify_clinic_certificate);
 router.get('/doctersby_clinic/:id',getDoctorsAndAvailabilityByClinic)
 router.post('/clinic/:id',blockOrUnblockClinic)
