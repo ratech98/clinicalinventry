@@ -26,15 +26,20 @@ const addClinic = async (req, res) => {
 
 const getAllClinics = async (req, res) => {
   try {
+    const {adminVerified}=req?.query
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
-    const totalClinics = await Clinic.countDocuments();
+    const filter = { };
+if(adminVerified){
+  filter.adminVerified=true
+}
+    const totalClinics = await Clinic.countDocuments(filter);
     const totalPages = Math.ceil(totalClinics / limit);
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    const clinics = await Clinic.find().skip(startIndex).limit(limit);
+    const clinics = await Clinic.find(filter).skip(startIndex).limit(limit);
 
     res.json({
       success: true,
@@ -53,6 +58,7 @@ const getAllClinics = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 
