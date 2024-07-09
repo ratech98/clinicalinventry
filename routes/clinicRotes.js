@@ -1,5 +1,5 @@
 const express = require('express');
-const { addClinic, getAllClinics, getClinicById, updateClinic, deleteClinic, verify_clinic, getClinics, getDoctorsAndAvailabilityByClinic, blockOrUnblockClinic, verify_clinic_certificate } = require('../controller/clinicController');
+const { addClinic, getAllClinics, getClinicById, updateClinic, deleteClinic, verify_clinic, getClinics, getDoctorsAndAvailabilityByClinic, blockOrUnblockClinic, verify_clinic_certificate, getClinicId } = require('../controller/clinicController');
 const router = express.Router();
 
 const multer = require('multer');
@@ -21,6 +21,7 @@ router.post('/addclinic', addClinic);
 router.get('/clinics', getAllClinics);
 
 router.get('/clinic',isAuth, getClinicById);
+router.get('/clinic/:id', getClinicId);
 router.put('/clinics/:id',upload, updateClinic);
 router.delete('/clinics/:id', deleteClinic);
 router.put('/verify-admin/:id', verify_clinic);

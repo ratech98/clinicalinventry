@@ -78,6 +78,20 @@ const getClinicById = async (req, res) => {
   }
 };
 
+
+const getClinicId = async (req, res) => {
+  try {
+     const clinic = await Clinic.findById(req?.params.id);
+    if (!clinic) {
+      return res.status(404).json({ error:errormesaages[1001],errorcode:1001 });
+    }
+    res.json({ success: true, message: "Clinic fetched successfully", clinic });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 const updateClinic = async (req, res) => {
   try {
 
@@ -265,5 +279,6 @@ module.exports = { addClinic,
                    verify_clinic,
                    getDoctorsAndAvailabilityByClinic,
                    blockOrUnblockClinic,
-                   verify_clinic_certificate
+                   verify_clinic_certificate,
+                   getClinicId
                   };
