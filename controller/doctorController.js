@@ -14,7 +14,7 @@ require("dotenv").config();
 const addDoctor = async (req, res) => {
   try {
     const doctors = await doctor.create(req.body);
-    res.status(201).json({ success: true, message: "Doctor added successfully", doctors });
+    res.status(200).json({ success: true, message: "Doctor added successfully", doctors });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -36,7 +36,7 @@ const getClinicDetailsByDoctorId = async (req, res) => {
   try {
     const doctors = await doctor.findById(req.body.doctorId).populate('clinics.clinicId');
     if (!doctors) {
-      return res.status(404).json({success:false, error: 'Doctor not found' });
+      return res.status(404).json({success:false,error: errormesaages[1002], errorcode: 1002 });
     }
 
     const clinics = doctors.clinics;
@@ -52,7 +52,7 @@ const getDoctorById = async (req, res) => {
   try {
     const doctors = await doctor.findById(req.params.id).populate('clinics.clinicId');
     if (!doctors) {
-      return res.status(404).json({ success:false,error: 'Doctor not found' });
+      return res.status(404).json({ success:false,error: errormesaages[1002], errorcode: 1002 });
     }
     res.json({ success: true, message: "Doctor fetched successfully", doctors });
   } catch (error) {
@@ -93,7 +93,7 @@ const updateDoctorAvailability = async (req, res) => {
   try {
     const doctors = await doctor.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('clinic');
     if (!doctors) {
-      return res.status(400).json({ error: errormesaages[1002], errorcode: 1002 });
+      return res.status(400).json({success:false, error: errormesaages[1002], errorcode: 1002 });
     }
     res.status(200).json({ success: true, message: "Doctor updated successfully", doctors });
   } catch (error) {
@@ -108,7 +108,7 @@ const verifyDoctorClinic = async (req, res) => {
     const doctors = await doctor.findById(doctorId);
 
     if (!doctors) {
-      return res.status(404).json({success:false, error: 'Doctor not found' });
+      return res.status(404).json({success:false, error:  errormesaages[1002], errorcode: 1002});
     }
 
     const clinic = doctors.clinics.find(c => c.clinicId.toString() === clinicId);
@@ -259,7 +259,7 @@ const updateDoctorAvailabilitty = async (req, res) => {
   try {
     const availability = await Availability.findById(availabilityId);
     if (!availability) {
-      return res.status(404).json({success:false, error: 'Availability not found' });
+      return res.status(404).json({success:false,error: errormesaages[1007], errorcode: 100 });
     }
 
     const nextOccurrences = calculateNextOccurrences(days);
@@ -301,7 +301,7 @@ const sendDoctorOtpForLogin = async (req, res) => {
 
   try {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+      return res.status(400).json({ success: false,message: errormesaages[1008], errorcode: 1008 });
     }
     const doctorData = await doctor.findOneAndUpdate(
       { mobile_number },
@@ -309,21 +309,21 @@ const sendDoctorOtpForLogin = async (req, res) => {
     );
 
 
-    if (!doctorData) {
-      return res.status(404).json({ success: false, message: 'Receptionist not found' });
-    }
+    // if (!doctorData) {
+    //   return res.status(404).json({ success: false,message: errormesaages[1002], errorcode: 1002 });
+    // }
 
-    if (!doctorData.otpVerified) {
-      return res.status(400).json({ success: false, message: 'Your mobile number is not verified' });
-    }
+    // if (!doctorData.otpVerified) {
+    //   return res.status(400).json({ success: false, message: 'Your mobile number is not verified' });
+    // }
     // if(!doctorData.verify){
     //   return res.status(400).json({ success: false, message: 'you are not verified by admin,contact admin' });
     
     // }
 
-    if (doctorData.block) {
-      return res.status(400).json({ success: false, message: 'You are blocked by admin, contact admin' });
-    }
+    // if (doctorData.block) {
+    //   return res.status(400).json({ success: false, message: 'You are blocked by admin, contact admin' });
+    // }
 
     await doctorData.save();
 
@@ -345,23 +345,21 @@ const sendDoctorOtpForLogin = async (req, res) => {
 
 const sendDoctorOtp = async (req, res) => {
   const { mobile_number, clinicId } = req.body;
-  const otp = "1234"; // You can generate a random OTP here
+  const otp = "1234";
 
   try {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+      return res.status(400).json({ success: false, message: errormesaages[1008], errorcode: 1008 });
     }
 
     let doctorData = await doctor.findOne({ mobile_number });
 
-    // Check for duplicate clinic
     if (doctorData) {
       const clinicExists = doctorData.clinics.some(c => c.clinicId.toString() === clinicId);
       if (clinicExists) {
         return res.status(400).json({ success: false, message: 'Doctor with this mobile number and clinic ID already exists' });
       }
     } else {
-      // Create new doctor if not exists
       doctorData = new doctor({ mobile_number, clinics: [] });
     }
 

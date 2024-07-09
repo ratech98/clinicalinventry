@@ -17,7 +17,7 @@ const addClinic = async (req, res) => {
   try {
     const clinic = await Clinic.create(req.body);
     console.log(req.body);
-    res.status(201).json({ success: true, message: "Clinic added successfully", clinic });
+    res.status(200).json({ success: true, message: "Clinic added successfully", clinic });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -125,7 +125,7 @@ const verify_clinic_certificate=async (req, res) => {
 const getDoctorsAndAvailabilityByClinic = async (req, res) => {
   try {
     const { id } = req.params;
-    const { specialist, recently_joined, onleave, page = 1, limit = 10 } = req.query;
+    const { specialist, recently_joined, onleave, page = 1, limit = 10,verify } = req.query;
     const today = new Date().toISOString().split('T')[0];
 
     const doctorQuery = { 'clinics.clinicId': id };
@@ -134,6 +134,9 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     }
     if (recently_joined) {
       doctorQuery["clinics.verified"] = false;
+    }
+    if(verify){
+      doctorQuery["clinics.verified"]=true
     }
 
     const totalDoctors = await doctor.countDocuments(doctorQuery);

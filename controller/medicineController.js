@@ -2,12 +2,33 @@ const { errormesaages } = require("../errormessages");
 const {Medicine }= require("../modal/medicine");
 
 require("dotenv").config(); 
-
 const addMedicine = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
+
+    if (!tenantDBConnection.readyState) {
+      return res.status(500).json({ error: "Database connection not ready" });
+    }
     
     const MedicineModel = tenantDBConnection.model('Medicine', Medicine.schema);
+
+    const { medicine_name, dosage_form, dosage_strength, dosage_unit } = req.body;
+
+    const queryOptions = { maxTimeMS: 20000 }; 
+
+    const existingMedicine = await MedicineModel.findOne({ 
+      medicine_name, 
+      dosage_form, 
+      dosage_strength, 
+      dosage_unit 
+    }, null, queryOptions);
+
+    if (existingMedicine) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Duplicate medicine: a medicine with the same name, form, strength, and unit already exists." 
+      });
+    }
 
     const medicine = new MedicineModel(req.body);
 
@@ -15,10 +36,12 @@ const addMedicine = async (req, res) => {
 
     res.status(201).json({ success: true, message: "Medicine added successfully", medicine });
   } catch (error) {
-    console.error(error);
+    console.error("Error adding medicine:", error.message || error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
 
 const getAllMedicines = async (req, res) => {
   try {
@@ -79,7 +102,7 @@ const getMedicineById = async (req, res) => {
      
 
     if (!medicine) {
-      return res.status(404).json({success:false, error: "Medicine not found", errorcode: 1003 });
+      return res.status(404).json({success:false, message:errormesaages[1003], errorcode: 1003});
     }
 
     res.json({ success: true, message: "Medicine fetched successfully", medicine });
@@ -98,7 +121,7 @@ const updateMedicine = async (req, res) => {
 
     const medicine = await MedicineModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!medicine) {
-      return res.status(400).json({ success:false,error: "Medicine not found", errorcode: 1003 });
+      return res.status(400).json({ success:false,error:errormesaages[1003], errorcode: 1003 });
     }
     res.status(200).json({ success: true, message: "Medicine updated successfully", medicine });
   } catch (error) {
@@ -115,7 +138,7 @@ const deleteMedicine = async (req, res) => {
 
     const medicine = await MedicineModel.findByIdAndDelete(req.params.id);
     if (!medicine) {
-      return res.status(400).json({success:false, error: errormesaages[1003], errorcode: 1003 });
+      return res.status(400).json({success:false, message: errormesaages[1003], errorcode: 1003 });
     }
     res.json({ success: true, message: "Medicine deleted successfully" });
   } catch (error) {
@@ -168,7 +191,7 @@ const importMedicinesData = async (req, res) => {
 
     if (missingFields.length > 0) {
       return res.status(400).json({
-        error: `Some medicines were not imported due to missing required fields or other issues: ${missingFields.join(", ")}`
+       success:false, message: `Some medicines were not imported due to missing required fields or other issues: ${missingFields.join(", ")}`
       });
     }
 

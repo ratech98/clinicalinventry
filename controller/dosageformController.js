@@ -8,7 +8,7 @@ const addDosageForm = async (req, res) => {
     const DosageFormModel = tenantDBConnection.model('DosageForm', DosageForm.schema);
     const dosageForm = new DosageFormModel(req.body);
     await dosageForm.save();
-    res.status(201).json({ success: true, message: "Dosage form added successfully", dosageForm });
+    res.status(200).json({ success: true, message: "Dosage form added successfully", dosageForm });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });

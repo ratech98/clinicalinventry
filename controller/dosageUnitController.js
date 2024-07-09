@@ -9,7 +9,7 @@ const addDosageUnit = async (req, res) => {
     const DosageUnitModel = tenantDBConnection.model('DosageUnit', DosageUnit.schema);
     const dosageUnit = new DosageUnitModel(req.body);
     await dosageUnit.save();
-    res.status(201).json({ success: true, message: "Dosage unit added successfully", dosageUnit });
+    res.status(200).json({ success: true, message: "Dosage unit added successfully", dosageUnit });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
