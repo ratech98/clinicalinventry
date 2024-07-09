@@ -18,7 +18,7 @@ const upload = multer({
 router.get('/get_prescriptionTemplate/:clinicId',getTemplatesByClinicId)
 router.post('/add_field',add_field_to_template)
 router.post('/update_field',update_field_in_template)
-router.delete('/delete_field/:fieldId/:clinicId',delete_field_from_template)
+router.delete('/delete_field/:clinicId/:section/:fieldName',delete_field_from_template)
 
 
 module.exports=router

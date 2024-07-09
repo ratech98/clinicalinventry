@@ -10,7 +10,7 @@ const defaultStyles = {
 };
 
 const fieldSchema = new Schema({
-  _id: { type: Schema.Types.ObjectId, auto: true },  // Ensure _id is of type ObjectId
+  section:{type:String,required:true},
   name: { type: String, required: true },
   value: { type: String },
   styles: {
