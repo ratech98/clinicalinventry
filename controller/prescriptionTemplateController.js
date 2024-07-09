@@ -124,9 +124,52 @@ const delete_field_from_template = async (req, res) => {
     }
 };
 
+const update_logo = async (req, res) => {
+  try {
+    const originalFilename = req.file.originalname;
+    const sanitizedFilename = originalFilename.replace(/[^a-zA-Z0-9.]/g, '_');
+    const imagePath = `clinic_logo/${Date.now()}_${sanitizedFilename}`;
+
+    let template = await Template.findOne({ clinic_id: req.body.clinicId });
+
+    if (template) {
+      if (template.logo) {
+        const oldLogoPath = template.logo.replace(`https://storage.googleapis.com/${bucketName}/`, '');
+        await gcsStorage.bucket(bucketName).file(oldLogoPath).delete();
+      }
+
+      await gcsStorage.bucket(bucketName).file(imagePath).save(req.file.buffer);
+
+      const logoUrl = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
+
+      template.logo = logoUrl;
+      await template.save();
+    } else {
+      const logoUrl = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
+      await gcsStorage.bucket(bucketName).file(imagePath).save(req.file.buffer);
+
+      template = new Template({
+        clinic_id: req.body.clinicId,
+        logo: logoUrl,
+        dynamicFields: []
+      });
+
+      await template.save();
+    }
+
+    res.status(200).json({ success: true, message: "Logo added successfully", template });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+
 module.exports = {
     getTemplatesByClinicId,
     add_field_to_template,
     update_field_in_template,
-    delete_field_from_template
+    delete_field_from_template,
+    update_logo
 };

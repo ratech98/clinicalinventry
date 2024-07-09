@@ -240,7 +240,7 @@ const verifyReceptionistOtp = async (req, res) => {
 const getReceptionistsByClinic = async (req, res) => {
   try {
     const { id } = req.params;
-    const { recently_joined, onleave, page = 1, limit = 10 } = req.query;
+    const { recently_joined, onleave, page = 1, limit = 10 ,verify} = req.query;
 
     let receptionistQuery = { clinic: id };
 
@@ -250,6 +250,9 @@ const getReceptionistsByClinic = async (req, res) => {
 
     if (onleave === 'true') {
       receptionistQuery.availability = 'onleave'; 
+    }
+    if (verify) {
+      receptionistQuery.verify = true; 
     }
 
     const totalReceptionists = await Receptionist.countDocuments(receptionistQuery);
