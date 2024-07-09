@@ -142,7 +142,7 @@ const verify_clinic=async (req, res) => {
     res.status(200).json({ success: true, message: 'Admin verified successfully', clinic });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: error });
   }
 }
 
