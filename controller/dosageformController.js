@@ -4,8 +4,16 @@ const { errormesaages } = require("../errormessages");
 const addDosageForm = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
-    
     const DosageFormModel = tenantDBConnection.model('DosageForm', DosageForm.schema);
+    
+    const name = req.body.form_name.toLowerCase();
+
+    const existingDosageForm = await DosageFormModel.findOne({ form_name: { $regex: new RegExp('^' + name + '$', 'i') } });
+    
+    if (existingDosageForm) {
+      return res.status(400).json({ uccess:false,error: errormesaages[1019], errorCode: 1019});
+    }
+
     const dosageForm = new DosageFormModel(req.body);
     await dosageForm.save();
     res.status(200).json({ success: true, message: "Dosage form added successfully", dosageForm });
@@ -14,6 +22,7 @@ const addDosageForm = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 const getAllDosageForms = async (req, res) => {
   try {

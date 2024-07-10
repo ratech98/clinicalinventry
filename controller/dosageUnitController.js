@@ -5,8 +5,16 @@ const { DosageUnit } = require('../modal/medicine');
 const addDosageUnit = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
-    
     const DosageUnitModel = tenantDBConnection.model('DosageUnit', DosageUnit.schema);
+
+    const name = req.body.name.toLowerCase();
+
+    const existingDosageUnit = await DosageUnitModel.findOne({ name: { $regex: new RegExp('^' + name + '$', 'i') } });
+
+    if (existingDosageUnit) {
+      return res.status(400).json({ success:false,error: errorMessages[1020], errorCode: 1020  });
+    }
+
     const dosageUnit = new DosageUnitModel(req.body);
     await dosageUnit.save();
     res.status(200).json({ success: true, message: "Dosage unit added successfully", dosageUnit });
@@ -15,6 +23,7 @@ const addDosageUnit = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 const getAllDosageUnits = async (req, res) => {
   try {

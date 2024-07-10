@@ -7,16 +7,12 @@ const { isAuth } = require('../config/auth');
 
 const multerStorage = multer.memoryStorage(); 
 const upload = multer({
-    storage: multerStorage,
-    fileFilter: (req, file, cb) => {
-      if (file.mimetype.startsWith('image')) {
-          console.log("file found")
-        cb(null, true);
-      } else {
-        cb(new Error('Only images are allowed'));
-      }
-    }
-  }).single('certificate'); 
+  storage: multerStorage,
+  fileFilter: (req, file, cb) => {
+    console.log("file found");
+    cb(null, true);
+  }
+}).single('certificate');
 router.post('/addclinic', addClinic);
 router.get('/clinics', getAllClinics);
 

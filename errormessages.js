@@ -17,6 +17,8 @@
     1016:"invalid otp",
     1017:"No receptionist found for this clinic",
     1018:'Receptionist with this mobile number and clinic ID already exists',
+    1019:"Dosage form already exists",
+    1020:"Dosage unit already exists"
 
   }
 
