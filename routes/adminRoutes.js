@@ -7,8 +7,10 @@ const {
   updateAdmin,
   blockAdmin,
   getAdminList,
+  getAdminId,
 } = require("../controller/adminController");
 const { updateMedicineStatus } = require("../controller/medicineController");
+const { isAdmin } = require("../config/adminAuth");
 
 const multerStorage = multer.memoryStorage();
 const upload = multer({
@@ -28,5 +30,6 @@ router.post("/verify_otp", verifyOtp);
 router.put("/updateadmin/:id",upload, updateAdmin);
 router.post('/admin/block/:id',blockAdmin)
 router.get('/admins',getAdminList)
+router.get('/admin',isAdmin,getAdminId)
 
 module.exports = router;

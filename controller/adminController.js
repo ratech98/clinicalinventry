@@ -1,3 +1,5 @@
+const { signAdminToken } = require("../config/adminAuth");
+const { errormesaages } = require("../errormessages");
 const { Admin } = require("../modal/admin");
 const { Storage } = require('@google-cloud/storage');
 
@@ -59,9 +61,10 @@ console.log(admin)
 
     admin.verified = true;
     await admin.save();
+    const token = signAdminToken(admin)
 
 
-    res.status(200).json({success:true, message: "OTP verified successfully",  admin });
+    res.status(200).json({success:true, message: "OTP verified successfully",  admin,token });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -140,5 +143,27 @@ const getAdminList = async (req, res) => {
   }
 };
 
-module.exports = { sendOtp, verifyOtp, updateAdmin, blockAdmin, getAdminList };
+const getAdminId = async (req, res) => {
+  try {
+    
+    const id=req?.admin._id
+     const admin = await Admin.findById(id);
+    if (!admin) {
+      return res.status(404).json({ error:errormesaages[1009],errorcode:1009 });
+    }
+    res.json({ success: true, message: "admin details fetched successfully", admin });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+module.exports = { 
+                   sendOtp, 
+                   verifyOtp, 
+                   updateAdmin, 
+                   blockAdmin, 
+                   getAdminList,
+                   getAdminId
+                   };
 
