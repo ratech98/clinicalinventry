@@ -38,7 +38,7 @@ const dosageUnitSchema = new Schema({
   unit_name: {
     type: String,
     required: true,
-    unique: true,
+    // unique: true,
   }
 
 }, { timestamps: true });
@@ -49,7 +49,7 @@ const dosageFormSchema = new Schema({
   form_name: {
     type: String,
     required: true,
-    unique: true,
+    // unique: true,
   },
  
 }, { timestamps: true });

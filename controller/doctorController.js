@@ -77,6 +77,8 @@ const updateDoctor = async (req, res) => {
         ] = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
       }
     }
+
+  req.body.details=true
     const updateData = { ...req.body, ...uploadedFiles };
 
     const doctors = await doctor.findByIdAndUpdate(req.params.id, updateData, { new: true })
@@ -110,7 +112,9 @@ const verifyDoctorClinic = async (req, res) => {
     if (!doctors) {
       return res.status(404).json({success:false, error:  errormesaages[1002], errorcode: 1002});
     }
-
+    if (doctors.details===true) {
+      return res.status(404).json({success:false, error:  errormesaages[1010], errorcode: 1010});
+    }
     const clinic = doctors.clinics.find(c => c.clinicId.toString() === clinicId);
 
     if (!clinic) {
@@ -128,8 +132,8 @@ const verifyDoctorClinic = async (req, res) => {
 };
 const deleteDoctor = async (req, res) => {
   try {
-    const doctor = await doctor.findByIdAndDelete(req.params.id);
-    if (!doctor) {
+    const doctors = await doctor.findByIdAndDelete(req.params.id);
+    if (!doctors) {
       return res.status(400).json({success:false, error:  errormesaages[1002], errorcode: 1002 });
     }
     res.json({ success: true, message: "Doctor deleted successfully" });

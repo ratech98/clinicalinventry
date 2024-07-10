@@ -54,7 +54,8 @@ const receptionistSchema = new Schema({
   certificate_verify:{
     type:Boolean,
     default:false
-  }
+  },
+  details:{type:Boolean,default:false}
   
 
 }, { timestamps: true });

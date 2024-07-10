@@ -71,7 +71,8 @@ const doctorSchema = new Schema({
   },
   block:{ type: Boolean, default: false },
   block_reason:{type:String,default:null},
-  unblock_reason:{type:String,default:null}
+  unblock_reason:{type:String,default:null},
+  details:{type:Boolean,default:false}
 
 }, { timestamps: true });
 

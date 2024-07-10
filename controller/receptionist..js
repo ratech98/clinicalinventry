@@ -82,6 +82,7 @@ const updateReceptionist = async (req, res) => {
         ] = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
       }
     }
+    req.body.details=true
     const updateData = { ...req.body, ...uploadedFiles };
     const receptionist = await Receptionist.findByIdAndUpdate(req.params.id,updateData, { new: true });
     if (!receptionist) {
@@ -125,6 +126,9 @@ const updateReceptionistVerify = async (req, res) => {
     const receptionist = await Receptionist.findByIdAndUpdate(req.params.id, { verify: req.body.verify }, { new: true });
     if (!receptionist) {
       return res.status(400).json({success:false, error: errormesaages[1004], errorcode: 1004 });
+    }
+    if (receptionist.details===true) {
+      return res.status(404).json({success:false, error:  errormesaages[1011], errorcode: 1011});
     }
     res.status(200).json({ success: true, message: "Receptionist status updated successfully", receptionist });
   } catch (error) {
