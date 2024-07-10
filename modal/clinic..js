@@ -74,7 +74,6 @@ clinicSchema.pre('findOneAndUpdate', async function (next) {
         await client.close();
         console.log('Disconnected from MongoDB Atlas cluster');
 
-        // Update the document with the new dbUri
         update.dbUri = uri;
       } else {
         console.error('clinic_name is undefined or dbUri already exists');

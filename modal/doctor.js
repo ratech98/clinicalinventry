@@ -28,10 +28,10 @@ const doctorSchema = new Schema({
   address: {
     type: String
   },
-  verify: {
-    type: Boolean,
-    default: false
-  },
+  // verify: {
+  //   type: Boolean,
+  //   default: false
+  // },
   clinics: {
     type: [clinicSubSchema],
     default: []
