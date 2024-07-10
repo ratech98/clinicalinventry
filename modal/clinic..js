@@ -25,6 +25,20 @@ const clinicSchema = new mongoose.Schema({
   unblock_reason: { type: String, default: null }
 }, { timestamps: true });
 
+// Function to ensure indexes for the collections
+async function ensureIndexes(db) {
+  try {
+    await db.collection('patients').createIndex({ name: 1 }, { unique: true });
+    await db.collection('medicines').createIndex({ name: 1 }, { unique: true });
+    await db.collection('dosageforms').createIndex({ form: 1 }, { unique: true });
+    await db.collection('dosageunits').createIndex({ unit: 1 }, { unique: true });
+    console.log('Indexes ensured');
+  } catch (error) {
+    console.error('Error ensuring indexes:', error);
+    throw error;
+  }
+}
+
 // Middleware to handle creation of DB and collections when adminVerified changes to true
 clinicSchema.pre('findOneAndUpdate', async function (next) {
   try {
