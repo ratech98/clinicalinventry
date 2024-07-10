@@ -42,7 +42,7 @@ const getClinicDetailsByreceptionistId = async (req, res) => {
   try {
     const receptionist = await Receptionist.findById(req.body.id).populate('clinic');
     if (!receptionist) {
-      return res.status(404).json({success:false, error: 'Receptionist not found' });
+      return res.status(404).json({success:false,message: errormesaages[1004], errorcode: 1004 });
     }
 
     const clinic = receptionist.clinic;
@@ -127,8 +127,12 @@ const updateReceptionistVerify = async (req, res) => {
     if (!receptionist) {
       return res.status(400).json({success:false, error: errormesaages[1004], errorcode: 1004 });
     }
-    if (receptionist.details===true) {
+    
+    if (receptionist.details!==true) {
       return res.status(404).json({success:false, error:  errormesaages[1011], errorcode: 1011});
+    }
+    if (receptionist.certificate_verify!==true) {
+      return res.status(404).json({success:false, error:  errormesaages[1012], errorcode: 1012});
     }
     res.status(200).json({ success: true, message: "Receptionist status updated successfully", receptionist });
   } catch (error) {
@@ -145,7 +149,7 @@ const sendReceptionistOtpForLogin = async (req, res) => {
 
   try {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+      return res.status(400).json({ success: false, message: errormesaages[1008], errorcode: 1008 });
     }
 
 
@@ -155,19 +159,19 @@ const sendReceptionistOtpForLogin = async (req, res) => {
     );
 
     if (!receptionist) {
-      return res.status(404).json({ success: false, message: 'Receptionist not found' });
+      return res.status(404).json({ success: false, message: errormesaages[1004], errorcode: 1004 });
     }
 
-    if (!receptionist.otpVerified) {
-      return res.status(400).json({ success: false, message: 'Your mobile number is not verified' });
-    }
-    if(!receptionist.verify){
-      return res.status(400).json({ success: false, message: 'you are not verified by admin,contact admin' });
+    // if (!receptionist.otpVerified) {
+    //   return res.status(400).json({ success: false, message: 'Your mobile number is not verified' });
+    // }
+    // if(!receptionist.verify){
+    //   return res.status(400).json({ success: false, message: 'you are not verified by admin,contact admin' });
     
-    }
-    if (receptionist.block) {
-      return res.status(400).json({ success: false, message: 'You are blocked by admin, contact admin' });
-    }
+    // }
+    // if (receptionist.block) {
+    //   return res.status(400).json({ success: false, message: 'You are blocked by admin, contact admin' });
+    // }
 
     await receptionist.save();
 
@@ -187,11 +191,11 @@ const sendReceptionistOtp = async (req, res) => {
 
   try {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+      return res.status(400).json({ success: false,message: errormesaages[1008], errorcode: 1008 });
     }
     const existingReceptionist = await Receptionist.findOne({ mobile_number, clinic: clinicId });
     if (existingReceptionist) {
-      return res.status(400).json({ success: false, message: 'Receptionist with this mobile number and clinic ID already exists' });
+      return res.status(400).json({ success: false, message: errormesaages[1018], errorcode: 1018 });
     }
 
     const receptionist = await Receptionist.findOneAndUpdate(
@@ -216,20 +220,20 @@ const verifyReceptionistOtp = async (req, res) => {
 
   try {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+      return res.status(400).json({ success: false, message: errormesaages[1008], errorcode: 1008  });
     }
     if(!otp||otp===""){
-      return res.status(400).json({ success: false, message: 'otp is required and cannot be empty' });
+      return res.status(400).json({ success: false,message: errormesaages[1015], errorcode: 1015 });
 
     }
     const receptionist = await Receptionist.findOne({ mobile_number });
 
     if (!receptionist) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ success: false,message: errormesaages[1004], errorcode: 1004 });
     }
 
     if (otp !== receptionist.otp) {
-      return res.status(400).json({ error: 'Invalid OTP' });
+      return res.status(400).json({message: errormesaages[1016], errorcode: 1016  });
     }
 
     receptionist.otpVerified = true;
@@ -270,7 +274,7 @@ const getReceptionistsByClinic = async (req, res) => {
       .populate('clinic');
 
     if (!receptionists.length) {
-      return res.status(404).json({success:true, message: 'No receptionists found for this clinic' });
+      return res.status(404).json({success:true,message: errormesaages[1017], errorcode: 1017});
     }
 
     res.status(200).json({
@@ -305,7 +309,7 @@ const blockOrUnblockReceptionist = async (req, res) => {
     }
 
     if (!receptionist) {
-      return res.status(404).json({ error: 'Receptionist not found' });
+      return res.status(404).json({  success: false,message: errormesaages[1004], errorcode: 1004 });
     }
 
     const action = block ? 'blocked' : 'unblocked';
@@ -331,7 +335,7 @@ const verify_receptionist_certificate=async (req, res) => {
     );
 
     if (!receptionist) {
-      return res.status(404).json({success:false, message: 'Receptionist not found' });
+      return res.status(404).json({success: false,message: errormesaages[1004], errorcode: 1004 });
     }
 
     res.status(200).json({success:true, message: 'Certificate verified', receptionist });

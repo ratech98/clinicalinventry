@@ -9,7 +9,14 @@
     1008:"mobile number required and cannot be empty",
     1009:"admin not found",
     1010:"doctor details not updated properly",
-    1011:"receptionist details not updated properly"
+    1011:"receptionist details not updated properly",
+    1012:"certificate not verified",
+    1013:"Clinic not found for this doctor",
+    1014:'Doctor with this mobile number and clinic ID already exists',
+    1015: 'otp is required and cannot be empty',
+    1016:"invalid otp",
+    1017:"No receptionist found for this clinic",
+    1018:'Receptionist with this mobile number and clinic ID already exists',
 
   }
 

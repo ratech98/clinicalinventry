@@ -112,13 +112,17 @@ const verifyDoctorClinic = async (req, res) => {
     if (!doctors) {
       return res.status(404).json({success:false, error:  errormesaages[1002], errorcode: 1002});
     }
-    if (doctors.details===true) {
+    
+    if (doctors.details!==true) {
       return res.status(404).json({success:false, error:  errormesaages[1010], errorcode: 1010});
+    }
+    if (doctors.postgraduate_certificate_verify!==true||doctors.undergraduate_certificate_verify!==true) {
+      return res.status(404).json({success:false, error:  errormesaages[1012], errorcode: 1012});
     }
     const clinic = doctors.clinics.find(c => c.clinicId.toString() === clinicId);
 
     if (!clinic) {
-      return res.status(404).json({success:false, error: 'Clinic not found for this doctor' });
+      return res.status(404).json({success:false, error:errormesaages[1013], errorcode: 1013 });
     }
 
     clinic.verified = verify;
@@ -172,12 +176,12 @@ const addDoctorAvailability = async (req, res) => {
   try {
     const doctors = await doctor.findById(doctorId);
     if (!doctors) {
-      return res.status(404).json({success:false, error: 'Doctor not found' });
+      return res.status(404).json({success:false, error:  errormesaages[1002], errorcode: 1002 });
     }
 
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
-      return res.status(404).json({success:false, error: 'Clinic not found' });
+      return res.status(404).json({success:false, error:  errormesaages[1001], errorcode: 1001 });
     }
 
     const nextOccurrences = calculateNextOccurrences(days);
@@ -361,7 +365,7 @@ const sendDoctorOtp = async (req, res) => {
     if (doctorData) {
       const clinicExists = doctorData.clinics.some(c => c.clinicId.toString() === clinicId);
       if (clinicExists) {
-        return res.status(400).json({ success: false, message: 'Doctor with this mobile number and clinic ID already exists' });
+        return res.status(400).json({ success: false,  message: errormesaages[1014], errorcode: 1014 });
       }
     } else {
       doctorData = new doctor({ mobile_number, clinics: [] });
@@ -388,20 +392,20 @@ const verifyDoctorOtp = async (req, res) => {
 
   try {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+      return res.status(400).json({ success: false,  message: errormesaages[1008], errorcode: 1008 });
     }
     if(!otp||otp===""){
-      return res.status(400).json({ success: false, message: 'otp is required and cannot be empty' });
+      return res.status(400).json({ success: false, message: errormesaages[1015], errorcode: 1015 });
 
     }
     const doctorData = await doctor.findOne({ mobile_number });
 
     if (!doctorData) {
-      return res.status(404).json({success:false, error: 'Doctor not found' });
+      return res.status(404).json({success:false,  message: errormesaages[1002], errorcode: 1002 });
     }
 
     if (otp !== doctorData.otp) {
-      return res.status(400).json({ success:false,error: 'Invalid OTP' });
+      return res.status(400).json({ success:false,message: errormesaages[1016], errorcode: 1016 });
     }
 
     doctorData.otpVerified = true;
