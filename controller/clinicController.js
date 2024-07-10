@@ -165,9 +165,12 @@ const verify_clinic_certificate=async (req, res) => {
 const getDoctorsAndAvailabilityByClinic = async (req, res) => {
   try {
     const { id } = req.params;
-    const { specialist, recently_joined, onleave, page = 1, limit = 10,verify } = req.query;
-    const today = new Date().toISOString().split('T')[0];
+    const { specialist, recently_joined, onleave, page = 1, limit = 10, verify } = req.query;
 
+    // Get today's date in UTC format (YYYY-MM-DD)
+    const todayUTC = new Date().toISOString().split('T')[0]; // Outputs 'YYYY-MM-DD'
+console.log( new Date(todayUTC))
+    // Query for fetching doctors
     const doctorQuery = { 'clinics.clinicId': id };
     if (specialist) {
       doctorQuery.specialist = specialist;
@@ -175,35 +178,40 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     if (recently_joined) {
       doctorQuery["clinics.verified"] = false;
     }
-    if(verify){
-      doctorQuery["clinics.verified"]=true
+    if (verify) {
+      doctorQuery["clinics.verified"] = true;
     }
 
+    // Fetch total count of doctors matching the query
     const totalDoctors = await doctor.countDocuments(doctorQuery);
     const totalPages = Math.ceil(totalDoctors / limit);
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
+    // Fetch doctors based on query criteria
     const doctors = await doctor.find(doctorQuery)
       .limit(limit)
       .skip(startIndex);
 
     if (!doctors.length) {
-      return res.status(404).json({success:false, error: 'No doctors found for this clinic' });
+      return res.status(404).json({ success: false, error: 'No doctors found for this clinic' });
     }
 
+    // Fetch availability for each doctor
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
-      const availability = await Availability.findOne({
+      const availabilityDoc = await Availability.findOne({
         doctorId: doctor._id,
-        'availabilities.date': today,
+        'availabilities.date': { $lte: new Date(todayUTC) }, // Compare with today's UTC date
         clinicId: id
       });
-
+console.log(availabilityDoc)
       let availabilityStatus = 'unavailable';
-      if (availability) {
-        const todayAvailability = availability.availabilities.find(avail => avail.date.toISOString().split('T')[0] === today);
+      if (availabilityDoc) {
+        const todayAvailability = availabilityDoc.availabilities.find(avail => avail.date.toISOString().split('T')[0] === todayUTC);
         if (todayAvailability) {
-          availabilityStatus = 'available';
+          // Check if any slot for today is available
+          const availableSlots = todayAvailability.slots.some(slot => slot.available);
+          availabilityStatus = availableSlots ? 'available' : 'unavailable';
         }
       }
 
@@ -213,16 +221,20 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
       };
     });
 
+    // Resolve all availability promises
     const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
 
+    // Filter doctors based on 'onleave' query parameter
     let filteredDoctorAvailability = doctorAvailability;
     if (onleave) {
       filteredDoctorAvailability = doctorAvailability.filter(doc => doc.availability === 'unavailable');
     }
 
+    // Calculate counts of available and unavailable doctors
     const availableDoctorsCount = filteredDoctorAvailability.filter(doc => doc.availability === 'available').length;
     const unavailableDoctorsCount = filteredDoctorAvailability.filter(doc => doc.availability === 'unavailable').length;
 
+    // Respond with the fetched data
     res.status(200).json({
       success: true,
       message: 'Doctors fetched successfully',
@@ -237,13 +249,15 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
       endIndex: endIndex > totalDoctors ? totalDoctors : endIndex,
       currentPage: parseInt(page),
       doctorAvailability: filteredDoctorAvailability,
-      
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+
+
 
 
 

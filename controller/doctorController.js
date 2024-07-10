@@ -169,6 +169,13 @@ const addClinicToDoctor = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+function formatDate(date) {
+  const year = date.getFullYear();
+  let month = (1 + date.getMonth()).toString().padStart(2, '0');
+  let day = date.getDate().toString().padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
 
 const addDoctorAvailability = async (req, res) => {
   const { doctorId, clinicId, days, slots } = req.body;
@@ -176,18 +183,18 @@ const addDoctorAvailability = async (req, res) => {
   try {
     const doctors = await doctor.findById(doctorId);
     if (!doctors) {
-      return res.status(404).json({success:false, error:  errormesaages[1002], errorcode: 1002 });
+      return res.status(404).json({ success: false, error: "Doctor not found" });
     }
 
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
-      return res.status(404).json({success:false, error:  errormesaages[1001], errorcode: 1001 });
+      return res.status(404).json({ success: false, error: "Clinic not found" });
     }
 
     const nextOccurrences = calculateNextOccurrences(days);
 
     const availabilities = nextOccurrences.map(date => ({
-      date,
+      date: formatDate(date), // Format date as YYYY-MM-DD
       day: getDayOfWeek(date),
       slots: slots.map(slot => ({ timeSlot: slot, available: true }))
     }));
@@ -195,14 +202,11 @@ const addDoctorAvailability = async (req, res) => {
     for (const availability of availabilities) {
       const existingAvailability = await Availability.findOne({
         doctorId,
-       'availabilities.day':{$in:days},
+        'availabilities.date': availability.date,
         'availabilities.slots.timeSlot': { $in: slots }
       });
-// console.log(existingAvailability)
       if (existingAvailability) {
-        return res.status(400).json({success:false,
-          error: `Doctor already has availability on ${availability.date} for one of the provided slots`
-        });
+        return res.status(400).json({ success: false, error: `Doctor already has availability on ${availability.date} for one of the provided slots` });
       }
     }
 
@@ -222,6 +226,8 @@ const addDoctorAvailability = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
 
 
 
@@ -267,13 +273,13 @@ const updateDoctorAvailabilitty = async (req, res) => {
   try {
     const availability = await Availability.findById(availabilityId);
     if (!availability) {
-      return res.status(404).json({success:false,error: errormesaages[1007], errorcode: 100 });
+      return res.status(404).json({ success: false, error: "Availability not found" });
     }
 
     const nextOccurrences = calculateNextOccurrences(days);
 
     const newAvailabilities = nextOccurrences.map(date => ({
-      date,
+      date: formatDate(date), // Format date as YYYY-MM-DD
       day: getDayOfWeek(date),
       slots: slots.map(slot => ({ timeSlot: slot, available: true }))
     }));
@@ -282,10 +288,11 @@ const updateDoctorAvailabilitty = async (req, res) => {
       const existingAvailability = await Availability.findOne({
         _id: { $ne: availabilityId },
         doctorId,
+        'availabilities.date': newAvailability.date,
         'availabilities.slots.timeSlot': { $in: slots }
       });
       if (existingAvailability) {
-        return res.status(400).json({success:false, error: `Doctor has overlapping availability on ${newAvailability.date}` });
+        return res.status(400).json({ success: false, error: `Doctor has overlapping availability on ${newAvailability.date}` });
       }
     }
 
