@@ -32,7 +32,7 @@ const getAllClinics = async (req, res) => {
 
     const filter = { };
 if(adminVerified){
-  filter.adminVerified=true
+  filter.adminVerified=adminVerified
 }
     const totalClinics = await Clinic.countDocuments(filter);
     const totalPages = Math.ceil(totalClinics / limit);
