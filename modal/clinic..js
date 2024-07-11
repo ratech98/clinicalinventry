@@ -3,6 +3,7 @@ const { MongoClient } = require('mongodb');
 const Receptionist = require('../modal/receptionist'); // Adjust path if needed
 const Patient = require('../modal/patient'); // Adjust path if needed
 const Medicine = require('../modal/medicine'); // Adjust path if needed
+const Template = require('./prescriptiontemplate');
 
 const clinicSchema = new mongoose.Schema({
   clinic_name: { type: String}, 
@@ -83,6 +84,37 @@ clinicSchema.pre('findOneAndUpdate', async function (next) {
     next();
   } catch (error) {
     console.error('Error in pre-update hook:', error);
+    next(error);
+  }
+});
+
+clinicSchema.pre('save', async function(next) {
+  try {
+    if (this.isNew) {
+      const clinicId = this._id;
+      const defaultFields = [
+        { name: "Clinic Name", section: "clinicDetails" },
+        { name: "Contact number", section: "clinicDetails" },
+        { name: "Address", section: "clinicDetails" },
+        { name: "GST No", section: "clinicDetails" },
+        { name: "Doctor Name", section: "doctorDetails" },
+        { name: "Speciality", section: "doctorDetails" },
+        { name: "Degree", section: "doctorDetails" },
+        { name: "Work", section: "doctorDetails" }
+      ];
+
+      const template = new Template({
+        clinic_id: clinicId,
+        dynamicFields: defaultFields
+      });
+
+      await template.save();
+      console.log('Default template fields created');
+    }
+
+    next();
+  } catch (error) {
+    console.error('Error in pre-save hook:', error);
     next(error);
   }
 });
