@@ -93,14 +93,14 @@ clinicSchema.pre('save', async function(next) {
     if (this.isNew) {
       const clinicId = this._id;
       const defaultFields = [
-        { name: "Clinic Name", section: "clinicDetails" },
-        { name: "Contact number", section: "clinicDetails" },
-        { name: "Address", section: "clinicDetails" },
+        { name: "Clinic Name", section: "clinicDetails", value:""},
+        { name: "Contact number", section: "clinicDetails", value:"" },
+        { name: "Address", section: "clinicDetails", value:"" },
         { name: "GST No", section: "clinicDetails" },
-        { name: "Doctor Name", section: "doctorDetails" },
-        { name: "Speciality", section: "doctorDetails" },
-        { name: "Degree", section: "doctorDetails" },
-        { name: "Work", section: "doctorDetails" }
+        { name: "Doctor Name", section: "doctorDetails", value:"" },
+        { name: "Speciality", section: "doctorDetails", value:"" },
+        { name: "Degree", section: "doctorDetails", value:"" },
+        { name: "Work", section: "doctorDetails", value:"" }
       ];
 
       const template = new Template({
