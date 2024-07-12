@@ -2,11 +2,11 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const defaultStyles = {
-  font: 'Arial',
+  font: 'Sansserif',
   size: '12px',
   color: '#000000',
   align: 'left',
-  font_weight: 'Bold'
+  font_weight: '400'
 };
 
 const fieldSchema = new Schema({
