@@ -12,7 +12,7 @@ const defaultStyles = {
 const fieldSchema = new Schema({
   section:{type:String,required:true},
   name: { type: String, required: true },
-  value: { type: String, required: true },
+  value: { type: String },
   styles: {
     type: {
       font: { type: String, default: defaultStyles.font },
