@@ -77,16 +77,19 @@ const updateAdmin = async (req, res) => {
 
   try {
 
+    const admin = await Admin.findById(id);
+    if (!admin) {
+      return res.status(404).json({success:false, error: "Admin not found" });
+    }
+if(req.file){
     const originalFilename = req.file.originalname;
       const sanitizedFilename = originalFilename.replace(/[^a-zA-Z0-9.]/g, '_');
       const imagePath = `admin_images/${Date.now()}_${sanitizedFilename}`;
       await gcsStorage.bucket(bucketName).file(imagePath).save(req.file.buffer);
-    const admin = await Admin.findById(id);
+      admin.image= `https://storage.cloud.google.com/${bucketName}/${imagePath}`
 
-    if (!admin) {
-      return res.status(404).json({success:false, error: "Admin not found" });
-    }
 
+}
     admin.name = name || admin.name;
     admin.address = address || admin.address;
     admin.country = country || admin.country;
@@ -95,7 +98,6 @@ const updateAdmin = async (req, res) => {
     admin.phone = phone || admin.phone;
    
     admin.role = role || admin.role;
-    admin.image= `https://storage.cloud.google.com/${bucketName}/${imagePath}`,
 
 
     await admin.save();
