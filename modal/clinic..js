@@ -23,7 +23,11 @@ const clinicSchema = new mongoose.Schema({
   dbUri: { type: String },
   block: { type: Boolean, default: false },
   block_reason: { type: String, default: null },
-  unblock_reason: { type: String, default: null }
+  unblock_reason: { type: String, default: null },
+  subscription:{type:Boolean,default:false},
+  subscription_startdate:{type:String},
+  subscription_enddate:{type:String},
+
 }, { timestamps: true });
 
 async function ensureIndexes(db) {

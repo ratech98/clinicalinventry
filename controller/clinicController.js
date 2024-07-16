@@ -4,6 +4,8 @@ const Clinic = require("../modal/clinic.");
 const doctor = require("../modal/doctor");
 const { Storage } = require("@google-cloud/storage");
 const Template = require("../modal/prescriptiontemplate");
+const moment = require('moment');
+
 
 require("dotenv").config();
 const bucketName = process.env.bucketName;
@@ -291,6 +293,54 @@ const blockOrUnblockClinic = async (req, res) => {
   }
 };
 
+
+const update_Subscription=async (req, res) => {
+  try {
+    const { subscription, subscription_startdate, subscription_enddate } = req.body;
+    const clinicId = req.params.id;
+
+    const clinic = await Clinic.findById(clinicId);
+    if (!clinic) {
+      return res.status(404).send('Clinic not found');
+    }
+
+    clinic.subscription = subscription;
+    clinic.subscription_startdate = subscription_startdate
+    clinic.subscription_enddate = subscription_enddate
+
+    await clinic.save();
+
+    res.status(200).send({success:true,message:'Subscription details updated successfully',clinic});
+  } catch (error) {
+    console.error('Error updating subscription details:', error);
+    res.status(500).send({success:false,error:error});
+  }
+}
+
+const getsubscriptiondays=async (req, res) => {
+  try {
+    const clinicId = req.params.id;
+
+    const clinic = await Clinic.findById(clinicId);
+    if (!clinic) {
+      return res.status(404).send('Clinic not found');
+    }
+
+    if (!clinic.subscription_enddate) {
+      return res.status(400).send('Subscription end date is not set');
+    }
+
+    const currentDate = moment();
+    const endDate = moment(clinic.subscription_enddate);
+    const remainingDays = endDate.diff(currentDate, 'days');
+
+    res.status(200).json({ remainingDays });
+  } catch (error) {
+    console.error('Error calculating remaining days:', error);
+    res.status(500).send({success:false,error:error});
+  }
+}
+
 module.exports = { addClinic,
                    getAllClinics, 
                    getClinicById, 
@@ -300,5 +350,7 @@ module.exports = { addClinic,
                    getDoctorsAndAvailabilityByClinic,
                    blockOrUnblockClinic,
                    verify_clinic_certificate,
-                   getClinicId
+                   getClinicId,
+                   update_Subscription,
+                   getsubscriptiondays
                   };
