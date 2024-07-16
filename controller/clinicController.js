@@ -94,23 +94,39 @@ const getClinicId = async (req, res) => {
 
 const updateClinic = async (req, res) => {
   try {
-if(req.file){
-    const originalFilename = req.file.originalname;
-    const sanitizedFilename = originalFilename.replace(/[^a-zA-Z0-9.]/g, '_');
-    const imagePath = `clinic_certificates/${Date.now()}_${sanitizedFilename}`;
-    await gcsStorage.bucket(bucketName).file(imagePath).save(req.file.buffer);
-   req.body.certificate=`https://storage.googleapis.com/${bucketName}/${imagePath}`
-}
-    const clinic = await Clinic.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!clinic) {
-      return res.status(400).json({ error:errormesaages[1001],errorcode:1001  });
+    let updateData = { ...req.body }; // Initialize updateData with req.body
+
+    if (req.files) {
+      const files = req.files;
+      const uploadedFiles = {};
+
+      for (const fieldName in files) {
+        if (Object.hasOwnProperty.call(files, fieldName)) {
+          const file = files[fieldName][0];
+          const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
+          const imagePath = `docter_certificates/${Date.now()}_${sanitizedFilename}`;
+
+          await gcsStorage.bucket(bucketName).file(imagePath).save(file.buffer);
+          uploadedFiles[fieldName] = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
+        }
+      }
+
+      updateData = { ...updateData, ...uploadedFiles };
     }
+
+    const clinic = await Clinic.findByIdAndUpdate(req.params.id, updateData, { new: true });
+
+    if (!clinic) {
+      return res.status(400).json({ error: "Clinic not found" });
+    }
+
     res.status(200).json({ success: true, message: "Clinic updated successfully", clinic });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 const deleteClinic = async (req, res) => {
   try {
@@ -167,10 +183,8 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     const { id } = req.params;
     const { specialist, recently_joined, onleave, page = 1, limit = 10, verify } = req.query;
 
-    // Get today's date in UTC format (YYYY-MM-DD)
     const todayUTC = new Date().toISOString().split('T')[0]; // Outputs 'YYYY-MM-DD'
 console.log( new Date(todayUTC))
-    // Query for fetching doctors
     const doctorQuery = { 'clinics.clinicId': id };
     if (specialist) {
       doctorQuery.specialist = specialist;
@@ -182,13 +196,11 @@ console.log( new Date(todayUTC))
       doctorQuery["clinics.verified"] = true;
     }
 
-    // Fetch total count of doctors matching the query
     const totalDoctors = await doctor.countDocuments(doctorQuery);
     const totalPages = Math.ceil(totalDoctors / limit);
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    // Fetch doctors based on query criteria
     const doctors = await doctor.find(doctorQuery)
       .limit(limit)
       .skip(startIndex);
@@ -197,11 +209,10 @@ console.log( new Date(todayUTC))
       return res.status(404).json({ success: false, error: 'No doctors found for this clinic' });
     }
 
-    // Fetch availability for each doctor
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
       const availabilityDoc = await Availability.findOne({
         doctorId: doctor._id,
-        'availabilities.date': { $lte: new Date(todayUTC) }, // Compare with today's UTC date
+        'availabilities.date': { $lte: new Date(todayUTC) },
         clinicId: id
       });
 console.log(availabilityDoc)
@@ -209,7 +220,6 @@ console.log(availabilityDoc)
       if (availabilityDoc) {
         const todayAvailability = availabilityDoc.availabilities.find(avail => avail.date.toISOString().split('T')[0] === todayUTC);
         if (todayAvailability) {
-          // Check if any slot for today is available
           const availableSlots = todayAvailability.slots.some(slot => slot.available);
           availabilityStatus = availableSlots ? 'available' : 'unavailable';
         }
@@ -221,20 +231,16 @@ console.log(availabilityDoc)
       };
     });
 
-    // Resolve all availability promises
     const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
 
-    // Filter doctors based on 'onleave' query parameter
     let filteredDoctorAvailability = doctorAvailability;
     if (onleave) {
       filteredDoctorAvailability = doctorAvailability.filter(doc => doc.availability === 'unavailable');
     }
 
-    // Calculate counts of available and unavailable doctors
     const availableDoctorsCount = filteredDoctorAvailability.filter(doc => doc.availability === 'available').length;
     const unavailableDoctorsCount = filteredDoctorAvailability.filter(doc => doc.availability === 'unavailable').length;
 
-    // Respond with the fetched data
     res.status(200).json({
       success: true,
       message: 'Doctors fetched successfully',

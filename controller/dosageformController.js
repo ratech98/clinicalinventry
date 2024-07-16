@@ -27,15 +27,36 @@ const addDosageForm = async (req, res) => {
 const getAllDosageForms = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
-    
+    const { page = 1, limit = 10 } = req.query; // Default page 1, limit 10
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+
     const DosageFormModel = tenantDBConnection.model('DosageForm', DosageForm.schema);
-    const dosageForms = await DosageFormModel.find();
-    res.json({ success: true, message: "Dosage forms fetched successfully", dosageForms });
+    
+    const totalCount = await DosageFormModel.countDocuments();
+    const totalPages = Math.ceil(totalCount / limitNum);
+
+    const skip = (pageNum - 1) * limitNum;
+    const dosageForms = await DosageFormModel.find().skip(skip).limit(limitNum);
+
+    res.json({
+      success: true,
+      message: "Dosage forms fetched successfully",
+      dosageForms,
+      totalCount,
+      page: pageNum,
+      limit: limitNum,
+      totalPages,
+      startIndex: skip + 1,
+      endIndex: skip + dosageForms.length,
+      currentPage: pageNum
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 const getDosageFormById = async (req, res) => {
   try {

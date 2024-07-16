@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-// Medicine schema
 const medicineSchema = new Schema({
   name: { type: String, required: true },
   dosage: { type: String },
@@ -14,7 +13,6 @@ const medicineSchema = new Schema({
   }
 });
 
-// Prescription schema
 const prescriptionSchema = new Schema({
   provisional_diagnosis: { type: String },
   advice: { type: String },
@@ -24,7 +22,6 @@ const prescriptionSchema = new Schema({
   investigation_with_reports: { type: String }
 });
 
-// Appointment schema
 const appointmentSchema = new Schema({
   appointment_date: { type: String },
   time: { type: String },
@@ -48,7 +45,6 @@ const diagnoseReportSchema = new Schema({
   diagnose_report:{ type: String }
 });
 
-// Patient schema
 const patientSchema = new Schema({
   name: { type: String, required: false },
   mobile_number: { type: String },
@@ -60,6 +56,7 @@ const patientSchema = new Schema({
   otp: { type: String },
   otpVerified: { type: Boolean, default: false },
   diagnose_reports: [diagnoseReportSchema],
+  bond:{type:String, default:"myself"}
 
 }, { timestamps: true });
 

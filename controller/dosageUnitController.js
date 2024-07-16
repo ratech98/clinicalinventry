@@ -24,14 +24,33 @@ const addDosageUnit = async (req, res) => {
   }
 };
 
-
 const getAllDosageUnits = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
-    
+    const { page = 1, limit = 10 } = req.query; 
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+
     const DosageUnitModel = tenantDBConnection.model('DosageUnit', DosageUnit.schema);
-    const dosageUnits = await DosageUnitModel.find();
-    res.json({ success: true, message: "Dosage units fetched successfully", dosageUnits });
+    
+    const totalCount = await DosageUnitModel.countDocuments();
+    const totalPages = Math.ceil(totalCount / limitNum);
+
+    const skip = (pageNum - 1) * limitNum;
+    const dosageUnits = await DosageUnitModel.find().skip(skip).limit(limitNum);
+
+    res.json({
+      success: true,
+      message: "Dosage units fetched successfully",
+      dosageUnits,
+      totalCount,
+      page: pageNum,
+      limit: limitNum,
+      totalPages,
+      startIndex: skip + 1,
+      endIndex: skip + dosageUnits.length,
+      currentPage: pageNum
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
