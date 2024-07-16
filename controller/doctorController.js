@@ -92,15 +92,34 @@ const updateDoctor = async (req, res) => {
   }
 };
 const updateDoctorAvailability = async (req, res) => {
+  const { doctorId, clinicId, date, timeSlot, available } = req.body;
   try {
-    const doctors = await doctor.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('clinic');
-    if (!doctors) {
-      return res.status(400).json({success:false, error: errormesaages[1002], errorcode: 1002 });
+    const availability = await Availability.findOne({ doctorId, clinicId });
+
+    if (!availability) {
+      return res.status(404).json({ success: false, error: errormesaages[1007], errorcode: 1007 });
     }
-    res.status(200).json({ success: true, message: "Doctor updated successfully", doctors });
+
+    const availabilityDate = availability.availabilities.find(a => a.date.toISOString().split('T')[0] === new Date(date).toISOString().split('T')[0]);
+
+    if (!availabilityDate) {
+      return res.status(404).json({ success: false, error: errormesaages[1023], errorcode: 1023 });
+    }
+
+    const slot = availabilityDate.slots.find(s => s.timeSlot === timeSlot);
+
+    if (!slot) {
+      return res.status(404).json({ success: false, error: errormesaages[1024], errorcode: 1024 });
+    }
+
+    slot.available = available;
+
+    await availability.save();
+
+    res.status(200).json({ success: true, message: 'Availability updated successfully', availability });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 const verifyDoctorClinic = async (req, res) => {

@@ -1,5 +1,5 @@
 const express = require('express');
-const { addPatient, getAllPatients, getPatientById, updatePatient, deletePatient, getPatients, sendPatientOtp, verifyPatientOtp, updateAppointmentWithPrescription, getPrescription, todayappointment, addAppointmentWithToken, addFollowUpAppointment, getPatientsWithTodayAppointments, upload_diagnose_report, get_diagnose_report } = require('../controller/patientController');
+const { addPatient, getAllPatients, getPatientById, updatePatient, deletePatient, getPatients, sendPatientOtp, verifyPatientOtp, updateAppointmentWithPrescription, getPrescription, todayappointment, addAppointmentWithToken, addFollowUpAppointment, getPatientsWithTodayAppointments, upload_diagnose_report, get_diagnose_report, getFollowUpList } = require('../controller/patientController');
 const { isAuth } = require('../config/auth');
 const { connectTenantDB } = require('../config/db');
 const { sendDoctorOtp } = require('../controller/doctorController');
@@ -32,6 +32,8 @@ router.get('/patients/today', isAuth,connectTenantDB,getPatientsWithTodayAppoint
 router.post('/upload_diagnose_report/:patientId',isAuth,connectTenantDB, upload,upload_diagnose_report );
 // Route to get diagnose reports for a specific patient
 router.get('/diagnose_reports/:patientId',isAuth,connectTenantDB,get_diagnose_report );
+
+router.get('/followuplist',isAuth,connectTenantDB,getFollowUpList)
   
 
 module.exports=router

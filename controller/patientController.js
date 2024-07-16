@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Patient = require('../modal/patient');
 const { Storage } = require("@google-cloud/storage");
+const { errormesaages } = require('../errormessages');
 
 require("dotenv").config();
 const bucketName = process.env.bucketName;
@@ -102,7 +103,7 @@ const getPatientById = async (req, res) => {
       model: mainDBConnection.model('doctor')
     });
     if (!patient) {
-      return res.status(404).json({success:false, error: "Patient not found", errorcode: 1005 });
+      return res.status(404).json({success:false, error:  errormesaages[1021], errorcode: 1005 });
     }
     const totalVisits = patient.appointment_history.length;
     res.json({
@@ -129,7 +130,7 @@ const updatePatient = async (req, res) => {
     const patient = await PatientModel.findByIdAndUpdate(id, req.body, { new: true });
 
     if (!patient) {
-      return res.status(404).json({success:false, error: "Patient not found", errorcode: 1005 });
+      return res.status(404).json({success:false, error: errormesaages[1021], errorcode: 1021 });
     }
     
     res.status(200).json({ success: true, message: "Patient updated successfully", patient });
@@ -146,7 +147,7 @@ const deletePatient = async (req, res) => {
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const patient = await PatientModel.findByIdAndDelete(req.params.id);
     if (!patient) {
-      return res.status(400).json({success:false, error: "Patient not found", errorcode: 1005 });
+      return res.status(400).json({success:false, error: errormesaages[1021], errorcode: 1021 });
     }
     res.json({ success: true, message: "Patient deleted successfully" });
   } catch (error) {
@@ -188,10 +189,10 @@ const verifyPatientOtp = async (req, res) => {
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const patient = await PatientModel.findOne({ mobile_number });
     if (!patient) {
-      return res.status(404).json({success:false, error: 'User not found' });
+      return res.status(404).json({success:false, error: errormesaages[1021] ,errorcode:1021});
     }
     if (otp !== patient.otp) {
-      return res.status(400).json({success:false, error: 'Invalid OTP' });
+      return res.status(400).json({success:false, error:  errormesaages[1016],errorcode:1016 });
     }
     patient.otpVerified = true;
     await patient.save();
@@ -322,19 +323,19 @@ const addAppointmentWithToken = async (req, res) => {
 const addFollowUpAppointment = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
-    const { patientId, previousAppointmentId, appointment_date, time, reason, doctorId, temp, Bp } = req.body;
+    const { patientId, previousAppointmentId, appointment_date, time, reason, doctorId } = req.body;
 
     const PatientModel = tenantDBConnection.model('Patient',Patient.schema);
     const patient = await PatientModel.findById(patientId);
 
     if (!patient) {
-      return res.status(404).json({success:false, error: "Patient not found", errorcode: 1005 });
+      return res.status(404).json({success:false, error:  errormesaages[1021], errorcode: 1021 });
     }
 
     const previousAppointment = patient.appointment_history.id(previousAppointmentId);
 
     if (!previousAppointment) {
-      return res.status(404).json({ error: "Previous appointment not found", errorcode: 1006 });
+      return res.status(404).json({ error:  errormesaages[1022], errorcode: 1022 });
     }
 
     const tokenCount = patient.appointment_history.filter(a => a.appointment_date === appointment_date).length;
@@ -347,8 +348,7 @@ const addFollowUpAppointment = async (req, res) => {
       doctor: doctorId,
       token_number: newTokenNumber,
       follow_up_from: previousAppointmentId,
-      temp,
-      Bp
+      
     };
 
     patient.appointment_history.push(newAppointment);
@@ -414,7 +414,7 @@ const upload_diagnose_report =async (req, res) => {
     const patient = await PatientModel.findById(patientId);
 
     if (!patient) {
-      return res.status(404).json({ error: 'Patient not found', errorcode: 1005 });
+      return res.status(404).json({ error:  errormesaages[1021], errorcode: 1021 });
     }
 
     const originalFilename = req.file.originalname;
@@ -451,7 +451,7 @@ const get_diagnose_report=async (req, res) => {
     const patient = await PatientModel.findById(patientId);
 
     if (!patient) {
-      return res.status(404).json({success:false, error: 'Patient not found', errorcode: 1005 });
+      return res.status(404).json({success:false, error: errormesaages[1021], errorcode: 1021 });
     }
 
     const diagnoseReports = patient.diagnose_reports;
@@ -462,6 +462,53 @@ const get_diagnose_report=async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 }
+const getFollowUpList = async (req, res) => {
+  try {
+    const { tenantDBConnection } = req;
+    if (!tenantDBConnection) {
+      return res.status(500).json({success:false, error: 'Tenant DB connection is not set' });
+    }
+    const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const dayAfterTomorrow = new Date(today);
+    dayAfterTomorrow.setDate(today.getDate() + 2);
+
+    const todayString = today.toISOString().split('T')[0];
+    const tomorrowString = tomorrow.toISOString().split('T')[0];
+    const dayAfterTomorrowString = dayAfterTomorrow.toISOString().split('T')[0];
+
+    const patients = await PatientModel.find({
+      'appointment_history': {
+        $elemMatch: {
+          appointment_date: { $in: [todayString, tomorrowString, dayAfterTomorrowString] },
+          follow_up_from: { $exists: true, $ne: null },
+        }
+      }
+    })
+
+    const followUpList = patients.map(patient => {
+      const filteredAppointments = patient.appointment_history.filter(appointment => 
+        [todayString, tomorrowString, dayAfterTomorrowString].includes(appointment.appointment_date) && 
+        appointment.follow_up_from
+      );
+      return {
+        ...patient.toObject(),
+        appointment_history: filteredAppointments
+      };
+    });
+
+    res.status(200).json({ success: true, followUpList });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
 
 module.exports = {
   addPatient,
@@ -478,5 +525,6 @@ module.exports = {
   addFollowUpAppointment,
   getPatientsWithTodayAppointments,
   upload_diagnose_report,
-  get_diagnose_report
+  get_diagnose_report,
+  getFollowUpList
 };

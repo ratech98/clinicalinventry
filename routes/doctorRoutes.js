@@ -22,7 +22,7 @@ router.get('/doctors/clinic', getClinicDetailsByDoctorId);
 router.get('/doctors/:id', getDoctorById);
 router.put('/doctors/:id',upload, updateDoctor);
 router.delete('/doctors/:id', deleteDoctor);
-router.put('/doctors/status/:id', updateDoctorAvailability);
+router.put('/doctors/status', updateDoctorAvailability);
 router.put('/doctors/verify/clinic', verifyDoctorClinic);
 router.post('/update_clinic_to_doctor',addClinicToDoctor)
 router.post('/adddoctor_availablity',addDoctorAvailability)
