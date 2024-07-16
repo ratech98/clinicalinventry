@@ -50,9 +50,8 @@ clinicSchema.pre('findOneAndUpdate', async function (next) {
       console.log('Document to update:', docToUpdate);
 
       if (!docToUpdate.dbUri && docToUpdate.clinic_name) {
-        const dbName = `${docToUpdate.clinic_name.toLowerCase().replace(/\s/g, '_')}_di_${String(sequenceValue).padStart(5, '0')}`;
+        const dbName = `${docToUpdate.clinic_name.toLowerCase().replace(/\s/g, '_')}_db`;
         console.log('Generated dbName:', dbName);
-
 
         const uri = `mongodb+srv://testuser1:saravana03@cluster0.mqxbump.mongodb.net/${dbName}?retryWrites=true&w=majority`;
 
