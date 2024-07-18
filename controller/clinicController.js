@@ -6,6 +6,7 @@ const { Storage } = require("@google-cloud/storage");
 const Template = require("../modal/prescriptiontemplate");
 const moment = require('moment');
 const { createNotification } = require("../lib/notification");
+const { SubscriptionDuration } = require("../modal/subscription");
 
 
 require("dotenv").config();
@@ -306,28 +307,50 @@ const blockOrUnblockClinic = async (req, res) => {
 };
 
 
-const update_Subscription=async (req, res) => {
+const update_Subscription = async (req, res) => {
   try {
-    const { subscription, subscription_startdate, subscription_enddate } = req.body;
+    const {  subscription_id } = req.body;
     const clinicId = req.params.id;
+
+    // if (!mongoose.Types.ObjectId.isValid(subscription) || !mongoose.Types.ObjectId.isValid(subscription_id) || !mongoose.Types.ObjectId.isValid(clinicId)) {
+    //   return res.status(400).send({ success: false, error: 'Invalid ID format' });
+    // }
 
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
-      return res.status(404).send({success:false,error:errormesaages[1001],errorcode:1001});
+      return res.status(404).send({ success: false, error: 'Clinic not found', errorcode: 1001 });
     }
 
-    clinic.subscription = subscription;
-    clinic.subscription_startdate = subscription_startdate
-    clinic.subscription_enddate = subscription_enddate
+    const subscriptionDuration = await SubscriptionDuration.findById(subscription_id);
+    if (!subscriptionDuration) {
+      return res.status(404).send({ success: false, error: 'Subscription duration not found', errorcode: 1002 });
+    }
+
+    const currentDate = moment();
+    let endDate;
+    if (subscriptionDuration.duration === 'month') {
+      endDate = currentDate.add(subscriptionDuration.durationInNo, 'months');
+    } else if (subscriptionDuration.duration === 'year') {
+      endDate = currentDate.add(subscriptionDuration.durationInNo, 'years');
+    }
+
+    const formattedStartDate = currentDate.format('DD-MM-YYYY');
+    const formattedEndDate = endDate.format('DD-MM-YYYY');
+
+    clinic.subscription = true;
+    clinic.subscription_startdate = formattedStartDate;
+    clinic.subscription_enddate = formattedEndDate;
+    clinic.subscription_id = subscription_id;
 
     await clinic.save();
 
-    res.status(200).send({success:true,message:'Subscription details updated successfully',clinic});
+    res.status(200).send({ success: true, message: 'Subscription details updated successfully', clinic });
   } catch (error) {
     console.error('Error updating subscription details:', error);
-    res.status(500).send({success:false,error:error});
+    res.status(500).send({ success: false, error: error });
   }
-}
+};
+
 
 const getsubscriptiondays=async (req, res) => {
   try {
@@ -343,7 +366,7 @@ const getsubscriptiondays=async (req, res) => {
     }
 
     const currentDate = moment();
-    const endDate = moment(clinic.subscription_enddate);
+    const endDate = moment(clinic.subscription_enddate, 'DD-MM-YYYY');
     const remainingDays = endDate.diff(currentDate, 'days');
 
     res.status(200).json({ remainingDays });

@@ -16,7 +16,7 @@ router.get('/medicines',isAuth,connectTenantDB, getAllMedicines);
 router.get('/medicines/:id',isAuth,connectTenantDB, getMedicineById);
 router.put('/medicines/:id',isAuth,connectTenantDB, updateMedicine);
 router.delete('/medicines/:id',isAuth,connectTenantDB, deleteMedicine);
-router.post('/import/medicines', isAuth, uploadfile, importMedicinesData);
+router.post('/import/medicines', isAuth,connectTenantDB, uploadfile, importMedicinesData);
 
 router.post('/dosageform',isAuth,connectTenantDB, addDosageForm);
 router.get('/dosageform',isAuth,connectTenantDB, getAllDosageForms);

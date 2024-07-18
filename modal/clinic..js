@@ -25,6 +25,7 @@ const clinicSchema = new mongoose.Schema({
   block_reason: { type: String, default: null },
   unblock_reason: { type: String, default: null },
   subscription:{type:Boolean,default:false},
+  subscription_id:{type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionDuration' },
   subscription_startdate:{type:String},
   subscription_enddate:{type:String},
 

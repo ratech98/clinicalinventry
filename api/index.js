@@ -13,6 +13,7 @@ const staffRoleRouter=require('../routes/staffRoleRoutes')
 const adminRouter=require('../routes/adminRoutes')
 const prescriptiontemplateRouter=require('../routes/prescriptionTemplaateRoutes')
 const notificationrouter=require('../routes/notificationRouter')
+const subscriptionRouter= require('../routes/subscriptionRouter')
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -30,6 +31,7 @@ app.use((req, res, next) => {
 app.use('/', clinicRouter);
 app.use('/', doctorRouter);
 app.use('/', medicineRouter);
+app.use('/',subscriptionRouter)
 app.use('/',notificationrouter)
 app.use('/', otpRouter);
 app.use('/', patientRouter);

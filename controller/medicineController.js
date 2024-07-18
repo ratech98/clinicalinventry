@@ -1,5 +1,6 @@
 const { errormesaages } = require("../errormessages");
 const {Medicine }= require("../modal/medicine");
+const xlsx= require('xlsx')
 
 require("dotenv").config(); 
 const addMedicine = async (req, res) => {
@@ -150,10 +151,15 @@ const deleteMedicine = async (req, res) => {
 const importMedicinesData = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
+
+    if (!tenantDBConnection) {
+      return res.status(500).json({ success: false, error: "Database connection not found" });
+    }
+
     const MedicineModel = tenantDBConnection.model('Medicine', Medicine.schema);
 
     if (!req.files || !req.files.file) {
-      return res.status(400).json({success:false, error: "No file uploaded" });
+      return res.status(400).json({ success: false, error: "No file uploaded" });
     }
 
     const file = req.files.file[0];
@@ -173,6 +179,7 @@ const importMedicinesData = async (req, res) => {
     }));
 
     const missingFields = [];
+    const duplicateMedicines = [];
 
     await Promise.all(
       medicines.map(async (medicine) => {
@@ -181,6 +188,19 @@ const importMedicinesData = async (req, res) => {
             missingFields.push('Unnamed Medicine');
             return;
           }
+
+          const existingMedicine = await MedicineModel.findOne({
+            medicine_name: medicine.medicine_name,
+            dosage_form: { $all: medicine.dosage_form },
+            dosage_strength: medicine.dosage_strength,
+            dosage_unit: medicine.dosage_unit
+          });
+
+          if (existingMedicine) {
+            duplicateMedicines.push(medicine.medicine_name);
+            return;
+          }
+
           await MedicineModel.create(medicine);
         } catch (error) {
           console.error(error);
@@ -189,18 +209,24 @@ const importMedicinesData = async (req, res) => {
       })
     );
 
+    let message = "Medicines imported successfully";
     if (missingFields.length > 0) {
-      return res.status(400).json({
-       success:false, message: `Some medicines were not imported due to missing required fields or other issues: ${missingFields.join(", ")}`
-      });
+      message += `. Some medicines were not imported due to missing required fields or other issues: ${missingFields.join(", ")}`;
+    }
+    if (duplicateMedicines.length > 0) {
+      message += `. Duplicate medicines were not imported: ${duplicateMedicines.join(", ")}`;
     }
 
-    res.status(200).json({ success: true, message: "Medicines imported successfully" });
+    res.status(200).json({ success: true, message });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error('Error importing medicines:', error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
+module.exports = { importMedicinesData };
+
+
 
 
 module.exports = { addMedicine,
