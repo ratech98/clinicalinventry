@@ -98,13 +98,13 @@ const getClinicId = async (req, res) => {
 const updateClinic = async (req, res) => {
   try {
     let updateData = { ...req.body }; 
-    console.log(req.body.email)
-    if (req.body.email) {
-      const emailExists = await Clinic.findOne({ email: req.body.email, _id: { $ne: req.params.id } });
-      if (emailExists) {
-        return res.status(400).json({ success:false,error:errormesaages[1025],errorcode:1025});
-      }
-    }
+    // console.log(req.body.email)
+    // if (req.body.email) {
+    //   const emailExists = await Clinic.findOne({ email: req.body.email, _id: { $ne: req.params.id } });
+    //   if (emailExists) {
+    //     return res.status(400).json({ success:false,error:errormesaages[1025],errorcode:1025});
+    //   }
+    // }
     if (req.files) {
       const files = req.files;
       const uploadedFiles = {};
