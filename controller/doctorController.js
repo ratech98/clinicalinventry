@@ -470,7 +470,7 @@ const blockOrUnblockDoctor = async (req, res) => {
     }
 
     if (!doctors) {
-      return res.status(404).json({ success: false, error: 'Doctor not found' });
+      return res.status(404).json({success:false, error: errormesaages[1002], errorcode: 1002 });
     }
     const clinics=await Clinic.findById(clinicId)
 
@@ -529,7 +529,7 @@ const verify_certificate = async (req, res) => {
     );
 
     if (!doctors) {
-      return res.status(404).json({ success: false, message: 'Doctor not found' });
+      return res.status(404).json({success:false, error: errormesaages[1002], errorcode: 1002 });
     }
     const clinics=await Clinic.findById(req.body.clinicId)
 
