@@ -1,5 +1,6 @@
 
 const { errormesaages } = require("../errormessages");
+const { createNotification } = require("../lib/notification");
 const Availability = require("../modal/availablity");
 const Clinic = require("../modal/clinic.");
 const doctor = require("../modal/doctor");
@@ -145,8 +146,10 @@ const verifyDoctorClinic = async (req, res) => {
     }
 
     clinic.verified = verify;
+     const clinics=await Clinic.findById(clinicId)
 
     await doctors.save();
+    createNotification("doctor",doctorId,`doctor ${verify?"verified":"not verified"} by clinic ${clinics.clinic_name} `,clinicId)
 
     res.status(200).json({ success: true, message: 'Clinic verified successfully', doctors });
   } catch (error) {
@@ -172,12 +175,12 @@ const addClinicToDoctor = async (req, res) => {
   try {
     const doctors = await doctor.findById(doctorId);
     if (!doctors) {
-      return res.status(404).json({success:false, error: 'Doctor not found' });
+      return res.status(404).json({success:false, error: errormesaages[1002], errorcode: 1002 });
     }
 
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
-      return res.status(404).json({success:false, error: 'Clinic not found' });
+      return res.status(404).json({success:false, error: errormesaages[1001], errorcode: 1001 });
     }
 
     doctors.clinic.push(clinic._id);
@@ -202,12 +205,12 @@ const addDoctorAvailability = async (req, res) => {
   try {
     const doctors = await doctor.findById(doctorId);
     if (!doctors) {
-      return res.status(404).json({ success: false, error: "Doctor not found" });
+      return res.status(404).json({success:false, error: errormesaages[1002], errorcode: 1002 });
     }
 
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
-      return res.status(404).json({ success: false, error: "Clinic not found" });
+      return res.status(404).json({ success:false, error: errormesaages[1001], errorcode: 1001 });
     }
 
     const nextOccurrences = calculateNextOccurrences(days);
@@ -292,7 +295,7 @@ const updateDoctorAvailabilitty = async (req, res) => {
   try {
     const availability = await Availability.findById(availabilityId);
     if (!availability) {
-      return res.status(404).json({ success: false, error: "Availability not found" });
+      return res.status(404).json({success: false, error: errormesaages[1007], errorcode: 1007 });
     }
 
     const nextOccurrences = calculateNextOccurrences(days);
@@ -447,27 +450,40 @@ const verifyDoctorOtp = async (req, res) => {
 
 const blockOrUnblockDoctor = async (req, res) => {
   const { id } = req.params;
-  const { block, reason } = req.body;
+  const { block, reason, clinicId } = req.body;
 
   try {
     let doctors;
+
     if (block) {
-      doctors = await doctor.findByIdAndUpdate(id, { block: true, block_reason: reason }, { new: true });
+      doctors = await doctor.findOneAndUpdate(
+        { _id: id, "clinics.clinicId": clinicId },
+        { $set: { "clinics.$.block": true, "clinics.$.block_reason": reason } },
+        { new: true }
+      );
     } else {
-      doctors = await doctor.findByIdAndUpdate(id, { block: false, unblock_reason: reason }, { new: true });
+      doctors = await doctor.findOneAndUpdate(
+        { _id: id, "clinics.clinicId": clinicId },
+        { $set: { "clinics.$.block": false, "clinics.$.unblock_reason": reason } },
+        { new: true }
+      );
     }
 
     if (!doctors) {
-      return res.status(404).json({success:false, error: 'Doctor not found' });
+      return res.status(404).json({ success: false, error: 'Doctor not found' });
     }
+    const clinics=await Clinic.findById(clinicId)
 
-    const action = block ? 'blocked' : 'unblocked';
-    res.json({ success: true, message: `Doctor ${action} successfully`, doctors });
+    createNotification("doctor", id, `Doctor ${block ? "blocked" : "unblocked"} by clinic ${clinics.clinic_name}`, clinicId);
+
+    res.json({ success: true, message: `Doctor ${block ? "blocked" : "unblocked"} successfully`, doctors });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
 
 const get_availability=async (req, res) => {
   try {
@@ -495,33 +511,35 @@ const get_availability=async (req, res) => {
     res.status(500).json({success:false, error: "Internal Server Error" });
   }
 }
-
-const verify_certificate=async (req, res) => {
+const verify_certificate = async (req, res) => {
   const updateFields = {};
 
   if (req.body.undergraduate_certificate_verify !== undefined) {
-    updateFields.undergraduate_certificate_verify = req.body.undergraduate_certificate_verify;
+    updateFields["clinics.$.undergraduate_certificate_verify"] = req.body.undergraduate_certificate_verify;
   }
   if (req.body.postgraduate_certificate_verify !== undefined) {
-    updateFields.postgraduate_certificate_verify = req.body.postgraduate_certificate_verify;
+    updateFields["clinics.$.postgraduate_certificate_verify"] = req.body.postgraduate_certificate_verify;
   }
 
   try {
-    const doctors = await doctor.findByIdAndUpdate(
-      req.params.id,
-      updateFields,
+    const doctors = await doctor.findOneAndUpdate(
+      { "_id": req.params.id, "clinics.clinicId": req.body.clinicId },
+      { $set: updateFields },
       { new: true }
     );
 
     if (!doctors) {
-      return res.status(404).json({success:false, message: 'Doctor not found' });
+      return res.status(404).json({ success: false, message: 'Doctor not found' });
     }
+    const clinics=await Clinic.findById(req.body.clinicId)
 
-    res.status(200).json({success:true, message: 'Certificate(s) verified', doctor });
+    createNotification("doctor",req.params.id,`doctor certificates ug ${req.body.undergraduate_certificate_verify?"verified":"not verified"} and pg ${req.body.postgraduate_certificate_verify?"verified":"not verified"} by clinic ${clinics.clinic_name} `,req.body.clinicId)
+
+    res.status(200).json({ success: true, message: 'Certificate(s) verified', doctors });
   } catch (error) {
-    res.status(500).json({success:false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
-}
+};
 
 module.exports = { 
                 addDoctor, 

@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const { generateOtp } = require('../lib/generateOtp');
 const { signInToken } = require('../config/auth');
 const Clinic = require('../modal/clinic.');
+const { errormesaages } = require('../errormessages');
 dotenv.config();
 
 // const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -16,22 +17,13 @@ const sendOtp = async (req, res) => {
   try {
     let clinic = await Clinic.findOne({ mobile_number });
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+      return res.status(400).json({  success: false,  message: errormesaages[1008], errorcode: 1008  });
     }
     
     if (clinic) {
     console.log("enrty")
-//       if (clinic.block) {
-//         return res.status(400).json({ success: false, message: 'Clinic is blocked, contact admin' });
-//       }
-// if(!clinic.adminVerified){
-//   return res.status(400).json({ success: false, message: 'Clinic  not verified' });
 
-// }
-//       if (!clinic.otpVerified) {
-//         return res.status(400).json({ success: false, message: 'Clinic mobile number is not verified' });
-//       }
-return res.status(400).json({ success: false, message: 'clinic with this Mobile number already exist' });
+    return res.status(400).json({  success: false,  message: errormesaages[1030], errorcode: 1030  });
 
     } else {
       clinic = new Clinic({
@@ -59,25 +51,16 @@ return res.status(400).json({ success: false, message: 'clinic with this Mobile 
 };
 const loginsendOtp = async (req, res) => {
   const { mobile_number } = req.body;
-  const otp = "123456"; // You can generate a random OTP here
+  const otp = "123456"; 
 
   try {
     let clinic = await Clinic.findOne({ mobile_number });
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+      return res.status(400).json({  success: false,  message: errormesaages[1008], errorcode: 1008  });
     }
     if (clinic) {
     console.log("enrty")
-//       if (clinic.block) {
-//         return res.status(400).json({ success: false, message: 'Clinic is blocked, contact admin' });
-//       }
-// if(!clinic.adminVerified){
-//   return res.status(400).json({ success: false, message: 'Clinic  not verified' });
 
-// }
-//       if (!clinic.otpVerified) {
-//         return res.status(400).json({ success: false, message: 'Clinic mobile number is not verified' });
-//       }
 
       clinic.otp = otp;
     } else {
@@ -105,20 +88,20 @@ const verifyOtp = async (req, res) => {
 
   try {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+      return res.status(400).json({ success:false,message: errormesaages[1008], errorcode: 1008});
     }
     if(!otp||otp===""){
-      return res.status(400).json({ success: false, message: 'otp is required and cannot be empty' });
+      return res.status(400).json({ success: false, message: errormesaages[1015], errorcode: 1015 });
 
     }
     const clinic = await Clinic.findOne({ mobile_number });
 
     if (!clinic) {
-      return res.status(404).json({success:false, error: 'User not found' });
+      return res.status(404).json({ success:false,message: errormesaages[1001], errorcode: 1001 });
     }
 
     if (otp !== clinic.otp) {
-      return res.status(400).json({success:false, error: 'Invalid OTP' });
+      return res.status(400).json({ success:false,message: errormesaages[1016], errorcode: 1016 });
     }
 
     clinic.otpVerified = true;
@@ -139,7 +122,7 @@ const generateToken = async (req, res) => {
     const clinic = await Clinic.find({_id:id});
 
     if (!clinic) {
-      return res.status(404).json({success:false, error: 'User not found' });
+      return res.status(404).json({ success:false,message: errormesaages[1001], errorcode: 1001 });
     }
 
    

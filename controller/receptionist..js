@@ -1,4 +1,5 @@
 const { errormesaages } = require("../errormessages");
+const { createNotification } = require("../lib/notification");
 const { ReceptionistAvailability } = require("../modal/availablity");
 const Clinic = require("../modal/clinic.");
 const Receptionist = require("../modal/receptionist");
@@ -134,6 +135,9 @@ const updateReceptionistVerify = async (req, res) => {
     if (receptionist.certificate_verify!==true) {
       return res.status(404).json({success:false, error:  errormesaages[1012], errorcode: 1012});
     }
+    const clinic =await Clinic.findById(receptionist.clinic)
+    createNotification("receptionist",req.params.id,`you are  ${req.body.verify?"verified":"not verified"} by clinic ${clinic.clinic_name} `,receptionist.clinic)
+
     res.status(200).json({ success: true, message: "Receptionist status updated successfully", receptionist });
   } catch (error) {
     console.error(error);
@@ -313,6 +317,10 @@ const blockOrUnblockReceptionist = async (req, res) => {
     }
 
     const action = block ? 'blocked' : 'unblocked';
+
+    const clinic =await Clinic.findById(receptionist.clinic)
+    createNotification("receptionist",id,`you are  ${action} by clinic ${clinic.clinic_name} for ${reason} `,receptionist.clinic)
+
     res.json({ success: true, message: `Receptionist ${action} successfully`, receptionist });
   } catch (error) {
     console.error(error);
@@ -337,6 +345,10 @@ const verify_receptionist_certificate=async (req, res) => {
     if (!receptionist) {
       return res.status(404).json({success: false,message: errormesaages[1004], errorcode: 1004 });
     }
+
+    const clinic =await Clinic.findById(receptionist.clinic)
+
+    createNotification("receptionist",req.params.id,`you are certificate ${req.body.certificate_verify?"verified":"not verifed"} by clinic ${clinic.clinic_name}  `,receptionist.clinic)
 
     res.status(200).json({success:true, message: 'Certificate verified', receptionist });
   } catch (error) {

@@ -5,6 +5,7 @@ const doctor = require("../modal/doctor");
 const { Storage } = require("@google-cloud/storage");
 const Template = require("../modal/prescriptiontemplate");
 const moment = require('moment');
+const { createNotification } = require("../lib/notification");
 
 
 require("dotenv").config();
@@ -96,8 +97,14 @@ const getClinicId = async (req, res) => {
 
 const updateClinic = async (req, res) => {
   try {
-    let updateData = { ...req.body }; // Initialize updateData with req.body
-
+    let updateData = { ...req.body }; 
+    console.log(req.body.email)
+    if (req.body.email) {
+      const emailExists = await Clinic.findOne({ email: req.body.email, _id: { $ne: req.params.id } });
+      if (emailExists) {
+        return res.status(400).json({ success:false,error:errormesaages[1025],errorcode:1025});
+      }
+    }
     if (req.files) {
       const files = req.files;
       const uploadedFiles = {};
@@ -119,7 +126,7 @@ const updateClinic = async (req, res) => {
     const clinic = await Clinic.findByIdAndUpdate(req.params.id, updateData, { new: true });
 
     if (!clinic) {
-      return res.status(400).json({ error: "Clinic not found" });
+      return res.status(400).json({success:false, error:errormesaages[1001],errorcode:1001});
     }
 
     res.status(200).json({ success: true, message: "Clinic updated successfully", clinic });
@@ -134,7 +141,7 @@ const deleteClinic = async (req, res) => {
   try {
     const clinic = await Clinic.findByIdAndDelete(req.params.id);
     if (!clinic) {
-      return res.status(400).json({ error:errormesaages[1001],errorcode:1001  });
+      return res.status(400).json({success:false, error:errormesaages[1001],errorcode:1001  });
     }
     res.json({ success: true, message: "Clinic deleted successfully" });
   } catch (error) {
@@ -157,6 +164,7 @@ const verify_clinic=async (req, res) => {
         dynamicFields: []  
       })}
       await newTemplate.save();
+      createNotification("clinic",req.params.id,"clinic verified by admin successfully")
     res.status(200).json({ success: true, message: 'Admin verified successfully', clinic });
   } catch (error) {
     console.error(error);
@@ -172,6 +180,8 @@ const verify_clinic_certificate=async (req, res) => {
       req?.body ,
       { new: true }
     );
+    createNotification("clinic",req.params.id,"clinic certificate verified by admin successfully")
+
     res.status(200).json({ success: true, message: 'certificate verified successfully', clinic });
   } catch (error) {
     console.error(error);
@@ -208,7 +218,7 @@ console.log( new Date(todayUTC))
       .skip(startIndex);
 
     if (!doctors.length) {
-      return res.status(404).json({ success: false, error: 'No doctors found for this clinic' });
+      return res.status(404).json({ success: false, error: errormesaages[1027],errorcode:1027});
     }
 
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
@@ -282,10 +292,12 @@ const blockOrUnblockClinic = async (req, res) => {
     }
 
     if (!clinic) {
-      return res.status(404).json({ success:false,error: 'Clinic not found' });
+      return res.status(404).json({ success:false,error:errormesaages[1001],errorcode:1001 });
     }
 
     const action = block ? 'blocked' : 'unblocked';
+    createNotification("clinic",id,`clinic ${action} by admin for ${reason}, contact admin !`)
+
     res.json({ success: true, message: `Clinic ${action} successfully`, clinic });
   } catch (error) {
     console.error(error);
@@ -301,7 +313,7 @@ const update_Subscription=async (req, res) => {
 
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
-      return res.status(404).send('Clinic not found');
+      return res.status(404).send({success:false,error:errormesaages[1001],errorcode:1001});
     }
 
     clinic.subscription = subscription;
@@ -323,11 +335,11 @@ const getsubscriptiondays=async (req, res) => {
 
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
-      return res.status(404).send('Clinic not found');
+      return res.status(404).send({success:false,error:errormesaages[1001],errorcode:1001});
     }
 
     if (!clinic.subscription_enddate) {
-      return res.status(400).send('Subscription end date is not set');
+      return res.status(400).send({success:false,error:errormesaages[1026],errorcode:1026});
     }
 
     const currentDate = moment();

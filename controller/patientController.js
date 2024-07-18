@@ -162,7 +162,7 @@ const sendPatientOtp = async (req, res) => {
   const otp = "1234"; 
   try {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+      return res.status(400).json({ success: false,  message: errormesaages[1008], errorcode: 1008});
     }
     const { tenantDBConnection } = req;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
@@ -183,7 +183,7 @@ const verifyPatientOtp = async (req, res) => {
   const { mobile_number, otp } = req.body;
   try {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false, message: 'Mobile number is required and cannot be empty' });
+      return res.status(400).json({ success: false,  message: errormesaages[1008], errorcode: 1008 });
     }
     const { tenantDBConnection } = req;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
@@ -211,12 +211,12 @@ const updateAppointmentWithPrescription = async (req, res) => {
     
     const patient = await PatientModel.findById(patientId);
     if (!patient) {
-      return res.status(404).json({success:false, error: "Patient not found", errorcode: 1005 });
+      return res.status(404).json({success:false, error: errormesaages[1021], errorcode: 1021 });
     }
 
     const appointment = patient.appointment_history.id(appointmentId);
     if (!appointment) {
-      return res.status(404).json({ error: "Appointment not found", errorcode: 1006 });
+      return res.status(404).json({ success:false, error: errormesaages[1028], errorcode: 1028});
     }
 
     if (medicines && Array.isArray(medicines)) {
@@ -232,7 +232,7 @@ const updateAppointmentWithPrescription = async (req, res) => {
         }
       }));
     } else {
-      return res.status(400).json({success:false, error: "Medicines should be an array", errorcode: 1007 });
+      return res.status(400).json({success:false, error: errormesaages[1029], errorcode: 1029 });
     }
 
     appointment.prescription = prescription;
@@ -255,12 +255,12 @@ const getPrescription = async (req, res) => {
     
     const patient = await PatientModel.findById(patientId);
     if (!patient) {
-      return res.status(404).json({success:false, error: "Patient not found", errorcode: 1005 });
+      return res.status(404).json({success:false, error: errormesaages[1021], errorcode: 1021 });
     }
 
     const appointment = patient.appointment_history.id(appointmentId);
     if (!appointment) {
-      return res.status(404).json({ error: "Appointment not found", errorcode: 1006 });
+      return res.status(404).json({success:false, error: errormesaages[1028], errorcode: 1028 });
     }
 
     res.status(200).json({ 
@@ -284,7 +284,7 @@ const addAppointmentWithToken = async (req, res) => {
     const patient = await PatientModel.findById(patientId);
 
     if (!patient) {
-      return res.status(404).json({success:false, error: "Patient not found", errorcode: 1005 });
+      return res.status(404).json({success:false, error: errormesaages[1021], errorcode: 1021});
     }
 
     const tokenCount = patient.appointment_history.filter(a => a.appointment_date === appointment_date).length;
@@ -312,6 +312,7 @@ const addAppointmentWithToken = async (req, res) => {
     // }
 
     await patient.save();
+    createNotification("doctor",doctorId,`you have appointment on ${appointment_date} at ${time} `)
 
     res.status(200).json({ success: true, message: "Appointment and diagnose reports added successfully", patient });
   } catch (error) {

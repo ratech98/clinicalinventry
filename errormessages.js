@@ -22,7 +22,14 @@
     1021:"Patient Not found",
     1022:"previous appointment not found",
     1023:"availability date not found",
-    1024:"availability time slot not found"
+    1024:"availability time slot not found",
+    1025:"Email already exists",
+    1026:'Subscription end date is not set',
+    1027:"No doctors found for this clinic",
+    1028:"Appointment not found",
+    1029:"Medicines should be an array",
+    1030:'clinic with this mobile number  already exists',
+
 
 
   }
