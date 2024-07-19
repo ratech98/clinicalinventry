@@ -37,6 +37,10 @@ async function ensureIndexes(db) {
     await db.collection('medicines');
     await db.collection('dosageforms');
     await db.collection('dosageunits');
+    db.createCollection('smstypes'),
+    db.createCollection('smstemplates')
+
+
     console.log('Indexes ensured');
   } catch (error) {
     console.error('Error ensuring indexes:', error);
@@ -70,7 +74,10 @@ clinicSchema.pre('findOneAndUpdate', async function (next) {
           db.createCollection('patients'),
           db.createCollection('medicines'),
           db.createCollection('dosageforms'),
-          db.createCollection("dosageunits")
+          db.createCollection("dosageunits"),
+          db.createCollection('smstypes'),
+          db.createCollection('smstemplates')
+    
         ]);
 
         await ensureIndexes(db);

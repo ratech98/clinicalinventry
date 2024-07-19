@@ -31,7 +31,11 @@
     1030:'clinic with this mobile number  already exists',
     1031:"subscription title already exist",
     1032:"subscription duration already exist",
-    1033:"subscription not found"
+    1033:"subscription not found",
+    1034:"SMS type already exist",
+    1035:"SMS type not found",
+    1036:"SMS template already exist",
+    1037:"SMS template not found"
 
 
 
