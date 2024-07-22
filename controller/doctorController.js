@@ -1,4 +1,5 @@
 
+const { signInToken } = require("../config/doctor");
 const { errormesaages } = require("../errormessages");
 const { createNotification } = require("../lib/notification");
 const Availability = require("../modal/availablity");
@@ -440,8 +441,8 @@ const verifyDoctorOtp = async (req, res) => {
     doctorData.otpVerified = true;
 
     await doctorData.save();
-
-    res.status(200).json({ success: true, message: 'OTP verified successfully', doctor: doctorData });
+const token=signInToken(doctorData)
+    res.status(200).json({ success: true, message: 'OTP verified successfully', doctor: doctorData,token });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -451,7 +452,7 @@ const verifyDoctorOtp = async (req, res) => {
 const blockOrUnblockDoctor = async (req, res) => {
   const { id } = req.params;
   const { block, reason, clinicId } = req.body;
-
+                  
   try {
     let doctors;
 
@@ -500,7 +501,7 @@ const get_availability=async (req, res) => {
       query['availabilities.date'] = new Date(date);
     }
     if (day) {
-      query['availabilities.day'] = day;
+      query['availabilities.day'] = { $regex: day, $options: 'i' };
     }
 
     const availabilities = await Availability.find(query)

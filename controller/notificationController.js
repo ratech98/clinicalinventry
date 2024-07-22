@@ -1,3 +1,4 @@
+const { errormesaages } = require("../errormessages");
 const Notification = require("../modal/notification");
 
 const getNotifications=async (req, res) => {
@@ -22,7 +23,7 @@ const getNotifications=async (req, res) => {
   
       const notifications = await Notification.find(filter).sort({ createdAt: -1 });
   
-      res.status(200).json(notifications);
+      res.status(200).json({success:true,message:"notifications fetched successfully",notifications:notifications});
     } catch (error) {
       console.error('Error fetching notifications:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -41,7 +42,7 @@ const readnotification= async (req, res) => {
       const notification = await Notification.findByIdAndUpdate(id, { read }, { new: true });
   
       if (!notification) {
-        return res.status(404).json({ error: 'Notification not found' });
+        return res.status(404).json({success:false, error:errormesaages[1038],errorcode:1038  });
       }
   
       res.status(200).json(notification);

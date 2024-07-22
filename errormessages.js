@@ -35,7 +35,8 @@
     1034:"SMS type already exist",
     1035:"SMS type not found",
     1036:"SMS template already exist",
-    1037:"SMS template not found"
+    1037:"SMS template not found",
+    1038:'Notification not found'
 
 
 

@@ -39,6 +39,7 @@ const getAllPatients = async (req, res) => {
     if (appointment_date) {
       query['appointment_history.appointment_date'] = appointment_date;
     }
+    
 
     const totalPatients = await PatientModel.countDocuments(query);
     const totalPages = Math.ceil(totalPatients / limit);
@@ -365,22 +366,29 @@ const addFollowUpAppointment = async (req, res) => {
 
 const getPatientsWithTodayAppointments = async (req, res) => {
   try {
-    const today = new Date().toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).split('/').join('-'); // Format as "DD-MM-YYYY"
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+    
+    console.log("Start of Day:", startOfDay);
+    console.log("End of Day:", endOfDay);
 
     const { tenantDBConnection } = req;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
 
     const patients = await PatientModel.aggregate([
       {
-        $unwind: '$appointment_history' // Flatten the appointment_history array
+        $unwind: '$appointment_history' 
       },
       {
         $match: {
-          'appointment_history.appointment_date': today
+          'appointment_history.appointment_date': {
+            $gte: startOfDay,
+            $lte: endOfDay
+          }
+        },
+        $match: {
+          'appointment_history.doctor':req?.params.doctor
         }
       },
       {
@@ -389,7 +397,7 @@ const getPatientsWithTodayAppointments = async (req, res) => {
           name: { $first: '$name' },
           mobile_number: { $first: '$mobile_number' },
           address: { $first: '$address' },
-          appointment_history: { $push: '$appointment_history' } 
+          appointment_history: { $push: '$appointment_history' }
         }
       }
     ]);

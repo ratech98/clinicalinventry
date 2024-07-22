@@ -36,6 +36,7 @@ const connectTenantDB = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET); 
+    console.log(decoded)
     const userId = decoded._id;
 
     const tenant = await Clinic.findById(userId);

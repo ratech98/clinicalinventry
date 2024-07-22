@@ -16,7 +16,7 @@ const subscriptionDurationSchema = new mongoose.Schema({
     pricePerMonth: { type: Number, required: true },
     discount: { type: Number, default: 0 },
     title:{type: mongoose.Schema.Types.ObjectId,
-        ref:"SubacriptionTitle"}
+        ref:"SubscriptionTitle"}
 });
 
 const SubscriptionDuration = mongoose.model('SubscriptionDuration', subscriptionDurationSchema);

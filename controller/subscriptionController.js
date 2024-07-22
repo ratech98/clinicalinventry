@@ -29,7 +29,7 @@ const addSubscriptionDuration = async (req, res) => {
 
 const getSubscriptionDurations = async (req, res) => {
   try {
-    const durations = await SubscriptionDuration.find();
+    const durations = await SubscriptionDuration.find().populate('title');
     res.json({
       success: true,
       message: "Subscription durations fetched successfully",

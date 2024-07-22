@@ -27,7 +27,7 @@ router.post('/appointment/prescription',isAuth,connectTenantDB,updateAppointment
 router.get('/appointment/prescription',isAuth,connectTenantDB,getPrescription)
 router.post('/add_appointment',isAuth,connectTenantDB,addAppointmentWithToken)
 router.post('/followup/appointment',isAuth,connectTenantDB,addFollowUpAppointment)
-router.get('/patients/today', isAuth,connectTenantDB,getPatientsWithTodayAppointments);
+router.get('/patientsappointment/:doctor', isAuth,connectTenantDB,getPatientsWithTodayAppointments);
   
 router.post('/upload_diagnose_report/:patientId',isAuth,connectTenantDB, upload,upload_diagnose_report );
 // Route to get diagnose reports for a specific patient

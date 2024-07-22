@@ -1,9 +1,14 @@
+const { signInToken } = require("../config/receptionist");
 const { errormesaages } = require("../errormessages");
 const { createNotification } = require("../lib/notification");
+const Availability = require("../modal/availablity");
 const { ReceptionistAvailability } = require("../modal/availablity");
 const Clinic = require("../modal/clinic.");
+const doctor = require("../modal/doctor");
+const Patient = require("../modal/patient");
 const Receptionist = require("../modal/receptionist");
 const { Storage } = require("@google-cloud/storage");
+const moment =require('moment')
 
 require("dotenv").config();
 const bucketName = process.env.bucketName;
@@ -207,6 +212,7 @@ const sendReceptionistOtp = async (req, res) => {
       { mobile_number, otp, clinic: clinicId },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
+    
 
     await receptionist.save();
 
@@ -241,9 +247,9 @@ const verifyReceptionistOtp = async (req, res) => {
     }
 
     receptionist.otpVerified = true;
-    await receptionist.save();
-
-    res.status(200).json({ success: true, message: 'OTP verified successfully', receptionist });
+    await receptionist.save()
+const token=signInToken(receptionist)
+    res.status(200).json({ success: true, message: 'OTP verified successfully', receptionist,token });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -356,6 +362,98 @@ const verify_receptionist_certificate=async (req, res) => {
   }
 }
 
+const getDoctorsAndAvailabilityByClinic = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { specialist, page = 1, limit = 10 } = req.query;
+
+    const todayUTC = new Date().toISOString().split('T')[0]; // Outputs 'YYYY-MM-DD'
+
+    const doctorQuery = { 'clinics.clinicId': id };
+    if (specialist) {
+      doctorQuery.specialist ={ $regex: specialist, $options: 'i' }
+    }
+
+    const totalDoctors = await doctor.countDocuments(doctorQuery);
+    const totalPages = Math.ceil(totalDoctors / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+
+    const doctors = await doctor.find(doctorQuery).select('specialist name mobile_number ')
+      .limit(limit)
+      .skip(startIndex);
+
+    if (!doctors.length) {
+      return res.status(404).json({ success: false, error: 'No doctors found', errorcode: 1027 });
+    }
+
+    const doctorAvailabilityPromises = doctors.map(async (doctor) => {
+      const availabilityDoc = await Availability.findOne({
+        doctorId: doctor._id,
+        'availabilities.date': { $lte: new Date(todayUTC) },
+         clinicId: id
+      });
+      console.log("availability",availabilityDoc)
+
+      let availabilityStatus = 'unavailable';
+      if (availabilityDoc) {
+        const todayAvailability = availabilityDoc.availabilities.find(avail => {
+          const availDate = moment(avail.date).format('DD-MM-YYYY');
+          return availDate === todayUTC;
+        });
+        if (todayAvailability) {
+          const availableSlots = todayAvailability.slots.some(slot => slot.available);
+          availabilityStatus = availableSlots ? 'available' : 'unavailable';
+        }
+      }
+
+      // Fetch today's appointments for the doctor
+      const todayAppointments = await Patient.find({
+        'appointment_history.doctor': doctor._id,
+        'appointment_history.appointment_date': todayUTC
+      }).select('appointment_history.$');
+
+      const tokenNumbers = todayAppointments.map(appointment => {
+        console.log(appointment.appointment_history); // Log the appointment history details
+        return appointment.appointment_history[0].token_number;
+      });
+
+      return {
+        doctor,
+        availability: availabilityStatus,
+        tokenNumbers
+      };
+    });
+
+    const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
+
+    
+    res.status(200).json({
+      success: true,
+      message: 'Doctors fetched successfully',
+      totalDoctorsCount: totalDoctors,
+ 
+      totalCount: totalDoctors,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages,
+      startIndex: startIndex + 1,
+      endIndex: endIndex > totalDoctors ? totalDoctors : endIndex,
+      currentPage: parseInt(page),
+      doctorAvailability: doctorAvailability,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+
+
+
+
+
+
 module.exports = {
   addReceptionist,
   getAllReceptionists,
@@ -372,5 +470,6 @@ module.exports = {
   getReceptionistsByClinic,
   blockOrUnblockReceptionist,
   sendReceptionistOtpForLogin,
-  verify_receptionist_certificate
+  verify_receptionist_certificate,
+  getDoctorsAndAvailabilityByClinic
 };
