@@ -224,7 +224,6 @@ const importMedicinesData = async (req, res) => {
   }
 };
 
-module.exports = { importMedicinesData };
 
 
 

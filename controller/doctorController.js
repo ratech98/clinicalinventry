@@ -137,15 +137,16 @@ const verifyDoctorClinic = async (req, res) => {
     if (doctors.details!==true) {
       return res.status(404).json({success:false, error:  errormesaages[1010], errorcode: 1010});
     }
-    if (doctors.postgraduate_certificate_verify!==true||doctors.undergraduate_certificate_verify!==true) {
-      return res.status(404).json({success:false, error:  errormesaages[1012], errorcode: 1012});
-    }
+    console.log(doctors)
+   
     const clinic = doctors.clinics.find(c => c.clinicId.toString() === clinicId);
 
     if (!clinic) {
       return res.status(404).json({success:false, error:errormesaages[1013], errorcode: 1013 });
     }
-
+    if (clinic.postgraduate_certificate_verify!==true||clinic.undergraduate_certificate_verify!==true) {
+      return res.status(404).json({success:false, error:  errormesaages[1012], errorcode: 1012});
+    }
     clinic.verified = verify;
      const clinics=await Clinic.findById(clinicId)
 
@@ -452,7 +453,7 @@ const token=signInToken(doctorData)
 const blockOrUnblockDoctor = async (req, res) => {
   const { id } = req.params;
   const { block, reason, clinicId } = req.body;
-                  
+
   try {
     let doctors;
 
