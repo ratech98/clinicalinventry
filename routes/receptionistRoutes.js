@@ -26,7 +26,7 @@ router.put('/receptionists/:id',upload,isAuth, updateReceptionist);
 router.delete('/receptionists/:id', deleteReceptionist);
 
 router.put('/receptionists/staus/:id',isAuth,updateReceptionistStatus)
-router.put('/receptionists/verify/:id',isAuth,updateReceptionistVerify)
+router.put('/receptionists/verify/:id',updateReceptionistVerify)
 // router.post('/update_receptionist_clinic',addClinicToReceptionist)
 
 router.post('/sendotp/receptionist',sendReceptionistOtp)
