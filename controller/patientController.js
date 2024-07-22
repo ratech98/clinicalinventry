@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const Patient = require('../modal/patient');
 const { Storage } = require("@google-cloud/storage");
 const { errormesaages } = require('../errormessages');
+const Availability = require('../modal/availablity');
+const doctor = require('../modal/doctor');
 
 require("dotenv").config();
 const bucketName = process.env.bucketName;
@@ -53,6 +55,46 @@ const getAllPatients = async (req, res) => {
       })
       .skip(startIndex)
       .limit(parseInt(limit));
+      const doctors = await doctor.find()
+      .limit(limit)
+      .skip(startIndex);
+      const todayUTC = new Date().toISOString().split('T')[0]; // Outputs 'YYYY-MM-DD'
+
+    if (!doctors.length) {
+      return res.status(404).json({ success: false, error: errormesaages[1027],errorcode:1027});
+    }
+
+    const doctorAvailabilityPromises = doctors.map(async (doctor) => {
+      const availabilityDoc = await Availability.findOne({
+        doctorId: doctor._id,
+        'availabilities.date': { $lte: new Date(todayUTC) },
+        clinicId: req.user._id
+      });
+console.log(availabilityDoc)
+      let availabilityStatus = 'unavailable';
+      if (availabilityDoc) {
+        const todayAvailability = availabilityDoc.availabilities.find(avail => avail.date.toISOString().split('T')[0] === todayUTC);
+        if (todayAvailability) {
+          const availableSlots = todayAvailability.slots.some(slot => slot.available);
+          availabilityStatus = availableSlots ? 'available' : 'unavailable';
+        }
+      }
+
+      return {
+        doctor,
+        availability: availabilityStatus
+      };
+    });
+
+    const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
+
+    let filteredDoctorAvailability = doctorAvailability;
+    // if (onleave) {
+    //   filteredDoctorAvailability = doctorAvailability.filter(doc => doc.availability === 'unavailable');
+    // }
+
+    const availableDoctorsCount = filteredDoctorAvailability.filter(doc => doc.availability === 'available').length;
+    const unavailableDoctorsCount = filteredDoctorAvailability.filter(doc => doc.availability === 'unavailable').length;
 
     res.json({
       success: true,
@@ -65,6 +107,8 @@ const getAllPatients = async (req, res) => {
       endIndex: endIndex > totalPatients ? totalPatients : endIndex,
       currentPage: parseInt(page),
       patients,
+      availableDoctorsCount:availableDoctorsCount,
+      unavailableDoctorsCount:unavailableDoctorsCount,
     });
   } catch (error) {
     console.error(error);
