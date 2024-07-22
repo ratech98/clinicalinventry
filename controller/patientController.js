@@ -76,11 +76,21 @@ const getAllPatients = async (req, res) => {
 // Get Patients by Doctor ID
 const getPatients = async (req, res) => {
   try {
+    const today = new Date();
+
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
+    const year = today.getFullYear();
+    
+    const formattedDate = `${day}-${month}-${year}`;
+    
+    console.log(formattedDate);
+    
     
     const { tenantDBConnection } = req;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const mainDBConnection = mongoose.connection;
-    const patients = await PatientModel.find({ 'appointment_history.doctor': req.body.doctorId }).populate({
+    const patients = await PatientModel.find({ 'appointment_history.doctor': req.params.doctor,'appointment_history.appointment_date':formattedDate }).populate({
       path: 'appointment_history.doctor',
       model: mainDBConnection.model('doctor')
     });

@@ -17,7 +17,7 @@ const upload = multer({
 
 router.post('/patients',isAuth,connectTenantDB, addPatient);
 router.get('/patients',isAuth,connectTenantDB, getAllPatients);
-router.get('/patients/doctor',isAuth,connectTenantDB, getPatients);
+router.get('/patients/:doctor',isAuth,connectTenantDB, getPatients);
 router.get('/patients/:id',isAuth,connectTenantDB, getPatientById);
 router.put('/patients/:id',isAuth,connectTenantDB, updatePatient);
 router.delete('/patients/:id',isAuth,connectTenantDB, deletePatient);

@@ -487,7 +487,7 @@ const blockOrUnblockDoctor = async (req, res) => {
 
 
 
-const get_availability=async (req, res) => {
+const get_availability = async (req, res) => {
   try {
     const { doctorId, clinicId, date, day } = req.query;
     let query = {};
@@ -498,21 +498,47 @@ const get_availability=async (req, res) => {
     if (clinicId) {
       query.clinicId = clinicId;
     }
-    if (date) {
-      query['availabilities.date'] = new Date(date);
-    }
-    if (day) {
-      query['availabilities.day'] = { $regex: day, $options: 'i' };
+
+    if (date || day) {
+      query.availabilities = {};
+      if (date) {
+        query.availabilities.$elemMatch = { date: new Date(date) };
+      }
+      if (day) {
+        if (!query.availabilities.$elemMatch) {
+          query.availabilities.$elemMatch = {};
+        }
+        query.availabilities.$elemMatch.day = { $regex: day, $options: 'i' };
+      }
     }
 
-    const availabilities = await Availability.find(query)
+    const availabilities = await Availability.find(query);
     
-    res.json({ success: true, message: "Availabilities fetched successfully", availabilities });
+    const matchedAvailabilities = availabilities.map(item => ({
+      ...item.toObject(),
+      availabilities: item.availabilities.filter(avail => {
+        let dateMatch = true;
+        let dayMatch = true;
+        
+        if (date) {
+          dateMatch = new Date(avail.date).toISOString().slice(0, 10) === new Date(date).toISOString().slice(0, 10);
+        }
+        if (day) {
+          dayMatch = new RegExp(day, 'i').test(avail.day);
+        }
+        
+        return dateMatch && dayMatch;
+      })
+    })).filter(item => item.availabilities.length > 0);
+
+    res.json({ success: true, message: "Availabilities fetched successfully", availabilities: matchedAvailabilities });
   } catch (error) {
     console.error(error);
-    res.status(500).json({success:false, error: "Internal Server Error" });
+    res.status(500).json({ success: false, error: "Internal Server Error" });
   }
-}
+};
+
+
 const verify_certificate = async (req, res) => {
   const updateFields = {};
 
