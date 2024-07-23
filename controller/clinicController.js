@@ -123,7 +123,7 @@ const updateClinic = async (req, res) => {
 
       updateData = { ...updateData, ...uploadedFiles };
     }
-
+updateData.details=true
     const clinic = await Clinic.findByIdAndUpdate(req.params.id, updateData, { new: true });
 
     if (!clinic) {

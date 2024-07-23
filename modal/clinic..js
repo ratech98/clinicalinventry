@@ -28,6 +28,7 @@ const clinicSchema = new mongoose.Schema({
   subscription_id:{type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionDuration' },
   subscription_startdate:{type:String},
   subscription_enddate:{type:String},
+  details:{type:Boolean,default:false}
 
 }, { timestamps: true });
 

@@ -1,7 +1,7 @@
 // Subscription Controller
 
 const errorMessages = require("../errormessages");
-const { SubscriptionDuration, SubscriptionTitle } = require("../modal/subscription");
+const { SubscriptionDuration, SubscriptionTitle, SubscriptionFeature } = require("../modal/subscription");
 
 
 const addSubscriptionDuration = async (req, res) => {
@@ -210,6 +210,110 @@ const deleteSubscriptionTitle = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+const addSubscriptionFeature = async (req, res) => {
+  try {
+    const { Feature,title } = req.body;
+
+    const newFeatureName = req.body.Feature.toLowerCase();
+
+    const existingFeature = await SubscriptionFeature.findOne({
+      name: { $regex: new RegExp("^" + newFeatureName, "i") },
+    });
+    if (existingFeature) {
+      return res
+        .status(400)
+        .json({ error: errorMessages[1035], errorcode: 1035 });
+    }
+    const newFeature = await SubscriptionFeature.create({ Feature,title });
+
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Subscription Feature added successfully",
+        Feature: newFeature,
+      });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const getSubscriptionFeatures = async (req, res) => {
+  try {
+    const Features = await SubscriptionFeature.find().populate('title');
+    res.json({
+      success: true,
+      message: "Subscription Features fetched successfully",
+      Features,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const getSubscriptionFeatureById = async (req, res) => {
+  try {
+    const Feature = await SubscriptionFeature.findById(req.params.id);
+    if (!Feature) {
+      return res
+        .status(400)
+        .json({ error: errorMessages[1036], errorcode: 1036 });
+    }
+    res.json({
+      success: true,
+      message: "Subscription Feature fetched successfully",
+      Feature,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const updateSubscriptionFeature = async (req, res) => {
+  try {
+    const updatedFeature = await SubscriptionFeature.findByIdAndUpdate(
+      req.params.id,
+       req.body ,
+      { new: true }
+    );
+    if (!updatedFeature) {
+      return res
+        .status(400)
+        .json({ error: errorMessages[1036], errorcode: 1036 });
+    }
+    res.json({
+      success: true,
+      message: "Subscription Feature updated successfully",
+      Feature: updatedFeature,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const deleteSubscriptionFeature = async (req, res) => {
+  try {
+    const deletedFeature = await SubscriptionFeature.findByIdAndDelete(
+      req.params.id
+    );
+    if (!deletedFeature) {
+      return res
+        .status(400)
+        .json({ error: errorMessages[1036], errorcode: 1036 });
+    }
+    res.json({
+      success: true,
+      message: "Subscription Feature deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 module.exports = {
   addSubscriptionDuration,
@@ -222,5 +326,10 @@ module.exports = {
   getSubscriptionTitleById,
   updateSubscriptionTitle,
   deleteSubscriptionTitle,
+  addSubscriptionFeature,
+  getSubscriptionFeatures,
+  updateSubscriptionFeature,
+  deleteSubscriptionFeature,
+  getSubscriptionFeatureById
  
 };
