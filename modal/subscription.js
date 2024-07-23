@@ -15,6 +15,7 @@ const subscriptionDurationSchema = new mongoose.Schema({
     durationInNo:{ type: Number, required: true },
     pricePerMonth: { type: Number, required: true },
     discount: { type: Number, default: 0 },
+    feature:[{type:String}],
     title:{type: mongoose.Schema.Types.ObjectId,
         ref:"SubscriptionTitle"}
 });

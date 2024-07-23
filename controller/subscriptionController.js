@@ -6,13 +6,14 @@ const { SubscriptionDuration, SubscriptionTitle, SubscriptionFeature } = require
 
 const addSubscriptionDuration = async (req, res) => {
   try {
-    const { duration, pricePerMonth, discount, durationInNo, title } = req.body;
+    const { duration, pricePerMonth, discount, durationInNo, title,feature } = req.body;
     const newDuration = await SubscriptionDuration.create({
       duration,
       pricePerMonth,
       discount,
       durationInNo,
       title,
+      feature
     });
     res
       .status(201)
@@ -62,11 +63,10 @@ const getSubscriptionDurationById = async (req, res) => {
 
 const updateSubscriptionDuration = async (req, res) => {
   try {
-    const { duration, pricePerMonth, discount, durationInNo } = req.body;
     const updatedDuration = await SubscriptionDuration.findByIdAndUpdate(
       req.params.id,
-      { duration, durationInNo, pricePerMonth, discount },
-      { new: true }
+      req.body,
+     { new: true }
     );
     if (!updatedDuration) {
       return res
