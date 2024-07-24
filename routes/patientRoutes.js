@@ -1,5 +1,5 @@
 const express = require('express');
-const { addPatient, getAllPatients, getPatientById, updatePatient, deletePatient, getPatients, sendPatientOtp, verifyPatientOtp, updateAppointmentWithPrescription, getPrescription, todayappointment, addAppointmentWithToken, addFollowUpAppointment, getPatientsWithTodayAppointments, upload_diagnose_report, get_diagnose_report, getFollowUpList } = require('../controller/patientController');
+const { addPatient, getAllPatients, getPatientById, updatePatient, deletePatient, getPatients, sendPatientOtp, verifyPatientOtp, updateAppointmentWithPrescription, getPrescription, todayappointment, addAppointmentWithToken, addFollowUpAppointment, getPatientsWithTodayAppointments, upload_diagnose_report, get_diagnose_report, getFollowUpList, getAllPatientslist } = require('../controller/patientController');
 const { isAuth } = require('../config/auth');
 const { connectTenantDB } = require('../config/db');
 const { sendDoctorOtp } = require('../controller/doctorController');
@@ -17,6 +17,8 @@ const upload = multer({
 
 router.post('/patients',isAuth,connectTenantDB, addPatient);
 router.get('/patients',isAuth,connectTenantDB, getAllPatients);
+router.get('/patientslist',isAuth,connectTenantDB, getAllPatientslist);
+
 router.get('/patients/:doctor',isAuth,connectTenantDB, getPatients);
 router.get('/patients/:id',isAuth,connectTenantDB, getPatientById);
 router.put('/patients/:id',isAuth,connectTenantDB, updatePatient);

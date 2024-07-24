@@ -115,6 +115,59 @@ console.log(availabilityDoc)
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+const getAllPatientslist = async (req, res) => {
+  try {
+    const { tenantDBConnection } = req;
+    const { mobile_number, appointment_date, page = 1, limit = 10 } = req.query;
+    const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
+    const mainDBConnection = mongoose.connection;
+    let query = {};
+
+    if (mobile_number) {
+      query.mobile_number = { $regex: mobile_number, $options: 'i' };
+    }
+
+    const totalPatients = await PatientModel.countDocuments(query);
+    const totalPages = Math.ceil(totalPatients / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+
+    const patients = await PatientModel.find(query)
+      .skip(startIndex)
+      .limit(parseInt(limit))
+      .select('name mobile_number address gender age dob otp otpVerified diagnose_reports bond appointment_history');
+
+    const patientData = patients.map(patient => {
+      const totalVisits = patient.appointment_history.length;
+      const lastVisit = totalVisits > 0 ? patient.appointment_history[totalVisits - 1].appointment_date : null;
+
+      // Remove appointment history from the result
+      const { appointment_history, ...patientWithoutHistory } = patient.toObject();
+
+      return {
+        ...patientWithoutHistory,
+        totalVisits,
+        lastVisit,
+      };
+    });
+
+    res.json({
+      success: true,
+      message: "Patients fetched successfully",
+      totalCount: totalPatients,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages,
+      startIndex: startIndex + 1,
+      endIndex: endIndex > totalPatients ? totalPatients : endIndex,
+      currentPage: parseInt(page),
+      patients: patientData,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 
 // Get Patients by Doctor ID
@@ -589,5 +642,6 @@ module.exports = {
   getPatientsWithTodayAppointments,
   upload_diagnose_report,
   get_diagnose_report,
-  getFollowUpList
+  getFollowUpList,
+  getAllPatientslist
 };
