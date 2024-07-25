@@ -13,8 +13,8 @@ console.log("userid",userId)
   return jwt.sign(
     {
       _id: userId,
-      name: user.name,
-      email: user.email || null,  
+      name: user.name||null,
+      email: user.email || null,    
       mobile_number: user.mobile_number,
       
     },

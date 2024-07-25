@@ -4,6 +4,7 @@ const { generateOtp } = require('../lib/generateOtp');
 const { signInToken } = require('../config/auth');
 const Clinic = require('../modal/clinic.');
 const { errormesaages } = require('../errormessages');
+const doctor = require('../modal/doctor');
 dotenv.config();
 
 // const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -116,24 +117,40 @@ const verifyOtp = async (req, res) => {
 };
 
 const generateToken = async (req, res) => {
-  const { id } = req.body;
+  const { clinicId, doctorId } = req.body;
 
   try {
-    const clinic = await Clinic.find({_id:id});
+    const doctors = await doctor.findOne({
+      _id: doctorId,
+      'clinics.clinicId': clinicId
+    });
 
-    if (!clinic) {
-      return res.status(404).json({ success:false,message: errormesaages[1001], errorcode: 1001 });
+    if (!doctors) {
+      return res.status(404).json({ success: false, message: 'Doctor with the specified clinicId not found' });
     }
 
-   
+    const clinicDetails = doctors.clinics.find(clinic => clinic.clinicId.toString() === clinicId);
 
-    const token = signInToken(clinic);
+    if (!clinicDetails) {
+      return res.status(404).json({ success: false, message: 'Clinic details not found' });
+    }
 
-    res.status(200).json({sucess:true, message: 'token generated successfully', token, clinic });
+    const doctordata = {
+      _id: doctors._id,
+      name: doctors.name,
+      mobile_number: doctors.mobile_number,
+      clinics: [clinicDetails],
+    };
+
+    const token = signInToken(doctordata);
+
+    res.status(200).json({ success: true,message:"token generated succesfully", doctordata, token });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error fetching clinic details:', error);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
+
 
 module.exports = {
   sendOtp,

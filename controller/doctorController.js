@@ -480,8 +480,8 @@ const verifyDoctorOtp = async (req, res) => {
     doctorData.otpVerified = true;
 
     await doctorData.save();
-const token=signInToken(doctorData)
-    res.status(200).json({ success: true, message: 'OTP verified successfully', doctor: doctorData,token });
+// const token=signInToken(doctorData)
+    res.status(200).json({ success: true, message: 'OTP verified successfully', doctor: doctorData});
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
