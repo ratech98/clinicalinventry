@@ -2,6 +2,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const Clinic = require("../modal/clinic.");
 const moment = require('moment');
+const { errormesaages } = require("../errormessages");
 
 const signInToken = (user) => {
   console.log(process.env.JWT_SECRET);  
@@ -57,7 +58,7 @@ const isAuth = async (req, res, next) => {
   const { authorization } = req.headers;
 
   if (!authorization || !authorization.startsWith('Bearer ')) {
-    return res.status(401).send({ message: 'Unauthorized - Missing or invalid token' });
+    return res.status(401).send({success:false, message: errormesaages[1040] ,errorcode:1040});
   }
 
   try {
@@ -70,11 +71,11 @@ const isAuth = async (req, res, next) => {
     const clinic = await Clinic.findById(decoded._id);
 
     if (!clinic) {
-      return res.status(401).send({ message: 'Unauthorized - Clinic not found' });
+      return res.status(401).send({success:false, message: errormesaages[1001],errorcode:1001 });
     }
 
     if (clinic.block) {
-      return res.status(403).send({ message: 'User is blocked', block_reason: clinic.block_reason });
+      return res.status(403).send({ message:errormesaages[1042], block_reason: clinic.block_reason,errorcode:1042 });
     }
 
     // Check subscription status and dates
@@ -87,17 +88,17 @@ const isAuth = async (req, res, next) => {
         const daysSinceExpiry = currentDate.diff(subscriptionEndDate, 'days');
         
         if (daysSinceExpiry > maxGracePeriod) {
-          return res.status(403).send({ message: 'Subscription expired and grace period exceeded' });
+          return res.status(403).send({ message: errormesaages[1043] });
         }
       }
     } else {
-      return res.status(403).send({ message: 'No active subscription' });
+      return res.status(403).send({success:false, message: errormesaages[1044],errorcode:1044 });
     }
 
     next();
   } catch (error) {
     console.error('Error verifying token:', error);
-    return res.status(400).send({ message: 'Unauthorized - Invalid token' });
+    return res.status(400).send({ success:false, message: errormesaages[1040] ,errorcode:1040 });
   }
 };
 

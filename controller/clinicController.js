@@ -325,12 +325,12 @@ const update_Subscription = async (req, res) => {
     // Find the clinic and subscription duration
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
-      return res.status(404).send({ success: false, error: 'Clinic not found', errorcode: 1001 });
+      return res.status(404).send({ success: false, error: errormesaages[1001], errorcode: 1001 });
     }
 
     const subscriptionDuration = await SubscriptionDuration.findById(subscription_id);
     if (!subscriptionDuration) {
-      return res.status(404).send({ success: false, error: 'Subscription duration not found', errorcode: 1002 });
+      return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1041 });
     }
 
     // Calculate end date based on duration
@@ -342,7 +342,7 @@ const update_Subscription = async (req, res) => {
     } else if (subscriptionDuration.duration === 'year') {
       endDate = currentDate.add(subscriptionDuration.durationInNo, 'years');
     } else {
-      return res.status(400).send({ success: false, error: 'Invalid subscription duration', errorcode: 1003 });
+      return res.status(400).send({ success: false, error:errormesaages[1045], errorcode: 1045 });
     }
 
     // Format dates
@@ -378,7 +378,7 @@ const getsubscriptiondays = async (req, res) => {
 
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
-      return res.status(404).send({ success: false, error: 'Clinic not found', errorcode: 1001 });
+      return res.status(404).send({ success: false, error:errormesaages[1001], errorcode: 1001 });
     }
 
     if (!clinic.subscription_details || clinic.subscription_details.length === 0) {

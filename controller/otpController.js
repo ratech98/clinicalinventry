@@ -37,13 +37,12 @@ const sendOtp = async (req, res) => {
 
     await clinic.save();
 
-    // Code to send OTP via SMS
-    // await client.messages.create({
-    //   body: `Your OTP code is ${otp}`,
-    //   from: process.env.TWILIO_PHONE_NUMBER,
-    //   to: mobile_number,
+    // const response = await axios.post('https://api.creativepoint.com/send', {
+    //   api_key: process.env.CREATIVEPOINT_API_KEY,
+    //   sender_id: process.env.CREATIVEPOINT_SENDER_ID,
+    //   mobile_number: mobile_number,
+    //   message: `Your OTP code is ${otp}`,
     // });
-
     res.status(200).json({ success: true, message: 'OTP sent successfully' });
   } catch (error) {
     console.error(error);
@@ -71,13 +70,12 @@ const loginsendOtp = async (req, res) => {
 
     await clinic.save();
 
-    // Code to send OTP via SMS
-    // await client.messages.create({
-    //   body: `Your OTP code is ${otp}`,
-    //   from: process.env.TWILIO_PHONE_NUMBER,
-    //   to: mobile_number,
+    // const response = await axios.post('https://api.creativepoint.com/send', {
+    //   api_key: process.env.CREATIVEPOINT_API_KEY,
+    //   sender_id: process.env.CREATIVEPOINT_SENDER_ID,
+    //   mobile_number: mobile_number,
+    //   message: `Your OTP code is ${otp}`,
     // });
-
     res.status(200).json({ success: true, message: 'OTP sent successfully' });
   } catch (error) {
     console.error(error);

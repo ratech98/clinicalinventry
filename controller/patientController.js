@@ -431,6 +431,17 @@ const addAppointmentWithToken = async (req, res) => {
     //     });
     //   });
     // }
+    // const whatsappNumber = `whatsapp:${patient.mobile_number}`;
+    // const messageBody = `Dear ${patient.name}, your appointment with Doctor ${doctorId} is confirmed for ${appointment_date} at ${time}. Your token number is ${newTokenNumber}.`;
+
+    // client.messages.create({
+    //   body: messageBody,
+    //   from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`, // Your Twilio WhatsApp number
+    //   to: whatsappNumber
+    // })
+    // .then(message => console.log(`Message sent: ${message.sid}`))
+    // .catch(error => console.error(`Failed to send message: ${error.message}`));
+
 
     await patient.save();
     createNotification("doctor", doctorId, `You have an appointment on ${appointment_date} at ${time}`);

@@ -18,7 +18,7 @@ const upload = multer({
 router.post('/addclinic',isAuth, addClinic);
 router.get('/clinics',isAdmin, getAllClinics);
 
-router.get('/clinic',isAuth, getClinicById);
+router.get('/clinic',verifyToken, getClinicById);
 router.get('/clinic/:id',isAuth, getClinicId);
 router.put('/clinics/:id',isAuth,upload, updateClinic);
 router.delete('/clinics/:id',isAuth, deleteClinic);
