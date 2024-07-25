@@ -31,8 +31,8 @@ router.put('/receptionists/verify/:id',isAuth,updateReceptionistVerify)
 
 
 router.post('/sendotp/receptionist',isAuth,sendReceptionistOtp)
-router.post('/sendotp/receptionist/login',isAuth,sendReceptionistOtpForLogin)
-router.post('/verifyotp/receptionist',isAuth,verifyReceptionistOtp)
+router.post('/sendotp/receptionist/login',sendReceptionistOtpForLogin)
+router.post('/verifyotp/receptionist',verifyReceptionistOtp)
 router.get('/receptionist/clinic/:id',isAuth,getReceptionistsByClinic)
 router.post('/receptionist/:id',isAuth,blockOrUnblockReceptionist)
 
