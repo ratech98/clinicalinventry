@@ -314,13 +314,15 @@ const blockOrUnblockClinic = async (req, res) => {
 
 const update_Subscription = async (req, res) => {
   try {
-    const {  subscription_id } = req.body;
+    const { subscription_id, transaction_id } = req.body;
     const clinicId = req.params.id;
 
-    // if (!mongoose.Types.ObjectId.isValid(subscription) || !mongoose.Types.ObjectId.isValid(subscription_id) || !mongoose.Types.ObjectId.isValid(clinicId)) {
+    // // Validate IDs
+    // if (!mongoose.Types.ObjectId.isValid(subscription_id) || !mongoose.Types.ObjectId.isValid(clinicId)) {
     //   return res.status(400).send({ success: false, error: 'Invalid ID format' });
     // }
 
+    // Find the clinic and subscription duration
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
       return res.status(404).send({ success: false, error: 'Clinic not found', errorcode: 1001 });
@@ -331,55 +333,69 @@ const update_Subscription = async (req, res) => {
       return res.status(404).send({ success: false, error: 'Subscription duration not found', errorcode: 1002 });
     }
 
+    // Calculate end date based on duration
     const currentDate = moment();
     let endDate;
+
     if (subscriptionDuration.duration === 'month') {
       endDate = currentDate.add(subscriptionDuration.durationInNo, 'months');
     } else if (subscriptionDuration.duration === 'year') {
       endDate = currentDate.add(subscriptionDuration.durationInNo, 'years');
+    } else {
+      return res.status(400).send({ success: false, error: 'Invalid subscription duration', errorcode: 1003 });
     }
 
+    // Format dates
     const formattedStartDate = currentDate.format('DD-MM-YYYY');
     const formattedEndDate = endDate.format('DD-MM-YYYY');
 
+    // Update clinic subscription details
     clinic.subscription = true;
-    clinic.subscription_startdate = formattedStartDate;
-    clinic.subscription_enddate = formattedEndDate;
-    clinic.subscription_id = subscription_id;
+
+
+    // Add the subscription detail
+    clinic.subscription_details.push({
+      subscription_id,
+      transaction_id: transaction_id || 'N/A', // Add transaction_id if provided
+      subscription_startdate: moment().format("DD-MM-YYYY"),
+      subscription_enddate: formattedEndDate
+    });
 
     await clinic.save();
 
     res.status(200).send({ success: true, message: 'Subscription details updated successfully', clinic });
   } catch (error) {
     console.error('Error updating subscription details:', error);
-    res.status(500).send({ success: false, error: error });
+    res.status(500).send({ success: false, error: error.message });
   }
 };
 
 
-const getsubscriptiondays=async (req, res) => {
+
+const getsubscriptiondays = async (req, res) => {
   try {
     const clinicId = req.params.id;
 
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
-      return res.status(404).send({success:false,error:errormesaages[1001],errorcode:1001});
+      return res.status(404).send({ success: false, error: 'Clinic not found', errorcode: 1001 });
     }
 
-    if (!clinic.subscription_enddate) {
-      return res.status(400).send({success:false,error:errormesaages[1026],errorcode:1026});
+    if (!clinic.subscription_details || clinic.subscription_details.length === 0) {
+      return res.status(400).send({ success: false, error: 'No subscription details found', errorcode: 1026 });
     }
 
+    const latestSubscriptionDetail = clinic.subscription_details[clinic.subscription_details.length - 1];
     const currentDate = moment();
-    const endDate = moment(clinic.subscription_enddate, 'DD-MM-YYYY');
+    const endDate = moment(latestSubscriptionDetail.subscription_enddate, 'DD-MM-YYYY');
     const remainingDays = endDate.diff(currentDate, 'days');
 
-    res.status(200).json({ remainingDays });
+    res.status(200).json({ success: true, remainingDays, subscription_details: clinic.subscription_details });
   } catch (error) {
     console.error('Error calculating remaining days:', error);
-    res.status(500).send({success:false,error:error});
+    res.status(500).send({ success: false, error: error.message });
   }
-}
+};
 
 module.exports = { addClinic,
                    getAllClinics, 

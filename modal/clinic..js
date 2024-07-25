@@ -5,6 +5,13 @@ const Patient = require('../modal/patient'); // Adjust path if needed
 const Medicine = require('../modal/medicine'); // Adjust path if needed
 const Template = require('./prescriptiontemplate');
 
+const subscriptionDetailSchema = new mongoose.Schema({
+  subscription_id: { type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionDuration' },
+  transaction_id: { type: String },
+  subscription_startdate:{type:String},
+  subscription_enddate:{type:String},
+}, { _id: false });
+
 const clinicSchema = new mongoose.Schema({
   clinic_name: { type: String}, 
   name: { type: String },
@@ -25,9 +32,8 @@ const clinicSchema = new mongoose.Schema({
   block_reason: { type: String, default: null },
   unblock_reason: { type: String, default: null },
   subscription:{type:Boolean,default:false},
-  subscription_id:{type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionDuration' },
-  subscription_startdate:{type:String},
-  subscription_enddate:{type:String},
+  subscription_details: [subscriptionDetailSchema]  ,
+
   details:{type:Boolean,default:false}
 
 }, { timestamps: true });

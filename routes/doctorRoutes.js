@@ -17,23 +17,23 @@ const upload = multer({
 
 
 router.post('/doctors', addDoctor);
-router.get('/doctors', getAllDoctors);
-router.get('/doctors/clinic', getClinicDetailsByDoctorId);
-router.get('/doctors/:id', getDoctorById);
-router.put('/doctors/:id',upload, updateDoctor);
-router.delete('/doctors/:id', deleteDoctor);
-router.put('/doctors/status', updateDoctorAvailability);
-router.put('/doctors/verify/clinic', verifyDoctorClinic);
-router.post('/update_clinic_to_doctor',addClinicToDoctor)
-router.post('/adddoctor_availablity',addDoctorAvailability)
-router.put('/updatedoctor_availablity',updateDoctorAvailabilitty)
-router.post('/sendotp/doctor',sendDoctorOtp)
-router.post('/sendotp/doctor/login',sendDoctorOtpForLogin)
-router.post('/verifyotp/doctor',verifyDoctorOtp)
-router.post('/doctor/:id',blockOrUnblockDoctor)
-router.get('/get/availability',get_availability)
-router.post('/unavaialbleslots',addUnavailableSlots)
+router.get('/doctors',isAuth, getAllDoctors);
+router.get('/doctors/clinic',isAuth, getClinicDetailsByDoctorId);
+router.get('/doctors/:id',isAuth, getDoctorById);
+router.put('/doctors/:id',isAuth,upload, updateDoctor);
+router.delete('/doctors/:id',isAuth, deleteDoctor);
+router.put('/doctors/status',isAuth, updateDoctorAvailability);
+router.put('/doctors/verify/clinic',isAuth, verifyDoctorClinic);
+router.post('/update_clinic_to_doctor',isAuth,addClinicToDoctor)
+router.post('/adddoctor_availablity',isAuth,addDoctorAvailability)
+router.put('/updatedoctor_availablity',isAuth,updateDoctorAvailabilitty)
+router.post('/sendotp/doctor',isAuth,sendDoctorOtp)
+router.post('/sendotp/doctor/login',isAuth,sendDoctorOtpForLogin)
+router.post('/verifyotp/doctor',isAuth,verifyDoctorOtp)
+router.post('/doctor/:id',isAuth,blockOrUnblockDoctor)
+router.get('/get/availability',isAuth,get_availability)
+router.post('/unavaialbleslots',isAuth,addUnavailableSlots)
 
-router.put('/verify/certificate/:id', verify_certificate);
+router.put('/verify/certificate/:id',isAuth, verify_certificate);
 
 module.exports=router

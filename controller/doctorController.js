@@ -1,5 +1,5 @@
 
-const { signInToken } = require("../config/doctor");
+const { signInToken } = require("../config/auth");
 const { errormesaages } = require("../errormessages");
 const { createNotification } = require("../lib/notification");
 const Availability = require("../modal/availablity");

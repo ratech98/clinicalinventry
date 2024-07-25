@@ -19,11 +19,11 @@ const upload = multer({
 }).single('logo'); 
 
 
-router.get('/get_prescriptionTemplate/:clinicId',getTemplatesByClinicId)
-router.post('/add_field',add_field_to_template)
-router.post('/update_field',update_field_in_template)
-router.delete('/delete_field/:clinicId/:section/:fieldName',delete_field_from_template)
-router.post('/update_logo',upload,update_logo)
+router.get('/get_prescriptionTemplate/:clinicId',isAuth,getTemplatesByClinicId)
+router.post('/add_field',isAuth,add_field_to_template)
+router.post('/update_field',isAuth,update_field_in_template)
+router.delete('/delete_field/:clinicId/:section/:fieldName',isAuth,delete_field_from_template)
+router.post('/update_logo',isAuth,upload,update_logo)
 
 
 module.exports=router

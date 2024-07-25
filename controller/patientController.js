@@ -387,6 +387,8 @@ const getPrescription = async (req, res) => {
   }
 };
 
+const moment = require('moment');
+
 const addAppointmentWithToken = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
@@ -396,7 +398,14 @@ const addAppointmentWithToken = async (req, res) => {
     const patient = await PatientModel.findById(patientId);
 
     if (!patient) {
-      return res.status(404).json({success:false, error: errormesaages[1021], errorcode: 1021});
+      return res.status(404).json({ success: false, error: errormesaages[1021], errorcode: 1021 });
+    }
+
+    const currentDate = moment();
+    const appointmentDate = moment(appointment_date, 'DD-MM-YYYY'); 
+
+    if (appointmentDate.isBefore(currentDate, 'day') || appointmentDate.diff(currentDate, 'days') > 7) {
+      return res.status(400).json({ success: false, error:errormesaages[1039] , errorcode: 1039 });
     }
 
     const tokenCount = patient.appointment_history.filter(a => a.appointment_date === appointment_date).length;
@@ -424,31 +433,39 @@ const addAppointmentWithToken = async (req, res) => {
     // }
 
     await patient.save();
-    createNotification("doctor",doctorId,`you have appointment on ${appointment_date} at ${time} `)
+    createNotification("doctor", doctorId, `You have an appointment on ${appointment_date} at ${time}`);
 
-    res.status(200).json({ success: true, message: "Appointment and diagnose reports added successfully", patient });
+    res.status(200).json({ success: true, message: "Appointment added successfully", patient });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
+
 const addFollowUpAppointment = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
     const { patientId, previousAppointmentId, appointment_date, time, reason, doctorId } = req.body;
 
-    const PatientModel = tenantDBConnection.model('Patient',Patient.schema);
+    const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const patient = await PatientModel.findById(patientId);
 
     if (!patient) {
-      return res.status(404).json({success:false, error:  errormesaages[1021], errorcode: 1021 });
+      return res.status(404).json({ success: false, error: errormesaages[1021], errorcode: 1021 });
     }
 
     const previousAppointment = patient.appointment_history.id(previousAppointmentId);
 
     if (!previousAppointment) {
-      return res.status(404).json({ error:  errormesaages[1022], errorcode: 1022 });
+      return res.status(404).json({ success: false, error: errormesaages[1022], errorcode: 1022 });
+    }
+
+    const currentDate = moment();
+    const followUpDate = moment(appointment_date, 'DD-MM-YYYY'); 
+
+    if (followUpDate.isBefore(currentDate, 'day') || followUpDate.diff(currentDate, 'days') > 7) {
+      return res.status(400).json({  success: false, error:errormesaages[1039] , errorcode: 1039 });
     }
 
     const tokenCount = patient.appointment_history.filter(a => a.appointment_date === appointment_date).length;
@@ -461,7 +478,6 @@ const addFollowUpAppointment = async (req, res) => {
       doctor: doctorId,
       token_number: newTokenNumber,
       follow_up_from: previousAppointmentId,
-      
     };
 
     patient.appointment_history.push(newAppointment);

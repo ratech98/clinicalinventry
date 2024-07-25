@@ -51,9 +51,30 @@ const readnotification= async (req, res) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
-
+  const deleteNotifications = async (req, res) => {
+    try {
+      const { ids } = req.body;
+  
+      if (!ids || !Array.isArray(ids)) {
+        return res.status(400).json({ error: 'Invalid input. IDs should be an array.' });
+      }
+  
+      const result = await Notification.deleteMany({
+        _id: { $in: ids }
+      });
+  
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ error: 'No notifications found', errorcode: 1109 });
+      }
+  
+      res.json({ success: true, message: "notifications deleted successfully", deletedCount: result.deletedCount });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
   module.exports={
                     getNotifications,
-                    readnotification
+                    readnotification,
+                    deleteNotifications
 
   }

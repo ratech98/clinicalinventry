@@ -36,7 +36,8 @@
     1035:"SMS type not found",
     1036:"SMS template already exist",
     1037:"SMS template not found",
-    1038:'Notification not found'
+    1038:'Notification not found',
+    1039:'Appointment date must be within the next 7 days'
 
 
 
