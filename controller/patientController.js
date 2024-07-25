@@ -6,6 +6,7 @@ const { Storage } = require("@google-cloud/storage");
 const { errormesaages } = require('../errormessages');
 const Availability = require('../modal/availablity');
 const doctor = require('../modal/doctor');
+const { createNotification } = require('../lib/notification');
 
 require("dotenv").config();
 const bucketName = process.env.bucketName;
@@ -41,7 +42,6 @@ const getAllPatients = async (req, res) => {
     if (appointment_date) {
       query['appointment_history.appointment_date'] = appointment_date;
     }
-    
 
     const totalPatients = await PatientModel.countDocuments(query);
     const totalPages = Math.ceil(totalPatients / limit);
@@ -55,27 +55,34 @@ const getAllPatients = async (req, res) => {
       })
       .skip(startIndex)
       .limit(parseInt(limit));
-      const doctors = await doctor.find()
+
+    if (!patients.length) {
+      return res.status(404).json({ success: false, error: errormessages[1027], errorcode: 1027 });
+    }
+
+    const doctors = await mainDBConnection.model('doctor').find()
       .limit(limit)
       .skip(startIndex);
-      const todayUTC = new Date().toISOString().split('T')[0]; // Outputs 'YYYY-MM-DD'
 
-    if (!doctors.length) {
-      return res.status(404).json({ success: false, error: errormesaages[1027],errorcode:1027});
-    }
+    const todayUTC = new Date().toISOString().split('T')[0]; // Outputs 'YYYY-MM-DD'
 
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
       const availabilityDoc = await Availability.findOne({
         doctorId: doctor._id,
-        'availabilities.date': { $lte: new Date(todayUTC) },
         clinicId: req.user._id
       });
-console.log(availabilityDoc)
+
       let availabilityStatus = 'unavailable';
       if (availabilityDoc) {
-        const todayAvailability = availabilityDoc.availabilities.find(avail => avail.date.toISOString().split('T')[0] === todayUTC);
+        const todayAvailability = availabilityDoc.availabilities.find(avail => avail.day === new Date().toLocaleString('en-us', { weekday: 'long' }));
+        const unavailableSlots = availabilityDoc.unavailable.find(u => u.date.toISOString().split('T')[0] === todayUTC);
+
         if (todayAvailability) {
-          const availableSlots = todayAvailability.slots.some(slot => slot.available);
+          const availableSlots = todayAvailability.slots.filter(slot => {
+            // Check if slot is in the unavailable slots
+            return !unavailableSlots || !unavailableSlots.slots.some(unavailableSlot => unavailableSlot.timeSlot === slot.timeSlot);
+          }).some(slot => slot.available);
+
           availabilityStatus = availableSlots ? 'available' : 'unavailable';
         }
       }
@@ -88,13 +95,9 @@ console.log(availabilityDoc)
 
     const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
 
-    let filteredDoctorAvailability = doctorAvailability;
-    // if (onleave) {
-    //   filteredDoctorAvailability = doctorAvailability.filter(doc => doc.availability === 'unavailable');
-    // }
-
-    const availableDoctorsCount = filteredDoctorAvailability.filter(doc => doc.availability === 'available').length;
-    const unavailableDoctorsCount = filteredDoctorAvailability.filter(doc => doc.availability === 'unavailable').length;
+    // Count available and unavailable doctors
+    const availableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'available').length;
+    const unavailableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'unavailable').length;
 
     res.json({
       success: true,
@@ -107,14 +110,15 @@ console.log(availabilityDoc)
       endIndex: endIndex > totalPatients ? totalPatients : endIndex,
       currentPage: parseInt(page),
       patients,
-      availableDoctorsCount:availableDoctorsCount,
-      unavailableDoctorsCount:unavailableDoctorsCount,
+      availableDoctorsCount,
+      unavailableDoctorsCount,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 const getAllPatientslist = async (req, res) => {
   try {
     const { tenantDBConnection } = req;

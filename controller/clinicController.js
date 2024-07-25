@@ -197,7 +197,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     const { specialist, recently_joined, onleave, page = 1, limit = 10, verify } = req.query;
 
     const todayUTC = new Date().toISOString().split('T')[0]; // Outputs 'YYYY-MM-DD'
-console.log( new Date(todayUTC))
+
     const doctorQuery = { 'clinics.clinicId': id };
     if (specialist) {
       doctorQuery.specialist = specialist;
@@ -219,21 +219,26 @@ console.log( new Date(todayUTC))
       .skip(startIndex);
 
     if (!doctors.length) {
-      return res.status(404).json({ success: false, error: errormesaages[1027],errorcode:1027});
+      return res.status(404).json({ success: false, error: errormessages[1027], errorcode: 1027 });
     }
 
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
       const availabilityDoc = await Availability.findOne({
         doctorId: doctor._id,
-        'availabilities.date': { $lte: new Date(todayUTC) },
         clinicId: id
       });
-console.log(availabilityDoc)
+
       let availabilityStatus = 'unavailable';
       if (availabilityDoc) {
-        const todayAvailability = availabilityDoc.availabilities.find(avail => avail.date.toISOString().split('T')[0] === todayUTC);
+        const todayAvailability = availabilityDoc.availabilities.find(avail => avail.day === new Date().toLocaleString('en-us', { weekday: 'long' }));
+        const unavailableSlots = availabilityDoc.unavailable.find(u => u.date.toISOString().split('T')[0] === todayUTC);
+
         if (todayAvailability) {
-          const availableSlots = todayAvailability.slots.some(slot => slot.available);
+          const availableSlots = todayAvailability.slots.filter(slot => {
+            // Check if slot is in the unavailable slots
+            return !unavailableSlots || !unavailableSlots.slots.some(unavailableSlot => unavailableSlot.timeSlot === slot.timeSlot);
+          }).some(slot => slot.available);
+
           availabilityStatus = availableSlots ? 'available' : 'unavailable';
         }
       }

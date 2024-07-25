@@ -127,7 +127,6 @@ const addSMSTemplate = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 const getAllSMSTemplates = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
@@ -135,13 +134,20 @@ const getAllSMSTemplates = async (req, res) => {
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
 
+    if (!tenantDBConnection.models['SMSType']) {
+      tenantDBConnection.model('SMSType', SMSType.schema);
+    }
+
     const SMSTemplateModel = tenantDBConnection.model('SMSTemplate', SMSTemplate.schema);
 
     const totalCount = await SMSTemplateModel.countDocuments();
     const totalPages = Math.ceil(totalCount / limitNum);
 
     const skip = (pageNum - 1) * limitNum;
-    const smstemplates = await SMSTemplateModel.find().skip(skip).limit(limitNum);
+    const smstemplates = await SMSTemplateModel.find()
+      .populate('smstypeId')  // Populate the smstypeId field
+      .skip(skip)
+      .limit(limitNum);
 
     res.json({
       success: true,
@@ -160,6 +166,7 @@ const getAllSMSTemplates = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 const getSMSTemplateById = async (req, res) => {
   try {

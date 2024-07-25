@@ -201,47 +201,92 @@ function formatDate(date) {
   return `${year}-${month}-${day}`;
 }
 
+// const addDoctorAvailability = async (req, res) => {
+//   const { doctorId, clinicId, days, slots } = req.body;
+
+//   try {
+//     const doctors = await doctor.findById(doctorId);
+//     if (!doctors) {
+//       return res.status(404).json({success:false, error: errormesaages[1002], errorcode: 1002 });
+//     }
+
+//     const clinic = await Clinic.findById(clinicId);
+//     if (!clinic) {
+//       return res.status(404).json({ success:false, error: errormesaages[1001], errorcode: 1001 });
+//     }
+
+//     const nextOccurrences = calculateNextOccurrences(days);
+
+//     const availabilities = nextOccurrences.map(date => ({
+//       date: formatDate(date), // Format date as YYYY-MM-DD
+//       day: getDayOfWeek(date),
+//       slots: slots.map(slot => ({ timeSlot: slot, available: true }))
+//     }));
+
+//     for (const availability of availabilities) {
+//       const existingAvailability = await Availability.findOne({
+//         doctorId,
+//         'availabilities.date': availability.date,
+//         'availabilities.slots.timeSlot': { $in: slots }
+//       });
+//       if (existingAvailability) {
+//         return res.status(400).json({ success: false, error: `Doctor already has availability on ${availability.date} for one of the provided slots` });
+//       }
+//     }
+
+//     // Create new availability document
+//     const newAvailability = new Availability({
+//       doctorId,
+//       clinicId,
+//       availabilities
+//     });
+
+//     // Save availability
+//     await newAvailability.save();
+
+//     res.status(201).json({ success: true, message: 'Availability added successfully', availability: newAvailability });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: 'Internal Server Error' });
+//   }
+// };
+
+
 const addDoctorAvailability = async (req, res) => {
   const { doctorId, clinicId, days, slots } = req.body;
 
   try {
     const doctors = await doctor.findById(doctorId);
     if (!doctors) {
-      return res.status(404).json({success:false, error: errormesaages[1002], errorcode: 1002 });
+      return res.status(404).json({ success: false, error: 'Doctor not found', errorcode: 1002 });
     }
 
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
-      return res.status(404).json({ success:false, error: errormesaages[1001], errorcode: 1001 });
+      return res.status(404).json({ success: false, error: 'Clinic not found', errorcode: 1001 });
     }
 
-    const nextOccurrences = calculateNextOccurrences(days);
-
-    const availabilities = nextOccurrences.map(date => ({
-      date: formatDate(date), // Format date as YYYY-MM-DD
-      day: getDayOfWeek(date),
+    const availabilities = days.map(day => ({
+      day,
       slots: slots.map(slot => ({ timeSlot: slot, available: true }))
     }));
 
-    for (const availability of availabilities) {
-      const existingAvailability = await Availability.findOne({
-        doctorId,
-        'availabilities.date': availability.date,
-        'availabilities.slots.timeSlot': { $in: slots }
-      });
-      if (existingAvailability) {
-        return res.status(400).json({ success: false, error: `Doctor already has availability on ${availability.date} for one of the provided slots` });
-      }
+    const existingAvailability = await Availability.findOne({
+      doctorId,
+      'availabilities.day': { $in: days },
+      'availabilities.slots.timeSlot': { $in: slots }
+    });
+
+    if (existingAvailability) {
+      return res.status(400).json({ success: false, error: 'Doctor already has availability on one of the provided days for one of the slots' });
     }
 
-    // Create new availability document
     const newAvailability = new Availability({
       doctorId,
       clinicId,
       availabilities
     });
 
-    // Save availability
     await newAvailability.save();
 
     res.status(201).json({ success: true, message: 'Availability added successfully', availability: newAvailability });
@@ -250,8 +295,6 @@ const addDoctorAvailability = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
-
 
 
 
@@ -376,15 +419,9 @@ const sendDoctorOtpForLogin = async (req, res) => {
 };
 
 
-
-
-
-
-
-
 const sendDoctorOtp = async (req, res) => {
   const { mobile_number, clinicId } = req.body;
-  const otp = "1234";
+  const otp = "1234"; 
 
   try {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
@@ -415,6 +452,7 @@ const sendDoctorOtp = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 
@@ -485,8 +523,6 @@ const blockOrUnblockDoctor = async (req, res) => {
   }
 };
 
-
-
 const get_availability = async (req, res) => {
   try {
     const { doctorId, clinicId, date, day } = req.query;
@@ -499,37 +535,55 @@ const get_availability = async (req, res) => {
       query.clinicId = clinicId;
     }
 
-    if (date || day) {
-      query.availabilities = {};
-      if (date) {
-        query.availabilities.$elemMatch = { date: new Date(date) };
-      }
-      if (day) {
-        if (!query.availabilities.$elemMatch) {
-          query.availabilities.$elemMatch = {};
-        }
-        query.availabilities.$elemMatch.day = { $regex: day, $options: 'i' };
-      }
+    let dayFilter = {};
+    if (date) {
+      const targetDate = new Date(date);
+      dayFilter = {
+        day: targetDate.toLocaleString('en-us', { weekday: 'long' }),
+        date: targetDate
+      };
+    } else if (day) {
+      dayFilter = {
+        day: new RegExp(day, 'i')
+      };
     }
 
     const availabilities = await Availability.find(query);
-    
-    const matchedAvailabilities = availabilities.map(item => ({
-      ...item.toObject(),
-      availabilities: item.availabilities.filter(avail => {
-        let dateMatch = true;
+
+    const matchedAvailabilities = availabilities.map(item => {
+      const filteredAvailabilities = item.availabilities.filter(avail => {
         let dayMatch = true;
-        
+        let slotsMatch = true;
+
         if (date) {
-          dateMatch = new Date(avail.date).toISOString().slice(0, 10) === new Date(date).toISOString().slice(0, 10);
+          dayMatch = dayFilter.day === avail.day;
+          const unavailableSlots = item.unavailable.find(u => u.date.toDateString() === dayFilter.date.toDateString());
+          if (unavailableSlots) {
+            avail.slots = avail.slots.filter(slot => 
+              !unavailableSlots.slots.some(unavailableSlot => unavailableSlot.timeSlot === slot.timeSlot)
+            );
+          }
+        } else if (day) {
+          dayMatch = dayFilter.day.test(avail.day);
         }
-        if (day) {
-          dayMatch = new RegExp(day, 'i').test(avail.day);
+
+        if (dayMatch) {
+          const availableSlots = avail.slots.filter(slot => slot.available === true);
+          slotsMatch = availableSlots.length > 0;
         }
-        
-        return dateMatch && dayMatch;
-      })
-    })).filter(item => item.availabilities.length > 0);
+
+        return dayMatch && slotsMatch;
+      });
+
+      return {
+        doctorId: item.doctorId,
+        clinicId: item.clinicId,
+        availabilities: filteredAvailabilities.map(avail => ({
+          day: avail.day,
+          slots: avail.slots.filter(slot => slot.available)
+        }))
+      };
+    }).filter(item => item.availabilities.length > 0);
 
     res.json({ success: true, message: "Availabilities fetched successfully", availabilities: matchedAvailabilities });
   } catch (error) {
@@ -537,6 +591,77 @@ const get_availability = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
+
+// const get_availability = async (req, res) => {
+//   try {
+//     const { doctorId, clinicId, date, day } = req.query;
+//     let query = {};
+
+//     if (doctorId) {
+//       query.doctorId = doctorId;
+//     }
+//     if (clinicId) {
+//       query.clinicId = clinicId;
+//     }
+
+//     let dayFilter = {};
+//     if (date) {
+//       const targetDate = new Date(date);
+//       dayFilter = {
+//         day: targetDate.toLocaleString('en-us', { weekday: 'long' })
+//       };
+//     } else if (day) {
+//       dayFilter = {
+//         day: new RegExp(day, 'i')
+//       };
+//     }
+
+//     const availabilities = await Availability.find(query);
+
+//     const matchedAvailabilities = availabilities.map(item => {
+//       const filteredAvailabilities = item.availabilities.filter(avail => {
+//         let dayMatch = true;
+//         let slotsMatch = true;
+
+//         if (date) {
+//           dayMatch = dayFilter.day === avail.day;
+//         } else if (day) {
+//           dayMatch = dayFilter.day.test(avail.day);
+//         }
+
+//         if (dayMatch) {
+//           const availableSlots = avail.slots.filter(slot => slot.available === true);
+//           slotsMatch = availableSlots.length > 0;
+//         }
+
+//         return dayMatch && slotsMatch;
+//       });
+
+//       return {
+//         doctorId: item.doctorId,
+//         clinicId: item.clinicId,
+//         availabilities: filteredAvailabilities.map(avail => ({
+//           day: avail.day,
+//           slots: avail.slots.filter(slot => slot.available)
+//         }))
+//       };
+//     }).filter(item => item.availabilities.length > 0);
+
+//     res.json({ success: true, message: "Availabilities fetched successfully", availabilities: matchedAvailabilities });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, error: "Internal Server Error" });
+//   }
+// };
+
+
+
+
+
+
+
+
 
 
 const verify_certificate = async (req, res) => {
@@ -569,6 +694,27 @@ const verify_certificate = async (req, res) => {
   }
 };
 
+const addUnavailableSlots = async (req, res) => {
+  const { doctorId, clinicId, unavailable } = req.body;
+
+  try {
+    const availability = await Availability.findOne({ doctorId, clinicId });
+
+    if (!availability) {
+      return res.status(404).json({ success: false, error: "Availability record not found" });
+    }
+
+    availability.unavailable.push(...unavailable);
+    await availability.save();
+
+    res.status(200).json({ success: true, message: 'Unavailable slots added successfully', availability });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
+
 module.exports = { 
                 addDoctor, 
                 getAllDoctors, 
@@ -587,5 +733,6 @@ module.exports = {
                blockOrUnblockDoctor,
                sendDoctorOtpForLogin,
                get_availability,
-               verify_certificate
+               verify_certificate,
+               addUnavailableSlots
                 };
