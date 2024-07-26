@@ -5,8 +5,7 @@ const moment = require('moment');
 const { errormesaages } = require("../errormessages");
 
 const signInToken = (user) => {
-  console.log(process.env.JWT_SECRET);  
-  
+  console.log("JWT_SECRET during sign-in:", process.env.JWT_SECRET);   
   const userId = user.clinics && user.clinics.length > 0 
   ? user.clinics[0].clinicId 
   : (user.clinic ? user.clinic : user._id);
@@ -62,6 +61,7 @@ const isAuth = async (req, res, next) => {
   }
 
   try {
+    console.log("JWT_SECRET during verify:", process.env.JWT_SECRET); 
     const token = authorization.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;

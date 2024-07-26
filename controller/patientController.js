@@ -130,7 +130,7 @@ const getAllPatientslist = async (req, res) => {
     if (mobile_number) {
       query.mobile_number = { $regex: mobile_number, $options: 'i' };
     }
-
+// query.bond={ $regex: "myself", $options: 'i' }
     const totalPatients = await PatientModel.countDocuments(query);
     const totalPages = Math.ceil(totalPatients / limit);
     const startIndex = (page - 1) * limit;
@@ -564,7 +564,7 @@ const upload_diagnose_report =async (req, res) => {
       return res.status(404).json({ error:  errormesaages[1021], errorcode: 1021 });
     }
 
-    const originalFilename = req.file.originalname;
+    const originalFilename = `${patient.name}_${report_name}`;
     const sanitizedFilename = originalFilename.replace(/[^a-zA-Z0-9.]/g, '_');
     const imagePath = `receptionst/${Date.now()}_${sanitizedFilename}`;
     await gcsStorage.bucket(bucketName).file(imagePath).save(req.file.buffer);
@@ -596,6 +596,7 @@ const get_diagnose_report=async (req, res) => {
 
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const patient = await PatientModel.findById(patientId);
+    // const patient = await PatientModel.findOne({mobile_number});
 
     if (!patient) {
       return res.status(404).json({success:false, error: errormesaages[1021], errorcode: 1021 });
