@@ -19,7 +19,7 @@ router.post('/addclinic',isAuth, addClinic);
 router.get('/clinics',isAdmin, getAllClinics);
 
 router.get('/clinic',verifyToken, getClinicById);
-router.get('/clinic/:id',isAuth, getClinicId);
+router.get('/clinic/:id',verifyToken, getClinicId);
 router.put('/clinics/:id',upload, updateClinic);
 router.delete('/clinics/:id',isAuth, deleteClinic);
 router.put('/verify-admin/:id',isAdmin, verify_clinic);

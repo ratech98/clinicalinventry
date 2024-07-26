@@ -58,7 +58,7 @@ const isAuth = async (req, res, next) => {
   const { authorization } = req.headers;
 
   if (!authorization || !authorization.startsWith('Bearer ')) {
-    return res.status(401).send({success:false, message: errormesaages[1040] ,errorcode:1040});
+    return res.status(401).send({success:false, message: errormesaages[1046] ,errorcode:1046});
   }
 
   try {
@@ -78,7 +78,6 @@ const isAuth = async (req, res, next) => {
       return res.status(403).send({ message:errormesaages[1042], block_reason: clinic.block_reason,errorcode:1042 });
     }
 
-    // Check subscription status and dates
     const currentDate = moment();
     const subscriptionEndDate = moment(clinic.subscription_enddate, 'DD-MM-YYYY');
     const maxGracePeriod = 7; // Maximum allowed grace period in days
