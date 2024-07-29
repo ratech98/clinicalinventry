@@ -303,6 +303,7 @@ const blockOrUnblockClinic = async (req, res) => {
 
     const action = block ? 'blocked' : 'unblocked';
     createNotification("clinic",id,`clinic ${action} by admin for ${reason}, contact admin !`)
+    createNotification("admin",req.admin._id,`You ${action} ${clinic.clinic_name} for ${reason}`)
 
     res.json({ success: true, message: `Clinic ${action} successfully`, clinic });
   } catch (error) {
@@ -310,6 +311,7 @@ const blockOrUnblockClinic = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 
 const update_Subscription = async (req, res) => {
@@ -349,11 +351,9 @@ const update_Subscription = async (req, res) => {
     const formattedStartDate = currentDate.format('DD-MM-YYYY');
     const formattedEndDate = endDate.format('DD-MM-YYYY');
 
-    // Update clinic subscription details
     clinic.subscription = true;
 
 
-    // Add the subscription detail
     clinic.subscription_details.push({
       subscription_id,
       transaction_id: transaction_id || 'N/A', // Add transaction_id if provided
@@ -362,6 +362,7 @@ const update_Subscription = async (req, res) => {
     });
 
     await clinic.save();
+    createNotification("admin",clinic._id,`${clinic.clinic_name} paid for subscription verify payment`)
 
     res.status(200).send({ success: true, message: 'Subscription details updated successfully', clinic });
   } catch (error) {

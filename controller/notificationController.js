@@ -3,16 +3,21 @@ const Notification = require("../modal/notification");
 
 const getNotifications=async (req, res) => {
     try {
-      const { recipientId, clinicId, read } = req.query;
+      const { recipientId, clinicId, read,recipientType } = req.query;
   
-      if (!recipientId) {
-        return res.status(400).json({ error: 'recipientId is required' });
-      }
+      // if (!recipientId) {
+      //   return res.status(400).json({ error: 'recipientId is required' });
+      // }
   
       const filter = {
-        recipientId
+        
       };
-  
+      if (recipientType) {
+        filter.recipientType = recipientType;
+      }
+      if (recipientId) {
+        filter.recipientId = recipientId;
+      }
       if (clinicId) {
         filter.clinicId = clinicId;
       }

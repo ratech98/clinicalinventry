@@ -563,8 +563,8 @@ const upload_diagnose_report =async (req, res) => {
     if (!patient) {
       return res.status(404).json({ error:  errormesaages[1021], errorcode: 1021 });
     }
-
-    const originalFilename = `${patient.name}_${report_name}`;
+    const currentDate = moment().format('DD-MM-YYYY'); 
+    const originalFilename = `${patient.name}_${currentDate}`;
     const sanitizedFilename = originalFilename.replace(/[^a-zA-Z0-9.]/g, '_');
     const imagePath = `receptionst/${Date.now()}_${sanitizedFilename}`;
     await gcsStorage.bucket(bucketName).file(imagePath).save(req.file.buffer);

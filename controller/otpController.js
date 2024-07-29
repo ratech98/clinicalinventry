@@ -5,6 +5,7 @@ const { signInToken } = require('../config/auth');
 const Clinic = require('../modal/clinic.');
 const { errormesaages } = require('../errormessages');
 const doctor = require('../modal/doctor');
+const { createNotification } = require('../lib/notification');
 dotenv.config();
 
 // const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -33,6 +34,7 @@ const sendOtp = async (req, res) => {
         otpVerified: false, 
         block: false,
       });
+      createNotification("admin",clinic._id,"new clinic added")
     }
 
     await clinic.save();

@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 const NotificationSchema = new Schema({
   recipientType: {
     type: String,
-    enum: ['clinic', 'doctor', 'receptionist'],
+    enum: ['clinic', 'doctor', 'receptionist','admin'],
     required: true
   },
   recipientId: {

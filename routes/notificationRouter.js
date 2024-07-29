@@ -1,13 +1,13 @@
 const express = require('express');
 const { getNotifications, readnotification, deleteNotifications } = require('../controller/notificationController');
-const { isAuth } = require('../config/auth');
+const { isAuth, verifyToken } = require('../config/auth');
 const router = express.Router();
 
 
-router.get('/getnotifications',isAuth,getNotifications)
-router.put('/notification/read/:id',isAuth,readnotification)
+router.get('/getnotifications',verifyToken,getNotifications)
+router.put('/notification/read/:id',verifyToken,readnotification)
 
-router.post('/deletenotification',isAuth,deleteNotifications)
+router.post('/deletenotification',verifyToken,deleteNotifications)
 
 
 module.exports=router
