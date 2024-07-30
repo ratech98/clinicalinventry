@@ -367,11 +367,12 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     const { id } = req.params;
     const { specialist, page = 1, limit = 10 } = req.query;
 
-    const todayUTC = new Date().toISOString().split('T')[0]; 
+    const todayUTC = moment().format('DD-MM-YYYY');    
+    const todayDay = new Date(todayUTC).getDay(); // Get the day of the week (0-6)
 
     const doctorQuery = { 'clinics.clinicId': id };
     if (specialist) {
-      doctorQuery.specialist ={ $regex: specialist, $options: 'i' }
+      doctorQuery.specialist = { $regex: specialist, $options: 'i' };
     }
 
     const totalDoctors = await doctor.countDocuments(doctorQuery);
@@ -379,7 +380,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    const doctors = await doctor.find(doctorQuery).select('specialist name mobile_number ')
+    const doctors = await doctor.find(doctorQuery).select('specialist name mobile_number')
       .limit(limit)
       .skip(startIndex);
 
@@ -390,48 +391,55 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
       const availabilityDoc = await Availability.findOne({
         doctorId: doctor._id,
-        'availabilities.date': { $lte: new Date(todayUTC) },
-         clinicId: id
+        clinicId: id
       });
-      console.log("availability",availabilityDoc)
 
       let availabilityStatus = 'unavailable';
       if (availabilityDoc) {
-        const todayAvailability = availabilityDoc.availabilities.find(avail => {
-          const availDate = moment(avail.date).format('DD-MM-YYYY');
-          return availDate === todayUTC;
-        });
+        const todayAvailability = availabilityDoc.availabilities.find(avail => avail.day === todayDay);
         if (todayAvailability) {
           const availableSlots = todayAvailability.slots.some(slot => slot.available);
           availabilityStatus = availableSlots ? 'available' : 'unavailable';
         }
       }
 
-      const todayAppointments = await Patient.find({
-        'appointment_history.doctor': doctor._id,
-        'appointment_history.appointment_date': todayUTC
-      }).select('appointment_history.$');
+      const { tenantDBConnection } = req;
+      if (!tenantDBConnection) {
+        return res.status(500).json({ success: false, error: 'Tenant DB connection is not set' });
+      }
 
-      const tokenNumbers = todayAppointments.map(appointment => {
-        console.log(appointment.appointment_history); 
-        return appointment.appointment_history[0].token_number;
+      const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
+
+      const todayAppointments = await PatientModel.find({
+        'appointment_history': {
+          $elemMatch: {
+            doctor: doctor._id,
+            // appointment_date: todayUTC
+          }
+        }
       });
+      const tokenCount = todayAppointments.reduce((count, appointment) => {
+        console.log("appoinment",appointment.appointment_history,todayUTC)
+
+        const todayAppointment = appointment.appointment_history.find(app => 
+          app.appointment_date === todayUTC
+        );
+        return todayAppointment ? count + 1 : count;
+      }, 0);
 
       return {
         doctor,
         availability: availabilityStatus,
-        tokenNumbers
+        tokenCount
       };
     });
 
     const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
 
-    
     res.status(200).json({
       success: true,
       message: 'Doctors fetched successfully',
       totalDoctorsCount: totalDoctors,
- 
       totalCount: totalDoctors,
       page: parseInt(page),
       limit: parseInt(limit),
@@ -446,6 +454,8 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+
 
 
 

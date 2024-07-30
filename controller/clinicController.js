@@ -43,7 +43,13 @@ if(adminVerified){
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    const clinics = await Clinic.find(filter).skip(startIndex).limit(limit);
+    const clinics = await Clinic.find(filter) 
+    .populate({
+      path: 'subscription_details.subscription_id',
+      populate: {
+        path: 'title'
+      }
+    }).skip(startIndex).limit(limit);
 
     res.json({
       success: true,
@@ -71,7 +77,12 @@ const getClinicById = async (req, res) => {
 
     const id=req.user._id
     console.log("id",id)
-    const clinic = await Clinic.findById(id);
+    const clinic = await Clinic.findById(id) .populate({
+      path: 'subscription_details.subscription_id',
+      populate: {
+        path: 'title',
+      }
+    })
     if (!clinic) {
       return res.status(404).json({ error:errormesaages[1001],errorcode:1001 });
     }
@@ -219,7 +230,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
       .skip(startIndex);
 
     if (!doctors.length) {
-      return res.status(404).json({ success: false, error: errormessages[1027], errorcode: 1027 });
+      return res.status(404).json({ success: false, error: errormesaages[1027], errorcode: 1027 });
     }
 
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {

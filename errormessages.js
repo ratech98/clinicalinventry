@@ -40,7 +40,7 @@
     1039:'Appointment date must be within the next 7 days',
     1040:'Unauthorized - Missing or invalid token',
     1041:"subscription duration not found",
-    1042:"clinic blocked",
+    1042:"clinic blocked  ",
     1043:'Subscription expired and grace period exceeded',
     1044:'No active subscription',
     1045: 'Invalid subscription duration',
