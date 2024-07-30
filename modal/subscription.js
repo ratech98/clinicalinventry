@@ -11,7 +11,7 @@ const SubscriptionTitle = mongoose.model('SubscriptionTitle', subscriptionTitleS
 
 
 const subscriptionDurationSchema = new mongoose.Schema({
-    duration: { type: String, required: true,enum:['month','year'] },
+    duration: { type: String, required: true,enum:['month','year','day'] },
     durationInNo:{ type: Number, required: true },
     pricePerMonth: { type: Number, required: true },
     discount: { type: Number, default: 0 },

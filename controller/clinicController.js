@@ -343,15 +343,15 @@ const update_Subscription = async (req, res) => {
       endDate = currentDate.add(subscriptionDuration.durationInNo, 'months');
     } else if (subscriptionDuration.duration === 'year') {
       endDate = currentDate.add(subscriptionDuration.durationInNo, 'years');
-    } else {
+    }else if (subscriptionDuration.duration === 'day') {
+      endDate = currentDate.add(subscriptionDuration.durationInNo, 'days');
+    }  else {
       return res.status(400).send({ success: false, error:errormesaages[1045], errorcode: 1045 });
     }
 
-    // Format dates
     const formattedStartDate = currentDate.format('DD-MM-YYYY');
     const formattedEndDate = endDate.format('DD-MM-YYYY');
 
-    clinic.subscription = true;
 
 
     clinic.subscription_details.push({
@@ -398,6 +398,23 @@ const getsubscriptiondays = async (req, res) => {
   }
 };
 
+const verify_subscription=async (req, res) => {
+  try {
+    const clinic = await Clinic.findOneAndUpdate(
+      { _id: req.params.id },
+      req?.body ,
+      { new: true }
+    );
+    createNotification("clinic",req.params.id,"clinic subscription verified by admin successfully")
+
+    res.status(200).json({ success: true, message: 'clinic subscription verified successfully', clinic });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+
 module.exports = { addClinic,
                    getAllClinics, 
                    getClinicById, 
@@ -409,5 +426,6 @@ module.exports = { addClinic,
                    verify_clinic_certificate,
                    getClinicId,
                    update_Subscription,
-                   getsubscriptiondays
+                   getsubscriptiondays,
+                   verify_subscription
                   };

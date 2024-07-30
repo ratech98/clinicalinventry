@@ -367,7 +367,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     const { id } = req.params;
     const { specialist, page = 1, limit = 10 } = req.query;
 
-    const todayUTC = new Date().toISOString().split('T')[0]; // Outputs 'YYYY-MM-DD'
+    const todayUTC = new Date().toISOString().split('T')[0]; 
 
     const doctorQuery = { 'clinics.clinicId': id };
     if (specialist) {
@@ -407,14 +407,13 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
         }
       }
 
-      // Fetch today's appointments for the doctor
       const todayAppointments = await Patient.find({
         'appointment_history.doctor': doctor._id,
         'appointment_history.appointment_date': todayUTC
       }).select('appointment_history.$');
 
       const tokenNumbers = todayAppointments.map(appointment => {
-        console.log(appointment.appointment_history); // Log the appointment history details
+        console.log(appointment.appointment_history); 
         return appointment.appointment_history[0].token_number;
       });
 
@@ -462,7 +461,6 @@ module.exports = {
   deleteReceptionist,
   updateReceptionistStatus,
   updateReceptionistVerify,
-  
   getReceptionists,
   getClinicDetailsByreceptionistId,
   sendReceptionistOtp,

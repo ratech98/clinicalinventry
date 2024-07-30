@@ -1,5 +1,5 @@
 const express = require('express');
-const { addClinic, getAllClinics, getClinicById, updateClinic, deleteClinic, verify_clinic, getClinics, getDoctorsAndAvailabilityByClinic, blockOrUnblockClinic, verify_clinic_certificate, getClinicId, update_Subscription, getsubscriptiondays } = require('../controller/clinicController');
+const { addClinic, getAllClinics, getClinicById, updateClinic, deleteClinic, verify_clinic, getClinics, getDoctorsAndAvailabilityByClinic, blockOrUnblockClinic, verify_clinic_certificate, getClinicId, update_Subscription, getsubscriptiondays, verify_subscription } = require('../controller/clinicController');
 const router = express.Router();
 
 const multer = require('multer');
@@ -12,7 +12,8 @@ const upload = multer({
 }).fields([
   { name: 'certificate', maxCount: 1 },
   { name: 'certificate2', maxCount: 1 },
-  {name:'certificate3',maxCount:1}
+  {name:'certificate3',maxCount:1},
+  {name:'profile',maxCount:1}
  
 ]);
 router.post('/addclinic',isAuth, addClinic);
@@ -24,6 +25,8 @@ router.put('/clinics/:id',upload, updateClinic);
 router.delete('/clinics/:id',isAuth, deleteClinic);
 router.put('/verify-admin/:id',isAdmin, verify_clinic);
 router.put('/verify_clinic/:id',isAdmin, verify_clinic_certificate);
+router.put('/verify_subscription/:id',isAdmin, verify_subscription);
+
 router.get('/doctersby_clinic/:id',isAuth,getDoctorsAndAvailabilityByClinic)
 router.post('/clinic/:id',isAdmin,blockOrUnblockClinic)
 router.post('/updateSubscription/:id',verifyToken, update_Subscription);

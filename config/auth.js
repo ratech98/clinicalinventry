@@ -80,7 +80,7 @@ const isAuth = async (req, res, next) => {
 
     const currentDate = moment();
     const subscriptionEndDate = moment(clinic.subscription_enddate, 'DD-MM-YYYY');
-    const maxGracePeriod = 7; // Maximum allowed grace period in days
+    const maxGracePeriod = 7
 
     if (clinic.subscription) {
       if (currentDate.isAfter(subscriptionEndDate)) {
