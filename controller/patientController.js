@@ -130,7 +130,8 @@ const getAllPatientslist = async (req, res) => {
     if (mobile_number) {
       query.mobile_number = { $regex: mobile_number, $options: 'i' };
     }
-// query.bond={ $regex: "myself", $options: 'i' }
+query.bond={ $regex: "myself", $options: 'i' }
+
     const totalPatients = await PatientModel.countDocuments(query);
     const totalPages = Math.ceil(totalPatients / limit);
     const startIndex = (page - 1) * limit;
@@ -172,7 +173,36 @@ const getAllPatientslist = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+const getAllrelationlist = async (req, res) => {
+  try {
+    const { tenantDBConnection } = req;
+    const { mobile_number } = req.query;
+    const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
+    let query = {};
+    query.bond = { $ne: "myself" };
+    if (mobile_number) {
+      query.mobile_number = { $regex: mobile_number, $options: 'i' };
+    }
 
+    const totalPatients = await PatientModel.countDocuments(query);
+   
+    const patients = await PatientModel.find(query)
+    .select('name bond ');
+
+
+
+    res.json({
+      success: true,
+      message: "Patients fetched successfully",
+      totalCount: totalPatients,
+   
+      patients: patients,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 // Get Patients by Doctor ID
 const getPatients = async (req, res) => {
@@ -675,5 +705,6 @@ module.exports = {
   upload_diagnose_report,
   get_diagnose_report,
   getFollowUpList,
-  getAllPatientslist
+  getAllPatientslist,
+  getAllrelationlist
 };
