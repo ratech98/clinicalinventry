@@ -1,22 +1,21 @@
 const mongoose = require('mongoose');
 const { MongoClient } = require('mongodb');
-const Receptionist = require('../modal/receptionist'); // Adjust path if needed
-const Patient = require('../modal/patient'); // Adjust path if needed
-const Medicine = require('../modal/medicine'); // Adjust path if needed
+
 const Template = require('./prescriptiontemplate');
+const { SMSTemplate, SMSType } = require('./smstemplate');
 
 const subscriptionDetailSchema = new mongoose.Schema({
   subscription_id: { type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionDuration' },
   transaction_id: { type: String },
-  subscription_startdate:{type:String},
-  subscription_enddate:{type:String},
+  subscription_startdate: { type: String },
+  subscription_enddate: { type: String },
 }, { _id: false });
 
 const clinicSchema = new mongoose.Schema({
-  clinic_name: { type: String}, 
+  clinic_name: { type: String },
   name: { type: String },
-  email: { type: String, },
-  mobile_number: { type: String,},
+  email: { type: String },
+  mobile_number: { type: String },
   agree: { type: Boolean, required: false },
   certificate: { type: String, required: false },
   certificate2: { type: String, required: false },
@@ -31,12 +30,10 @@ const clinicSchema = new mongoose.Schema({
   block: { type: Boolean, default: false },
   block_reason: { type: String, default: null },
   unblock_reason: { type: String, default: null },
-  subscription:{type:Boolean,default:false},
+  subscription: { type: Boolean, default: false },
   subscription_details: [subscriptionDetailSchema],
-  profile:{type:String},
-
-  details:{type:Boolean,default:false}
-
+  profile: { type: String },
+  details: { type: Boolean, default: false }
 }, { timestamps: true });
 
 async function ensureIndexes(db) {
@@ -45,9 +42,8 @@ async function ensureIndexes(db) {
     await db.collection('medicines');
     await db.collection('dosageforms');
     await db.collection('dosageunits');
-    db.createCollection('smstypes'),
-    db.createCollection('smstemplates')
-
+    await db.createCollection('smstypes');
+    await db.createCollection('smstemplates');
 
     console.log('Indexes ensured');
   } catch (error) {
@@ -61,7 +57,6 @@ clinicSchema.pre('findOneAndUpdate', async function (next) {
     const update = this.getUpdate();
     console.log('Pre-update hook triggered with update:', update);
 
-    // Only perform the hook logic if adminVerified is being updated to true
     if (update.adminVerified === true) {
       const docToUpdate = await this.model.findOne(this.getQuery());
       console.log('Document to update:', docToUpdate);
@@ -76,18 +71,7 @@ clinicSchema.pre('findOneAndUpdate', async function (next) {
         await client.connect();
         console.log('Connected to MongoDB Atlas cluster');
 
-        // Create collections and ensure indexes if they don't exist
         const db = client.db(dbName);
-        await Promise.all([
-          db.createCollection('patients'),
-          db.createCollection('medicines'),
-          db.createCollection('dosageforms'),
-          db.createCollection("dosageunits"),
-          db.createCollection('smstypes'),
-          db.createCollection('smstemplates')
-    
-        ]);
-
         await ensureIndexes(db);
 
         await client.close();
@@ -111,14 +95,14 @@ clinicSchema.pre('save', async function(next) {
     if (this.isNew) {
       const clinicId = this._id;
       const defaultFields = [
-        { name: "Clinic Name", section: "clinicDetails", value:""},
-        { name: "Contact number", section: "clinicDetails", value:"" },
-        { name: "Address", section: "clinicDetails", value:"" },
+        { name: "Clinic Name", section: "clinicDetails", value: "" },
+        { name: "Contact number", section: "clinicDetails", value: "" },
+        { name: "Address", section: "clinicDetails", value: "" },
         { name: "GST No", section: "clinicDetails" },
-        { name: "Doctor Name", section: "doctorDetails", value:"" },
-        { name: "Speciality", section: "doctorDetails", value:"" },
-        { name: "Degree", section: "doctorDetails", value:"" },
-        { name: "Work", section: "doctorDetails", value:"" }
+        { name: "Doctor Name", section: "doctorDetails", value: "" },
+        { name: "Speciality", section: "doctorDetails", value: "" },
+        { name: "Degree", section: "doctorDetails", value: "" },
+        { name: "Work", section: "doctorDetails", value: "" }
       ];
 
       const template = new Template({
@@ -128,6 +112,60 @@ clinicSchema.pre('save', async function(next) {
 
       await template.save();
       console.log('Default template fields created');
+
+      if (this.dbUri) {
+        // Connect to the tenant database to create SMS types and templates
+        const client = new MongoClient(this.dbUri, { useNewUrlParser: true, useUnifiedTopology: true });
+        await client.connect();
+        console.log('Connected to tenant MongoDB Atlas cluster');
+
+        const db = client.db();
+        await ensureIndexes(db);
+
+        // Create default SMS types
+        const smsTypes = ['SEND_OTP', 'Create_Account', 'Patients_Appoinment'];
+        const smsTypeIds = {};
+
+        for (const type of smsTypes) {
+          let smsType = await SMSType.findOne({ name: type }).exec();
+          if (!smsType) {
+            smsType = new SMSType({ name: type });
+            await smsType.save();
+            console.log(`SMS type '${type}' created`);
+          }
+          smsTypeIds[type] = smsType._id;
+        }
+
+        // Create default SMS templates using the retrieved SMS type IDs
+        const smsTemplates = [
+          {
+            smstypeId: smsTypeIds['SEND_OTP'],
+            body: 'Your OTP code is {{otpCode}}. Please use this code to complete your verification.'
+          },
+          {
+            smstypeId: smsTypeIds['Create_Account'],
+            body: 'Your account has been created successfully. Welcome!'
+          },
+          {
+            smstypeId: smsTypeIds['Patients_Appoinment'],
+            body: 'Your appointment is confirmed for {{appointmentDate}}. See you soon!'
+          }
+        ];
+
+        for (const template of smsTemplates) {
+          const existingTemplate = await SMSTemplate.findOne({ smstypeId: template.smstypeId }).exec();
+          if (!existingTemplate) {
+            const newTemplate = new SMSTemplate(template);
+            await newTemplate.save();
+            console.log(`SMS template created for type ID '${template.smstypeId}'`);
+          }
+        }
+
+        await client.close();
+        console.log('Disconnected from tenant MongoDB Atlas cluster');
+      } else {
+        console.error('dbUri is undefined');
+      }
     }
 
     next();
