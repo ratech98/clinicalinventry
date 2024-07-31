@@ -5,7 +5,7 @@ const moment = require('moment');
 const { errormesaages } = require("../errormessages");
 
 const signInToken = (user) => {
-  console.log("JWT_SECRET during sign-in:", process.env.JWT_SECRET);   
+  console.log("JWT_SECRET during sign-in:","alamsfdfsdsdfsdfsdfsdfsdfsdrafdar!@#$0fddlfjdfdfdssfds");   
   const userId = user.clinics && user.clinics.length > 0 
   ? user.clinics[0].clinicId 
   : (user.clinic ? user.clinic : user._id);
@@ -18,7 +18,7 @@ console.log("userid",userId)
       mobile_number: user.mobile_number,
       
     },
-    process.env.JWT_SECRET,
+    "alamsfdfsdsdfsdfsdfsdfsdfsdrafdar!@#$0fddlfjdfdfdssfds",
     {
       expiresIn: "2d", 
     }

@@ -640,11 +640,13 @@ const get_diagnose_report=async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 }
+
+
 const getFollowUpList = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
     if (!tenantDBConnection) {
-      return res.status(500).json({success:false, error: 'Tenant DB connection is not set' });
+      return res.status(500).json({ success: false, error: 'Tenant DB connection is not set' });
     }
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
 
@@ -655,24 +657,34 @@ const getFollowUpList = async (req, res) => {
     const dayAfterTomorrow = new Date(today);
     dayAfterTomorrow.setDate(today.getDate() + 2);
 
-    const todayString = today.toISOString().split('T')[0];
-    const tomorrowString = tomorrow.toISOString().split('T')[0];
-    const dayAfterTomorrowString = dayAfterTomorrow.toISOString().split('T')[0];
+    const todayString = moment(today).format('DD-MM-YYYY');
+    const tomorrowString = moment(tomorrow).format('DD-MM-YYYY');
+    const dayAfterTomorrowString = moment(dayAfterTomorrow).format('DD-MM-YYYY');
+
+    console.log('Dates:', { todayString, tomorrowString, dayAfterTomorrowString });
 
     const patients = await PatientModel.find({
       'appointment_history': {
         $elemMatch: {
-          appointment_date: { $in: [todayString, tomorrowString, dayAfterTomorrowString] },
           follow_up_from: { $exists: true, $ne: null },
         }
       }
-    })
+    });
+
+    console.log('Found patients:', patients.length);
 
     const followUpList = patients.map(patient => {
-      const filteredAppointments = patient.appointment_history.filter(appointment => 
-        [todayString, tomorrowString, dayAfterTomorrowString].includes(appointment.appointment_date) && 
-        appointment.follow_up_from
-      );
+      console.log('Patient appointment history:', patient.appointment_history);
+
+      const filteredAppointments = patient.appointment_history.filter(appointment => {
+     
+        console.log('Formatted appointment date:',appointment.appointment_date);
+        return [todayString, tomorrowString, dayAfterTomorrowString].includes(appointment.appointment_date) &&
+          appointment.follow_up_from;
+      });
+
+      console.log('Filtered appointments for patient:', filteredAppointments);
+
       return {
         ...patient.toObject(),
         appointment_history: filteredAppointments
@@ -681,10 +693,14 @@ const getFollowUpList = async (req, res) => {
 
     res.status(200).json({ success: true, followUpList });
   } catch (error) {
-    console.error(error);
+    console.error('Error in getFollowUpList:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+module.exports = getFollowUpList;
+
+
 
 
 
