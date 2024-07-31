@@ -1,8 +1,10 @@
 const mongoose = require('mongoose');
 const { MongoClient } = require('mongodb');
+const moment = require('moment');
 
 const Template = require('./prescriptiontemplate');
-const { SMSTemplate, SMSType } = require('./smstemplate');
+const smsTemplateSchema = require('./smstemplate').SMSTemplate.schema;
+const smsTypeSchema = require('./smstemplate').SMSType.schema;
 
 const subscriptionDetailSchema = new mongoose.Schema({
   subscription_id: { type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionDuration' },
@@ -38,10 +40,10 @@ const clinicSchema = new mongoose.Schema({
 
 async function ensureIndexes(db) {
   try {
-    await db.collection('patients');
-    await db.collection('medicines');
-    await db.collection('dosageforms');
-    await db.collection('dosageunits');
+    await db.collection('patients').createIndex({ someField: 1 });
+    await db.collection('medicines').createIndex({ someField: 1 });
+    await db.collection('dosageforms').createIndex({ someField: 1 });
+    await db.collection('dosageunits').createIndex({ someField: 1 });
     await db.createCollection('smstypes');
     await db.createCollection('smstemplates');
 
@@ -50,6 +52,13 @@ async function ensureIndexes(db) {
     console.error('Error ensuring indexes:', error);
     throw error;
   }
+}
+
+function getTenantModel(connection, modelName, schema) {
+  if (connection.models[modelName]) {
+    return connection.models[modelName];
+  }
+  return connection.model(modelName, schema);
 }
 
 clinicSchema.pre('findOneAndUpdate', async function (next) {
@@ -62,7 +71,8 @@ clinicSchema.pre('findOneAndUpdate', async function (next) {
       console.log('Document to update:', docToUpdate);
 
       if (!docToUpdate.dbUri && docToUpdate.clinic_name) {
-        const dbName = `${docToUpdate.clinic_name.toLowerCase().replace(/\s/g, '_')}_db`;
+        const currentdate = moment().format('DD-MM-YYYY');
+        const dbName = `${docToUpdate.clinic_name.toLowerCase().replace(/\s/g, '_')}_db${currentdate}`;
         console.log('Generated dbName:', dbName);
 
         const uri = `mongodb+srv://testuser1:saravana03@cluster0.mqxbump.mongodb.net/${dbName}?retryWrites=true&w=majority`;
@@ -78,51 +88,16 @@ clinicSchema.pre('findOneAndUpdate', async function (next) {
         console.log('Disconnected from MongoDB Atlas cluster');
 
         update.dbUri = uri;
-      } else {
-        console.error('clinic_name is undefined or dbUri already exists');
-      }
-    }
 
-    next();
-  } catch (error) {
-    console.error('Error in pre-update hook:', error);
-    next(error);
-  }
-});
-
-clinicSchema.pre('save', async function(next) {
-  try {
-    if (this.isNew) {
-      const clinicId = this._id;
-      const defaultFields = [
-        { name: "Clinic Name", section: "clinicDetails", value: "" },
-        { name: "Contact number", section: "clinicDetails", value: "" },
-        { name: "Address", section: "clinicDetails", value: "" },
-        { name: "GST No", section: "clinicDetails" },
-        { name: "Doctor Name", section: "doctorDetails", value: "" },
-        { name: "Speciality", section: "doctorDetails", value: "" },
-        { name: "Degree", section: "doctorDetails", value: "" },
-        { name: "Work", section: "doctorDetails", value: "" }
-      ];
-
-      const template = new Template({
-        clinic_id: clinicId,
-        dynamicFields: defaultFields
-      });
-
-      await template.save();
-      console.log('Default template fields created');
-
-      if (this.dbUri) {
-        // Connect to the tenant database to create SMS types and templates
-        const client = new MongoClient(this.dbUri, { useNewUrlParser: true, useUnifiedTopology: true });
-        await client.connect();
+        const tenantClient = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+        await tenantClient.connect();
         console.log('Connected to tenant MongoDB Atlas cluster');
 
-        const db = client.db();
-        await ensureIndexes(db);
+        const tenantConnection = mongoose.createConnection(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
-        // Create default SMS types
+        const SMSType = getTenantModel(tenantConnection, 'SMSType', smsTypeSchema);
+        const SMSTemplate = getTenantModel(tenantConnection, 'SMSTemplate', smsTemplateSchema);
+
         const smsTypes = ['SEND_OTP', 'Create_Account', 'Patients_Appoinment'];
         const smsTypeIds = {};
 
@@ -136,7 +111,6 @@ clinicSchema.pre('save', async function(next) {
           smsTypeIds[type] = smsType._id;
         }
 
-        // Create default SMS templates using the retrieved SMS type IDs
         const smsTemplates = [
           {
             smstypeId: smsTypeIds['SEND_OTP'],
@@ -161,11 +135,42 @@ clinicSchema.pre('save', async function(next) {
           }
         }
 
-        await client.close();
+        await tenantClient.close();
         console.log('Disconnected from tenant MongoDB Atlas cluster');
       } else {
-        console.error('dbUri is undefined');
+        console.error('clinic_name is undefined or dbUri already exists');
       }
+    }
+
+    next();
+  } catch (error) {
+    console.error('Error in pre-update hook:', error);
+    next(error);
+  }
+});
+
+clinicSchema.pre('save', async function (next) {
+  try {
+    if (this.isNew) {
+      const clinicId = this._id;
+      const defaultFields = [
+        { name: "Clinic Name", section: "clinicDetails", value: "" },
+        { name: "Contact number", section: "clinicDetails", value: "" },
+        { name: "Address", section: "clinicDetails", value: "" },
+        { name: "GST No", section: "clinicDetails" },
+        { name: "Doctor Name", section: "doctorDetails", value: "" },
+        { name: "Speciality", section: "doctorDetails", value: "" },
+        { name: "Degree", section: "doctorDetails", value: "" },
+        { name: "Work", section: "doctorDetails", value: "" }
+      ];
+
+      const template = new Template({
+        clinic_id: clinicId,
+        dynamicFields: defaultFields
+      });
+
+      await template.save();
+      console.log('Default template fields created');
     }
 
     next();
