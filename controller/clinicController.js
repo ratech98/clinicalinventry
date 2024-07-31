@@ -30,26 +30,50 @@ const addClinic = async (req, res) => {
 
 const getAllClinics = async (req, res) => {
   try {
-    const {adminVerified}=req?.query
+    const { adminVerified } = req?.query;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
-    const filter = { };
-if(adminVerified){
-  filter.adminVerified=adminVerified
-}
+    const filter = {};
+    if (adminVerified) {
+      filter.adminVerified = adminVerified;
+    }
+
     const totalClinics = await Clinic.countDocuments(filter);
     const totalPages = Math.ceil(totalClinics / limit);
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    const clinics = await Clinic.find(filter) 
-    .populate({
-      path: 'subscription_details.subscription_id',
-      populate: {
-        path: 'title'
-      }
-    }).skip(startIndex).limit(limit);
+    const clinics = await Clinic.find(filter)
+      .populate({
+        path: 'subscription_details.subscription_id',
+        populate: {
+          path: 'title'
+        }
+      })
+      .skip(startIndex)
+      .limit(limit);
+
+    // Calculate remaining days for each clinic's subscription
+    clinics.forEach(clinic => {
+      const currentDate = moment();
+      let remainingDays = 0;
+
+      clinic.subscription_details.forEach(subscriptionDetail => {
+        const startDate = moment(subscriptionDetail.subscription_startdate, 'DD-MM-YYYY');
+        const endDate = moment(subscriptionDetail.subscription_enddate, 'DD-MM-YYYY');
+
+        if (endDate.isAfter(currentDate)) {
+          if (startDate.isAfter(currentDate)) {
+            remainingDays += endDate.diff(startDate, 'days');
+          } else {
+            remainingDays += endDate.diff(currentDate, 'days');
+          }
+        }
+      });
+
+      clinic._doc.remainingDays = remainingDays; // Add remainingDays to clinic object
+    });
 
     res.json({
       success: true,
@@ -68,7 +92,6 @@ if(adminVerified){
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 
 
 
@@ -96,7 +119,12 @@ const getClinicById = async (req, res) => {
 
 const getClinicId = async (req, res) => {
   try {
-     const clinic = await Clinic.findById(req?.params.id);
+     const clinic = await Clinic.findById(req?.params.id) .populate({
+      path: 'subscription_details.subscription_id',
+      populate: {
+        path: 'title',
+      }
+    })
     if (!clinic) {
       return res.status(404).json({ error:errormesaages[1001],errorcode:1001 });
     }
@@ -330,12 +358,6 @@ const update_Subscription = async (req, res) => {
     const { subscription_id, transaction_id } = req.body;
     const clinicId = req.params.id;
 
-    // // Validate IDs
-    // if (!mongoose.Types.ObjectId.isValid(subscription_id) || !mongoose.Types.ObjectId.isValid(clinicId)) {
-    //   return res.status(400).send({ success: false, error: 'Invalid ID format' });
-    // }
-
-    // Find the clinic and subscription duration
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
       return res.status(404).send({ success: false, error: errormesaages[1001], errorcode: 1001 });
@@ -346,34 +368,38 @@ const update_Subscription = async (req, res) => {
       return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1041 });
     }
 
-    // Calculate end date based on duration
-    const currentDate = moment();
-    let endDate;
+    let currentDate = moment();
+    if (clinic.subscription_details.length > 0) {
+      const lastSubscription = clinic.subscription_details[clinic.subscription_details.length - 1];
+      const lastEndDate = moment(lastSubscription.subscription_enddate, 'DD-MM-YYYY');
+      if (lastEndDate.isAfter(currentDate)) {
+        currentDate = lastEndDate.add(1, 'days');
+      }
+    }
 
+    let endDate;
     if (subscriptionDuration.duration === 'month') {
-      endDate = currentDate.add(subscriptionDuration.durationInNo, 'months');
+      endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'months');
     } else if (subscriptionDuration.duration === 'year') {
-      endDate = currentDate.add(subscriptionDuration.durationInNo, 'years');
-    }else if (subscriptionDuration.duration === 'day') {
-      endDate = currentDate.add(subscriptionDuration.durationInNo, 'days');
-    }  else {
-      return res.status(400).send({ success: false, error:errormesaages[1045], errorcode: 1045 });
+      endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'years');
+    } else if (subscriptionDuration.duration === 'day') {
+      endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'days');
+    } else {
+      return res.status(400).send({ success: false, error: errormesaages[1045], errorcode: 1045 });
     }
 
     const formattedStartDate = currentDate.format('DD-MM-YYYY');
     const formattedEndDate = endDate.format('DD-MM-YYYY');
 
-
-
     clinic.subscription_details.push({
       subscription_id,
-      transaction_id: transaction_id || 'N/A', // Add transaction_id if provided
-      subscription_startdate: moment().format("DD-MM-YYYY"),
+      transaction_id: transaction_id || 'N/A', 
+      subscription_startdate: formattedStartDate,
       subscription_enddate: formattedEndDate
     });
 
     await clinic.save();
-    createNotification("admin",clinic._id,`${clinic.clinic_name} paid for subscription verify payment`)
+    createNotification("admin", clinic._id, `${clinic.clinic_name} paid for subscription, verify payment`);
 
     res.status(200).send({ success: true, message: 'Subscription details updated successfully', clinic });
   } catch (error) {
@@ -383,24 +409,35 @@ const update_Subscription = async (req, res) => {
 };
 
 
-
 const getsubscriptiondays = async (req, res) => {
   try {
     const clinicId = req.params.id;
 
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
-      return res.status(404).send({ success: false, error:errormesaages[1001], errorcode: 1001 });
+      return res.status(404).send({ success: false, error: errormesaages[1001], errorcode: 1001 });
     }
 
     if (!clinic.subscription_details || clinic.subscription_details.length === 0) {
       return res.status(400).send({ success: false, error: 'No subscription details found', errorcode: 1026 });
     }
 
-    const latestSubscriptionDetail = clinic.subscription_details[clinic.subscription_details.length - 1];
     const currentDate = moment();
-    const endDate = moment(latestSubscriptionDetail.subscription_enddate, 'DD-MM-YYYY');
-    const remainingDays = endDate.diff(currentDate, 'days');
+    let remainingDays = 0;
+
+    for (let i = 0; i < clinic.subscription_details.length; i++) {
+      const subscriptionDetail = clinic.subscription_details[i];
+      const startDate = moment(subscriptionDetail.subscription_startdate, 'DD-MM-YYYY');
+      const endDate = moment(subscriptionDetail.subscription_enddate, 'DD-MM-YYYY');
+
+      if (endDate.isAfter(currentDate)) {
+        if (startDate.isAfter(currentDate)) {
+          remainingDays += endDate.diff(startDate, 'days');
+        } else {
+          remainingDays += endDate.diff(currentDate, 'days');
+        }
+      }
+    }
 
     res.status(200).json({ success: true, remainingDays, subscription_details: clinic.subscription_details });
   } catch (error) {
@@ -408,6 +445,8 @@ const getsubscriptiondays = async (req, res) => {
     res.status(500).send({ success: false, error: error.message });
   }
 };
+
+
 
 const verify_subscription=async (req, res) => {
   try {
