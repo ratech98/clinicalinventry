@@ -10,7 +10,7 @@ const connectDB = async () => {
     await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000, 
+      serverSelectionTimeoutMS: 30000, 
     });
     console.log("mongodb connection success!");
 
@@ -21,7 +21,7 @@ const connectDB = async () => {
         tenantConnections[clinic._id] = await mongoose.createConnection(clinic.dbUri, {
           useNewUrlParser: true,
           useUnifiedTopology: true,
-          serverSelectionTimeoutMS: 5000, 
+          serverSelectionTimeoutMS: 30000, 
         });
         console.log(`Connected to tenant DB: ${clinic.dbUri}`);
       } else {
@@ -55,7 +55,7 @@ const connectTenantDB = async (req, res, next) => {
       tenantDBConnection = await mongoose.createConnection(tenant.dbUri, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 5000, 
+        serverSelectionTimeoutMS: 30000, 
       });
       tenantConnections[tenant._id] = tenantDBConnection;
       console.log(`Connected to tenant DB: ${tenant.dbUri}`);

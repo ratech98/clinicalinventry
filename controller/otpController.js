@@ -34,7 +34,6 @@ const sendOtp = async (req, res) => {
         otpVerified: false, 
         block: false,
       });
-      createNotification("admin",clinic._id,"new clinic added")
     }
 
     await clinic.save();

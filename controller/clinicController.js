@@ -137,14 +137,14 @@ const getClinicId = async (req, res) => {
 
 const updateClinic = async (req, res) => {
   try {
-    let updateData = { ...req.body }; 
-    // console.log(req.body.email)
-    // if (req.body.email) {
-    //   const emailExists = await Clinic.findOne({ email: req.body.email, _id: { $ne: req.params.id } });
-    //   if (emailExists) {
-    //     return res.status(400).json({ success:false,error:errormesaages[1025],errorcode:1025});
-    //   }
-    // }
+    let updateData = { ...req.body };
+    console.log(req.body.email);
+
+    const existingClinic = await Clinic.findById(req.params.id);
+    if (!existingClinic) {
+      return res.status(404).json({ success: false, error: "Clinic not found", errorcode: 1001 });
+    }
+
     if (req.files) {
       const files = req.files;
       const uploadedFiles = {};
@@ -162,11 +162,17 @@ const updateClinic = async (req, res) => {
 
       updateData = { ...updateData, ...uploadedFiles };
     }
-updateData.details=true
+
+    
+    updateData.details = true;
     const clinic = await Clinic.findByIdAndUpdate(req.params.id, updateData, { new: true });
 
     if (!clinic) {
-      return res.status(400).json({success:false, error:errormesaages[1001],errorcode:1001});
+      return res.status(400).json({ success: false, error: "Clinic update failed", errorcode: 1001 });
+    }
+
+    if (!existingClinic.details) {
+      createNotification("admin", clinic._id, `New clinic ${req.body.clinic_name} added`);
     }
 
     res.status(200).json({ success: true, message: "Clinic updated successfully", clinic });
@@ -436,6 +442,8 @@ const getsubscriptiondays = async (req, res) => {
         } else {
           remainingDays += endDate.diff(currentDate, 'days');
         }
+      } else {
+        remainingDays += endDate.diff(currentDate, 'days'); // Calculate negative days
       }
     }
 
@@ -445,6 +453,7 @@ const getsubscriptiondays = async (req, res) => {
     res.status(500).send({ success: false, error: error.message });
   }
 };
+
 
 
 
