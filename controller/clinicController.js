@@ -69,10 +69,12 @@ const getAllClinics = async (req, res) => {
           } else {
             remainingDays += endDate.diff(currentDate, 'days');
           }
+        } else {
+          remainingDays += endDate.diff(currentDate, 'days'); 
         }
       });
 
-      clinic._doc.remainingDays = remainingDays; // Add remainingDays to clinic object
+      clinic._doc.remainingDays = remainingDays; 
     });
 
     res.json({
@@ -163,7 +165,7 @@ const updateClinic = async (req, res) => {
       updateData = { ...updateData, ...uploadedFiles };
     }
 
-    
+
     updateData.details = true;
     const clinic = await Clinic.findByIdAndUpdate(req.params.id, updateData, { new: true });
 
