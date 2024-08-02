@@ -72,7 +72,7 @@ clinicSchema.pre('findOneAndUpdate', async function (next) {
 
       if (!docToUpdate.dbUri && docToUpdate.clinic_name) {
         const currentdate = moment().format('DD-MM-YYYY');
-        const dbName = `${docToUpdate.clinic_name.toLowerCase().replace(/\s/g, '_')}_db${currentdate}`;
+        const dbName = `Di_${docToUpdate.clinic_name.toLowerCase().replace(/\s/g, '_')}_db${currentdate}`;
         console.log('Generated dbName:', dbName);
 
         const uri = `mongodb+srv://testuser1:saravana03@cluster0.mqxbump.mongodb.net/${dbName}?retryWrites=true&w=majority`;
