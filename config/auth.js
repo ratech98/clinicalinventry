@@ -5,7 +5,7 @@ const moment = require('moment');
 const { errormesaages } = require("../errormessages");
 
 const signInToken = (user) => {
-  console.log("JWT_SECRET during sign-in:","alamsfdfsdsdfsdfsdfsdfsdfsdrafdar!@#$0fddlfjdfdfdssfds");   
+  // console.log("JWT_SECRET during sign-in:","alamsfdfsdsdfsdfsdfsdfsdfsdrafdar!@#$0fddlfjdfdfdssfds");   
   const userId = user.clinics && user.clinics.length > 0 
   ? user.clinics[0].clinicId 
   : (user.clinic ? user.clinic : user._id);
@@ -18,7 +18,7 @@ console.log("userid",userId)
       mobile_number: user.mobile_number,
       
     },
-    "alamsfdfsdsdfsdfsdfsdfsdfsdrafdar!@#$0fddlfjdfdfdssfds",
+    process.env.JWT_SECRET,
     {
       expiresIn: "2d", 
     }
@@ -63,7 +63,7 @@ const isAuth = async (req, res, next) => {
   try {
     console.log("JWT_SECRET during verify:", process.env.JWT_SECRET); 
     const token = authorization.split(' ')[1];
-    const decoded = jwt.verify(token, "alamsfdfsdsdfsdfsdfsdfsdfsdrafdar!@#$0fddlfjdfdfdssfds");
+    const decoded = jwt.verify(token,process.env.JWT_SECRET);
     req.user = decoded;
 
     console.log("Decoded token:", decoded);
@@ -74,9 +74,9 @@ const isAuth = async (req, res, next) => {
       return res.status(401).send({success:false, message: errormesaages[1001],errorcode:1001 });
     }
 
-    // if (clinic.block) {
-    //   return res.status(403).send({ message:errormesaages[1042], block_reason: clinic.block_reason,errorcode:1042 });
-    // }
+    if (clinic.block) {
+      return res.status(400).send({ message:errormesaages[1042], block_reason: clinic.block_reason,errorcode:1042 });
+    }
 
     const currentDate = moment();
     const subscriptionEndDate = moment(clinic.subscription_enddate, 'DD-MM-YYYY');

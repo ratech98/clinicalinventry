@@ -40,10 +40,10 @@ const clinicSchema = new mongoose.Schema({
 
 async function ensureIndexes(db) {
   try {
-    await db.collection('patients').createIndex({ someField: 1 });
-    await db.collection('medicines').createIndex({ someField: 1 });
-    await db.collection('dosageforms').createIndex({ someField: 1 });
-    await db.collection('dosageunits').createIndex({ someField: 1 });
+    await db.collection('patients')
+    await db.collection('medicines')
+    await db.collection('dosageforms')
+    await db.collection('dosageunits')
     await db.createCollection('smstypes');
     await db.createCollection('smstemplates');
 

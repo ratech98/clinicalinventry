@@ -104,6 +104,9 @@ const verifyOtp = async (req, res) => {
     if (!clinic) {
       return res.status(404).json({ success:false,message: errormesaages[1001], errorcode: 1001 });
     }
+    if (clinic.block) {
+      return res.status(403).send({ message:errormesaages[1042], block_reason: clinic.block_reason,errorcode:1042 });
+    }
 
     if (otp !== clinic.otp) {
       return res.status(400).json({ success:false,message: errormesaages[1016], errorcode: 1016 });

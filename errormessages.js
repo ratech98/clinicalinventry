@@ -44,7 +44,9 @@
     1043:'Subscription expired and grace period exceeded',
     1044:'No active subscription',
     1045: 'Invalid subscription duration',
-    1046:"unauthorized token or expired token "
+    1046:"unauthorized token or expired token ",
+    1047:"you are blocked by clinic admin",
+    
 
 
 

@@ -177,10 +177,10 @@ const sendReceptionistOtpForLogin = async (req, res) => {
     // if(!receptionist.verify){
     //   return res.status(400).json({ success: false, message: 'you are not verified by admin,contact admin' });
     
-    // }
-    // if (receptionist.block) {
-    //   return res.status(400).json({ success: false, message: 'You are blocked by admin, contact admin' });
-    // }
+    // }x
+    if (receptionist.block) {
+      return res.status(400).json({ success: false, message:errormesaages[1047],errorcode:1047 });
+    }
 
     await receptionist.save();
 
@@ -206,6 +206,7 @@ const sendReceptionistOtp = async (req, res) => {
     if (existingReceptionist) {
       return res.status(400).json({ success: false, message: errormesaages[1018], errorcode: 1018 });
     }
+    
 
     const receptionist = await Receptionist.findOneAndUpdate(
       { mobile_number },
@@ -241,7 +242,9 @@ const verifyReceptionistOtp = async (req, res) => {
     if (!receptionist) {
       return res.status(404).json({ success: false,message: errormesaages[1004], errorcode: 1004 });
     }
-
+    if (receptionist.block) {
+      return res.status(400).json({ success: false, message:errormesaages[1047],errorcode:1047 });
+    }
     if (otp !== receptionist.otp) {
       return res.status(400).json({message: errormesaages[1016], errorcode: 1016  });
     }
