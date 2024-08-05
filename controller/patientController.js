@@ -57,7 +57,7 @@ const getAllPatients = async (req, res) => {
       .limit(parseInt(limit));
 
     if (!patients.length) {
-      return res.status(404).json({ success: false, error: errormessages[1027], errorcode: 1027 });
+      return res.status(404).json({ success: false, error: errormesaages[1048], errorcode: 1048 });
     }
 
     const doctors = await mainDBConnection.model('doctor').find()
