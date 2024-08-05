@@ -45,6 +45,15 @@ const verifyToken = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
+    // const clinic = await Clinic.findById(decoded._id);
+
+    // if (!clinic) {
+    //   return res.status(401).send({success:false, message: errormesaages[1001],errorcode:1001 });
+    // }
+
+    // if (clinic.block) {
+    //   return res.status(400).send({ message:errormesaages[1042], block_reason: clinic.block_reason,errorcode:1042 });
+    // }
     next();
   } catch (err) {
     res.status(400).send({

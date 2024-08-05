@@ -171,13 +171,7 @@ const sendReceptionistOtpForLogin = async (req, res) => {
       return res.status(404).json({ success: false, message: errormesaages[1004], errorcode: 1004 });
     }
 
-    // if (!receptionist.otpVerified) {
-    //   return res.status(400).json({ success: false, message: 'Your mobile number is not verified' });
-    // }
-    // if(!receptionist.verify){
-    //   return res.status(400).json({ success: false, message: 'you are not verified by admin,contact admin' });
-    
-    // }x
+
     if (receptionist.block) {
       return res.status(400).json({ success: false, message:errormesaages[1047],errorcode:1047 });
     }

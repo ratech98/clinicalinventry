@@ -111,6 +111,9 @@ const getClinicById = async (req, res) => {
     if (!clinic) {
       return res.status(404).json({ error:errormesaages[1001],errorcode:1001 });
     }
+      if (clinic.block) {
+      return res.status(400).send({ message:errormesaages[1042], block_reason: clinic.block_reason,errorcode:1042 });
+    }
     res.json({ success: true, message: "Clinic fetched successfully", clinic });
   } catch (error) {
     console.error(error);
