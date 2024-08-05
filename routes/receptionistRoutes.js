@@ -22,7 +22,7 @@ router.get('/receptionists',isAuth, getAllReceptionists);
 router.get('/clinic/receptionists',isAuth,getReceptionists);
 router.post('/receptionists/clinic',isAuth, getClinicDetailsByreceptionistId);
 router.get('/receptionists/:id',isAuth, getReceptionistById);
-router.put('/receptionists/:id',upload,isAuth, updateReceptionist);
+router.put('/receptionists/:id',upload, updateReceptionist);
 router.delete('/receptionists/:id',isAuth, deleteReceptionist);
 
 router.put('/receptionists/staus/:id',isAuth,updateReceptionistStatus)
