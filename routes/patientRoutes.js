@@ -20,7 +20,7 @@ router.get('/patients',isAuth,connectTenantDB, getAllPatients);
 router.get('/patientslist',isAuth,connectTenantDB, getAllPatientslist);
 router.get('/relationlist',isAuth,connectTenantDB, getAllrelationlist);
 
-router.get('/patients/:doctor',isAuth,connectTenantDB, getPatients);
+router.get('/patients/doctor/:doctor',isAuth,connectTenantDB, getPatients);
 router.get('/patients/:id',isAuth,connectTenantDB, getPatientById);
 router.put('/patients/:id',isAuth,connectTenantDB, updatePatient);
 router.delete('/patients/:id',isAuth,connectTenantDB, deletePatient);
