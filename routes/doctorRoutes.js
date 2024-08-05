@@ -20,7 +20,7 @@ router.post('/doctors', addDoctor);
 router.get('/doctors',isAuth, getAllDoctors);
 router.get('/doctors/clinic',isAuth, getClinicDetailsByDoctorId);
 router.get('/doctors/:id',isAuth, getDoctorById);
-router.put('/doctors/:id',isAuth,upload, updateDoctor);
+router.put('/doctors/:id',upload, updateDoctor);
 router.delete('/doctors/:id',isAuth, deleteDoctor);
 router.put('/doctors/status',isAuth, updateDoctorAvailability);
 router.put('/doctors/verify/clinic',isAuth, verifyDoctorClinic);
