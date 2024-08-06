@@ -41,6 +41,7 @@ const appointmentSchema = new Schema({
   Bp: { type: String },
   status:{type:String,
     enum: ['FINISHED', 'PENDING'],
+    default:"PENDING"
 }
 });
 const diagnoseReportSchema = new Schema({
