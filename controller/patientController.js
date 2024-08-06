@@ -221,7 +221,7 @@ const getPatients = async (req, res) => {
     const { tenantDBConnection } = req;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const mainDBConnection = mongoose.connection;
-    const patients = await PatientModel.find({ 'appointment_history.doctor': req.params.doctor,'appointment_history.appointment_date':formattedDate }).populate({
+    const patients = await PatientModel.find({ 'appointment_history.doctor': req.params.doctor,'appointment_history.appointment_date':formattedDate ,'appointment_history.status': { $ne: 'FINISHED' }}).populate({
       path: 'appointment_history.doctor',
       model: mainDBConnection.model('doctor')
     });
@@ -378,6 +378,7 @@ const updateAppointmentWithPrescription = async (req, res) => {
     }
 
     appointment.prescription = prescription;
+    appointment.status="FINISHED"
     await patient.save();
 
     res.status(200).json({ success: true, message: "Prescription and medicines added successfully", patient });

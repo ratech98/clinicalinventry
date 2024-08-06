@@ -38,7 +38,10 @@ const appointmentSchema = new Schema({
     ref: 'Appointment',
   },
   temp: { type: String },
-  Bp: { type: String }
+  Bp: { type: String },
+  status:{type:String,
+    enum: ['FINISHED', 'PENDING'],
+}
 });
 const diagnoseReportSchema = new Schema({
   report_name: { type: String },

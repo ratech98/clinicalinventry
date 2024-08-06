@@ -30,7 +30,7 @@ const addClinic = async (req, res) => {
 
 const getAllClinics = async (req, res) => {
   try {
-    const { adminVerified } = req?.query;
+    const { adminVerified } = req.query;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
@@ -54,27 +54,32 @@ const getAllClinics = async (req, res) => {
       .skip(startIndex)
       .limit(limit);
 
-    // Calculate remaining days for each clinic's subscription
+    // Calculate remaining days and hours for each clinic's subscription
     clinics.forEach(clinic => {
       const currentDate = moment();
       let remainingDays = 0;
+      let remainingHours = 0;
 
       clinic.subscription_details.forEach(subscriptionDetail => {
-        const startDate = moment(subscriptionDetail.subscription_startdate, 'DD-MM-YYYY');
-        const endDate = moment(subscriptionDetail.subscription_enddate, 'DD-MM-YYYY');
+        const startDate = moment(subscriptionDetail.subscription_startdate, 'DD-MM-YYYY HH:mm:ss');
+        const endDate = moment(subscriptionDetail.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
 
         if (endDate.isAfter(currentDate)) {
           if (startDate.isAfter(currentDate)) {
             remainingDays += endDate.diff(startDate, 'days');
+            remainingHours += endDate.diff(startDate, 'hours') % 24;
           } else {
             remainingDays += endDate.diff(currentDate, 'days');
+            remainingHours += endDate.diff(currentDate, 'hours') % 24;
           }
         } else {
-          remainingDays += endDate.diff(currentDate, 'days'); 
+          remainingDays += endDate.diff(currentDate, 'days'); // Calculate negative days
+          remainingHours += endDate.diff(currentDate, 'hours') % 24; // Calculate negative hours
         }
       });
 
-      clinic._doc.remainingDays = remainingDays; 
+      clinic._doc.remainingDays = remainingDays;
+      clinic._doc.remainingHours = remainingHours;
     });
 
     res.json({
@@ -94,7 +99,6 @@ const getAllClinics = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 
 
 const getClinicById = async (req, res) => {
@@ -382,9 +386,9 @@ const update_Subscription = async (req, res) => {
     let currentDate = moment();
     if (clinic.subscription_details.length > 0) {
       const lastSubscription = clinic.subscription_details[clinic.subscription_details.length - 1];
-      const lastEndDate = moment(lastSubscription.subscription_enddate, 'DD-MM-YYYY');
+      const lastEndDate = moment(lastSubscription.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
       if (lastEndDate.isAfter(currentDate)) {
-        currentDate = lastEndDate.add(1, 'days');
+        currentDate = lastEndDate.add(1, 'seconds');
       }
     }
 
@@ -399,12 +403,12 @@ const update_Subscription = async (req, res) => {
       return res.status(400).send({ success: false, error: errormesaages[1045], errorcode: 1045 });
     }
 
-    const formattedStartDate = currentDate.format('DD-MM-YYYY');
-    const formattedEndDate = endDate.format('DD-MM-YYYY');
+    const formattedStartDate = currentDate.format('DD-MM-YYYY HH:mm:ss');
+    const formattedEndDate = endDate.format('DD-MM-YYYY HH:mm:ss');
 
     clinic.subscription_details.push({
       subscription_id,
-      transaction_id: transaction_id || 'N/A', 
+      transaction_id: transaction_id || 'N/A',
       subscription_startdate: formattedStartDate,
       subscription_enddate: formattedEndDate
     });
@@ -420,6 +424,7 @@ const update_Subscription = async (req, res) => {
 };
 
 
+
 const getsubscriptiondays = async (req, res) => {
   try {
     const clinicId = req.params.id;
@@ -430,37 +435,38 @@ const getsubscriptiondays = async (req, res) => {
     }
 
     if (!clinic.subscription_details || clinic.subscription_details.length === 0) {
-      return res.status(400).send({ success: false, error: 'No subscription details found', errorcode: 1026 });
+      return res.status(400).send({ success: false, error: errormesaages[1026], errorcode: 1026 });
     }
 
     const currentDate = moment();
     let remainingDays = 0;
+    let remainingHours = 0;
 
     for (let i = 0; i < clinic.subscription_details.length; i++) {
       const subscriptionDetail = clinic.subscription_details[i];
-      const startDate = moment(subscriptionDetail.subscription_startdate, 'DD-MM-YYYY');
-      const endDate = moment(subscriptionDetail.subscription_enddate, 'DD-MM-YYYY');
+      const startDate = moment(subscriptionDetail.subscription_startdate, 'DD-MM-YYYY HH:mm:ss');
+      const endDate = moment(subscriptionDetail.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
 
       if (endDate.isAfter(currentDate)) {
         if (startDate.isAfter(currentDate)) {
           remainingDays += endDate.diff(startDate, 'days');
+          remainingHours += endDate.diff(startDate, 'hours') % 24;
         } else {
           remainingDays += endDate.diff(currentDate, 'days');
+          remainingHours += endDate.diff(currentDate, 'hours') % 24;
         }
       } else {
-        remainingDays += endDate.diff(currentDate, 'days'); // Calculate negative days
+        remainingDays += endDate.diff(currentDate, 'days'); 
+        remainingHours += endDate.diff(currentDate, 'hours') % 24; 
       }
     }
 
-    res.status(200).json({ success: true, remainingDays, subscription_details: clinic.subscription_details });
+    res.status(200).json({ success: true, remainingDays, remainingHours, subscription_details: clinic.subscription_details });
   } catch (error) {
     console.error('Error calculating remaining days:', error);
     res.status(500).send({ success: false, error: error.message });
   }
 };
-
-
-
 
 const verify_subscription=async (req, res) => {
   try {
