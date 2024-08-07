@@ -204,7 +204,6 @@ const getAllrelationlist = async (req, res) => {
   }
 };
 
-// Get Patients by Doctor ID
 const getPatients = async (req, res) => {
   try {
     const today = new Date();
@@ -215,22 +214,84 @@ const getPatients = async (req, res) => {
     
     const formattedDate = `${day}-${month}-${year}`;
     
-    console.log(formattedDate);
-    
+    console.log(`Formatted Date: ${formattedDate}`);
     
     const { tenantDBConnection } = req;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const mainDBConnection = mongoose.connection;
-    const patients = await PatientModel.find({ 'appointment_history.doctor': req.params.doctor,'appointment_history.appointment_date':formattedDate ,'appointment_history.status': { $ne: 'FINISHED' }}).populate({
-      path: 'appointment_history.doctor',
-      model: mainDBConnection.model('doctor')
-    });
+
+    const patients = await PatientModel.aggregate([
+      {
+        $addFields: {
+          filtered_appointment_history: {
+            $filter: {
+              input: "$appointment_history",
+              as: "appointment",
+              cond: {
+                $and: [
+                  { $eq: ["$$appointment.doctor",new mongoose.Types.ObjectId(req.params.doctor)] },
+                  { $eq: ["$$appointment.appointment_date", formattedDate] },
+                  { $ne: ["$$appointment.status", "FINISHED"] }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        $match: {
+          "filtered_appointment_history.0": { $exists: true } // Ensure there is at least one matching appointment
+        }
+      },
+      {
+        $unwind: {
+          path: "$filtered_appointment_history",
+          preserveNullAndEmptyArrays: false // Remove documents with empty appointment history
+        }
+      },
+      {
+        $lookup: {
+          from: 'doctors', // Adjust this to your actual collection name
+          localField: 'filtered_appointment_history.doctor',
+          foreignField: '_id',
+          as: 'filtered_appointment_history.doctor'
+        }
+      },
+      {
+        $unwind: {
+          path: "$filtered_appointment_history.doctor",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $group: {
+          _id: "$_id",
+          name: { $first: "$name" },
+          mobile_number: { $first: "$mobile_number" },
+          bond: { $first: "$bond" },
+          createdAt: { $first: "$createdAt" },
+          diagnose_reports: { $first: "$diagnose_reports" },
+          otp: { $first: "$otp" },
+          otpVerified: { $first: "$otpVerified" },
+          updatedAt: { $first: "$updatedAt" },
+          address: { $first: "$address" },
+          age: { $first: "$age" },
+          dob: { $first: "$dob" },
+          gender: { $first: "$gender" },
+          appointment_history: { $push: "$filtered_appointment_history" }
+        }
+      }
+    ]);
+
+    console.log(`Patients Found: ${JSON.stringify(patients, null, 2)}`);
+
     res.json({ success: true, message: "Patients fetched successfully", patients });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 // Get Patient by ID
 const getPatientById = async (req, res) => {
