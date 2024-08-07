@@ -495,7 +495,7 @@ const addAppointmentWithToken = async (req, res) => {
 
     const currentDate = moment();
     const appointmentDate = moment(appointment_date, 'DD-MM-YYYY'); 
-
+console.log(currentDate,appointmentDate)
     if (appointmentDate.isBefore(currentDate, 'day') || appointmentDate.diff(currentDate, 'days') > 7) {
       return res.status(400).json({ success: false, error:errormesaages[1039] , errorcode: 1039 });
     }
@@ -760,7 +760,6 @@ const getFollowUpList = async (req, res) => {
   }
 };
 
-module.exports = getFollowUpList;
 
 
 

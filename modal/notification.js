@@ -15,9 +15,9 @@ const NotificationSchema = new Schema({
   clinicId: {
     type: Schema.Types.ObjectId,
     ref: 'Clinic',
-    required: function() {
-      return this.recipientType === 'doctor' || this.recipientType === 'receptionist';
-    }
+    // required: function() {
+    //   return this.recipientType === 'doctor' || this.recipientType === 'receptionist';
+    // }
   },
   content: {
     type: String,
