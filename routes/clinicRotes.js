@@ -29,7 +29,7 @@ router.put('/verify_subscription/:id',isAdmin, verify_subscription);
 
 router.get('/doctersby_clinic/:id',isAuth,getDoctorsAndAvailabilityByClinic)
 router.post('/clinic/:id',isAdmin,blockOrUnblockClinic)
-router.post('/updateSubscription/:id', update_Subscription);
+router.post('/updateSubscription/:id',verifyToken, update_Subscription);
 router.get('/remainingDays/:id',verifyToken, getsubscriptiondays);  
   
 
