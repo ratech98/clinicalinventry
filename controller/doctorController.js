@@ -391,9 +391,9 @@ const sendDoctorOtpForLogin = async (req, res) => {
     );
 
 
-    // if (!doctorData) {
-    //   return res.status(404).json({ success: false,message: errormesaages[1002], errorcode: 1002 });
-    // }
+    if (!doctorData) {
+      return res.status(404).json({ success: false,message: errormesaages[1002], errorcode: 1002 });
+    }
 
     // if (!doctorData.otpVerified) {
     //   return res.status(400).json({ success: false, message: 'Your mobile number is not verified' });
@@ -412,7 +412,7 @@ const sendDoctorOtpForLogin = async (req, res) => {
     // Code to send OTP via SMS
     // sendOtpSms(mobile_number, otp); // Uncomment and implement this function
 
-    res.status(200).json({ success: true, message: 'OTP sent successfully', doctor: doctorData });
+    res.status(200).json({ success: true, message: 'OTP sent successfully', doctor:doctorData });
   } catch (error) {
     console.log(error)
     res.status(500).json({ error: error.message });
