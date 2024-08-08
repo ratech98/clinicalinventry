@@ -383,7 +383,7 @@ const update_Subscription = async (req, res) => {
       return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1041 });
     }
 
-    let currentDate = moment();
+    let currentDate = moment()
     if (clinic.subscription_details.length > 0) {
       const lastSubscription = clinic.subscription_details[clinic.subscription_details.length - 1];
       const lastEndDate = moment(lastSubscription.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');

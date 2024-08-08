@@ -59,14 +59,16 @@ const loginsendOtp = async (req, res) => {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
       return res.status(400).json({  success: false,  message: errormesaages[1008], errorcode: 1008  });
     }
-
-    if(clinic.block){
-      return res.status(400).json({  success: false,  message: errormesaages[1042], errorcode: 1042 });
-
-    }
+console.log(clinic)
+   
     if (clinic) {
     console.log("enrty")
 
+
+      if(clinic.block){
+        return res.status(400).json({  success: false,  message: errormesaages[1042], errorcode: 1042 });
+  
+      }
 
       clinic.otp = otp;
       await clinic.save();
