@@ -412,7 +412,9 @@ const update_Subscription = async (req, res) => {
       subscription_startdate: formattedStartDate,
       subscription_enddate: formattedEndDate
     });
-
+if(transaction_id==="free_trial"){
+  clinic.subscription=true
+}
     await clinic.save();
     createNotification("admin", clinic._id, `${clinic.clinic_name} paid for subscription, verify payment`);
 
