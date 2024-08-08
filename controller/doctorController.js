@@ -407,13 +407,14 @@ const sendDoctorOtpForLogin = async (req, res) => {
     //   return res.status(400).json({ success: false, message: 'You are blocked by admin, contact admin' });
     // }
 
-    await doctorData.save();
+    // await doctorData.save();
 
     // Code to send OTP via SMS
     // sendOtpSms(mobile_number, otp); // Uncomment and implement this function
 
     res.status(200).json({ success: true, message: 'OTP sent successfully', doctor: doctorData });
   } catch (error) {
+    console.log(error)
     res.status(500).json({ error: error.message });
   }
 };
