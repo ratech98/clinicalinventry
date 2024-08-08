@@ -69,12 +69,13 @@ const loginsendOtp = async (req, res) => {
 
 
       clinic.otp = otp;
+      await clinic.save();
     } else {
       return res.status(400).json({ success: false, message: 'Mobile number not exist' });
 
     }
 
-    await clinic.save();
+    
 
     // const response = await axios.post('https://api.creativepoint.com/send', {
     //   api_key: process.env.CREATIVEPOINT_API_KEY,
