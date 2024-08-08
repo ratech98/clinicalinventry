@@ -246,7 +246,7 @@ const verifyReceptionistOtp = async (req, res) => {
     receptionist.otpVerified = true;
     await receptionist.save()
 const token=signInToken(receptionist)
-    res.status(200).json({ success: true, message: 'OTP verified successfully', receptionist,token });
+    res.status(200).json({ success: true, message: 'OTP verified successfully', receptionist,token,type:"Receptionist" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
