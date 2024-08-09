@@ -413,6 +413,7 @@ const update_Subscription = async (req, res) => {
       subscription_enddate: formattedEndDate
     });
 if(transaction_id==="free_trial"){
+  console.log("free trails")
   clinic.subscription=true
 }
     await clinic.save();
