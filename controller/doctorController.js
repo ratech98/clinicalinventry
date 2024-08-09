@@ -36,7 +36,7 @@ const getAllDoctors = async (req, res) => {
 
 const getClinicDetailsByDoctorId = async (req, res) => {
   try {
-    const doctors = await doctor.findById(req.body.doctorId).populate('clinics.clinicId');
+    const doctors = await doctor.findById(req.params.id).populate('clinics.clinicId');
     if (!doctors) {
       return res.status(404).json({success:false,error: errormesaages[1002], errorcode: 1002 });
     }

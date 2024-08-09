@@ -18,7 +18,7 @@ const upload = multer({
 
 router.post('/doctors', addDoctor);
 router.get('/doctors',isAuth, getAllDoctors);
-router.get('/doctors/clinic', getClinicDetailsByDoctorId);
+router.get('/doctors/clinic/:id', getClinicDetailsByDoctorId);
 router.get('/doctors/:id',isAuth, getDoctorById);
 router.put('/doctors/:id',upload, updateDoctor);
 router.delete('/doctors/:id',isAuth, deleteDoctor);
