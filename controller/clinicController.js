@@ -370,7 +370,7 @@ const blockOrUnblockClinic = async (req, res) => {
 
 const update_Subscription = async (req, res) => {
   try {
-    const { subscription_id, transaction_id } = req.body;
+    const { subscription_id, transaction_id, subscription_startdate, subscription_enddate } = req.body;
     const clinicId = req.params.id;
 
     const clinic = await Clinic.findById(clinicId);
@@ -383,40 +383,51 @@ const update_Subscription = async (req, res) => {
       return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1041 });
     }
 
-    let currentDate = moment()
-    if (clinic.subscription_details.length > 0) {
-      const lastSubscription = clinic.subscription_details[clinic.subscription_details.length - 1];
-      const lastEndDate = moment(lastSubscription.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
-      if (lastEndDate.isAfter(currentDate)) {
-        currentDate = lastEndDate.add(1, 'seconds');
-      }
-    }
+    if (transaction_id === "free_trial") {
+      console.log("Free trial subscription detected");
+      clinic.subscription = true;
 
-    let endDate;
-    if (subscriptionDuration.duration === 'month') {
-      endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'months');
-    } else if (subscriptionDuration.duration === 'year') {
-      endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'years');
-    } else if (subscriptionDuration.duration === 'day') {
-      endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'days');
+      clinic.subscription_details.push({
+        subscription_id: subscription_id,
+        transaction_id: transaction_id || 'N/A',
+        subscription_startdate: subscription_startdate,
+        subscription_enddate: subscription_enddate
+      });
     } else {
-      return res.status(400).send({ success: false, error: errormesaages[1045], errorcode: 1045 });
+      let currentDate = moment();
+      if (clinic.subscription_details.length > 0) {
+        const lastSubscription = clinic.subscription_details[clinic.subscription_details.length - 1];
+        const lastEndDate = moment(lastSubscription.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
+        if (lastEndDate.isAfter(currentDate)) {
+          currentDate = lastEndDate.add(1, 'seconds');
+        }
+      }
+
+      let endDate;
+      if (subscriptionDuration.duration === 'month') {
+        endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'months');
+      } else if (subscriptionDuration.duration === 'year') {
+        endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'years');
+      } else if (subscriptionDuration.duration === 'day') {
+        endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'days');
+      } else {
+        return res.status(400).send({ success: false, error: errormesaages[1045], errorcode: 1045 });
+      }
+  
+
+      const formattedStartDate = currentDate.format('DD-MM-YYYY HH:mm:ss');
+      const formattedEndDate = endDate.format('DD-MM-YYYY HH:mm:ss');
+
+      clinic.subscription_details.push({
+        subscription_id,
+        transaction_id: transaction_id || 'N/A',
+        subscription_startdate: formattedStartDate,
+        subscription_enddate: formattedEndDate
+      });
     }
 
-    const formattedStartDate = currentDate.format('DD-MM-YYYY HH:mm:ss');
-    const formattedEndDate = endDate.format('DD-MM-YYYY HH:mm:ss');
-
-    clinic.subscription_details.push({
-      subscription_id,
-      transaction_id: transaction_id || 'N/A',
-      subscription_startdate: formattedStartDate,
-      subscription_enddate: formattedEndDate
-    });
-if(transaction_id==="free_trial"){
-  console.log("free trails")
-  clinic.subscription=true
-}
     await clinic.save();
+
     createNotification("admin", clinic._id, `${clinic.clinic_name} paid for subscription, verify payment`);
 
     res.status(200).send({ success: true, message: 'Subscription details updated successfully', clinic });
@@ -425,6 +436,7 @@ if(transaction_id==="free_trial"){
     res.status(500).send({ success: false, error: error.message });
   }
 };
+
 
 
 
