@@ -20,7 +20,7 @@ const clinicSubSchema = new Schema({
   block:{ type: Boolean, default: false },
   block_reason:{type:String,default:null},
   unblock_reason:{type:String,default:null},
-  
+  scheduled:{ type: Boolean, default: false },
 });
 
 const doctorSchema = new Schema({

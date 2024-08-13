@@ -288,6 +288,11 @@ const addDoctorAvailability = async (req, res) => {
     });
 
     await newAvailability.save();
+    await doctor.updateOne(
+      { _id: doctorId, 'clinics.clinicId': clinicId },
+      { $set: { 'clinics.$.scheduled': true } }
+    );
+
 
     res.status(201).json({ success: true, message: 'Availability added successfully', availability: newAvailability });
   } catch (error) {
@@ -296,7 +301,7 @@ const addDoctorAvailability = async (req, res) => {
   }
 };
 
-
+x
 
 function calculateNextOccurrences(days) {
   const today = new Date();
