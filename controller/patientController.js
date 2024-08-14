@@ -546,10 +546,11 @@ console.log(currentDate,appointmentDate)
 };
 
 
+const moment = require('moment');
 const addFollowUpAppointment = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
-    const { patientId, previousAppointmentId, appointment_date, time, reason, doctorId } = req.body;
+    const { patientId, previousAppointmentId, appointment_date } = req.body;
 
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const patient = await PatientModel.findById(patientId);
@@ -568,30 +569,21 @@ const addFollowUpAppointment = async (req, res) => {
     const followUpDate = moment(appointment_date, 'DD-MM-YYYY'); 
 
     if (followUpDate.isBefore(currentDate, 'day') || followUpDate.diff(currentDate, 'days') > 7) {
-      return res.status(400).json({  success: false, error:errormesaages[1039] , errorcode: 1039 });
+      return res.status(400).json({  success: false, error:errormesaages[1039], errorcode: 1039 });
     }
 
-    const tokenCount = patient.appointment_history.filter(a => a.appointment_date === appointment_date).length;
-    const newTokenNumber = tokenCount + 1;
+    previousAppointment.follow_up_from = true;
+    previousAppointment.follow_up_date = followUpDate.format('DD-MM-YYYY');
 
-    const newAppointment = {
-      appointment_date,
-      time,
-      reason,
-      doctor: doctorId,
-      token_number: newTokenNumber,
-      follow_up_from: previousAppointmentId,
-    };
-
-    patient.appointment_history.push(newAppointment);
     await patient.save();
 
-    res.status(201).json({ success: true, message: "Follow-up appointment added successfully", patient });
+    res.status(200).json({ success: true, message: "Follow-up appointment updated successfully", patient });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 const getPatientsWithTodayAppointments = async (req, res) => {

@@ -34,9 +34,10 @@ const appointmentSchema = new Schema({
   medicines: [medicineSchema],
   token_number: { type: Number },
   follow_up_from: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Appointment',
+    type:Boolean,
+  
   },
+  follow_up_date:{type:String},
   temp: { type: String },
   Bp: { type: String },
   status:{type:String,
