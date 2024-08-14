@@ -301,7 +301,7 @@ const addDoctorAvailability = async (req, res) => {
   }
 };
 
-x
+
 
 function calculateNextOccurrences(days) {
   const today = new Date();
