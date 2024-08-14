@@ -546,7 +546,6 @@ console.log(currentDate,appointmentDate)
 };
 
 
-const moment = require('moment');
 const addFollowUpAppointment = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
