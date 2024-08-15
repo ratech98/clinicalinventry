@@ -500,9 +500,13 @@ console.log(currentDate,appointmentDate)
       return res.status(400).json({ success: false, error:errormesaages[1039] , errorcode: 1039 });
     }
 
-    const tokenCount = patient.appointment_history.filter(a => a.appointment_date === appointment_date).length;
-    const newTokenNumber = tokenCount + 1;
+    const allPatients = await PatientModel.find({ 'appointment_history.appointment_date': appointment_date });
+    let tokenCount = 0;
+    allPatients.forEach(patient => {
+      tokenCount += patient.appointment_history.filter(a => a.appointment_date === appointment_date).length;
+    });
 
+    const newTokenNumber = tokenCount + 1;
     const newAppointment = {
       appointment_date,
       time,

@@ -22,15 +22,16 @@ const subscriptionDurationSchema = new mongoose.Schema({
 
 const SubscriptionDuration = mongoose.model('SubscriptionDuration', subscriptionDurationSchema);
 
-const subscriptionFeatureSchema = new mongoose.Schema({
-    Feature: { type: String },
-    title:[{type: mongoose.Schema.Types.ObjectId,
-        ref:"SubscriptionTitle"}]
-
+const freetrailSchema = new mongoose.Schema({
+    days: { type: String },
+  
     
     
 });
 
-const SubscriptionFeature = mongoose.model('SubscriptionFeature', subscriptionFeatureSchema);
+const freetrail = mongoose.model('freetrail', freetrailSchema);
 
-module.exports = {SubscriptionDuration,SubscriptionTitle,SubscriptionFeature}
+
+
+
+module.exports = {SubscriptionDuration,SubscriptionTitle,freetrail}

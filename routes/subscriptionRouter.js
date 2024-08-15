@@ -1,5 +1,5 @@
 const express = require('express');
-const { addSubscriptionTitle, getSubscriptionTitles, getSubscriptionTitleById, updateSubscriptionTitle, deleteSubscriptionTitle, addSubscriptionDuration, getSubscriptionDurations, getSubscriptionDurationById, updateSubscriptionDuration, deleteSubscriptionDuration, addSubscriptionFeature, getSubscriptionFeatures, getSubscriptionFeatureById, updateSubscriptionFeature, deleteSubscriptionFeature } = require('../controller/subscriptionController');
+const { addSubscriptionTitle, getSubscriptionTitles, getSubscriptionTitleById, updateSubscriptionTitle, deleteSubscriptionTitle, addSubscriptionDuration, getSubscriptionDurations, getSubscriptionDurationById, updateSubscriptionDuration, deleteSubscriptionDuration, addSubscriptionFeature, getSubscriptionFeatures, getSubscriptionFeatureById, updateSubscriptionFeature, deleteSubscriptionFeature, getfreetrail, updatefreetrail, addfreetrail } = require('../controller/subscriptionController');
 const { isAuth, verifyToken } = require('../config/auth');
 const router = express.Router();
 
@@ -28,11 +28,13 @@ router.delete('/subscription_durations/:id',verifyToken, deleteSubscriptionDurat
 
 router.post('/subscription_feature',verifyToken, addSubscriptionFeature);
 
-router.get('/subscription_feature',verifyToken, getSubscriptionFeatures);
+router.post('/freetrail', addfreetrail);
+
+router.get('/freetrail', getfreetrail);
 
 router.get('/subscription_feature/:id',verifyToken, getSubscriptionFeatureById);
 
-router.put('/subscription_feature/:id',verifyToken, updateSubscriptionFeature);
+router.put('/freetrail/:id',updatefreetrail);
 
 router.delete('/subscription_feature/:id',verifyToken, deleteSubscriptionFeature);
 

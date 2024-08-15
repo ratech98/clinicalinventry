@@ -1,7 +1,7 @@
 // Subscription Controller
 
 const errorMessages = require("../errormessages");
-const { SubscriptionDuration, SubscriptionTitle, SubscriptionFeature } = require("../modal/subscription");
+const { SubscriptionDuration, SubscriptionTitle, SubscriptionFeature, freetrail } = require("../modal/subscription");
 
 
 const addSubscriptionDuration = async (req, res) => {
@@ -239,14 +239,33 @@ const addSubscriptionFeature = async (req, res) => {
   }
 };
 
-const getSubscriptionFeatures = async (req, res) => {
+const getfreetrail = async (req, res) => {
   try {
-    const Features = await SubscriptionFeature.find().populate('title');
+    const freetrails = await freetrail.find()
     res.json({
       success: true,
-      message: "Subscription Features fetched successfully",
-      Features,
+      message: "freetrail fetched successfully",
+      freetrails,
     });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+const addfreetrail = async (req, res) => {
+  try {
+    const { days } = req.body;
+
+
+    const newFeature = await freetrail.create({days});
+
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Subscription Feature added successfully",
+        freetrail: newFeature,
+      });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -314,7 +333,24 @@ const deleteSubscriptionFeature = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
+const updatefreetrail = async (req, res) => {
+  try {
+    const updatedFeature = await freetrail.findByIdAndUpdate(
+      req.params.id,
+       req.body ,
+      { new: true }
+    );
+ 
+    res.json({
+      success: true,
+      message: "freetail updated successfully",
+      freetrail: updatedFeature,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 module.exports = {
   addSubscriptionDuration,
   getSubscriptionDurations,
@@ -327,9 +363,11 @@ module.exports = {
   updateSubscriptionTitle,
   deleteSubscriptionTitle,
   addSubscriptionFeature,
-  getSubscriptionFeatures,
   updateSubscriptionFeature,
   deleteSubscriptionFeature,
-  getSubscriptionFeatureById
+  getSubscriptionFeatureById,
+  getfreetrail,
+  updatefreetrail,
+  addfreetrail
  
 };
