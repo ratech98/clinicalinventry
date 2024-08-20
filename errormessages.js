@@ -46,7 +46,10 @@
     1045: 'Invalid subscription duration',
     1046:"unauthorized token or expired token ",
     1047:"you are blocked by clinic admin",
-    1048:"No patients appointment  found  "
+    1048:"No patients appointment  found  ",
+    1049:'No active subscription for doctor',
+    1050:'No active subscription for receptionist',
+
     
 
 

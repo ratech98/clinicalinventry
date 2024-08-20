@@ -3,6 +3,8 @@ const jwt = require("jsonwebtoken");
 const Clinic = require("../modal/clinic.");
 const moment = require('moment');
 const { errormesaages } = require("../errormessages");
+const doctor = require("../modal/doctor");
+const Receptionist = require("../modal/receptionist");
 
 const signInToken = (user) => {
   // console.log("JWT_SECRET during sign-in:","alamsfdfsdsdfsdfsdfsdfsdfsdrafdar!@#$0fddlfjdfdfdssfds");   
@@ -16,6 +18,8 @@ console.log("userid",userId)
       name: user.name||null,
       email: user.email || null,    
       mobile_number: user.mobile_number,
+      type:user.type,
+      id:user._id
       
     },
     process.env.JWT_SECRET,
@@ -101,6 +105,24 @@ const isAuth = async (req, res, next) => {
       }
     } else {
       return res.status(403).send({success:false, message: errormesaages[1044],errorcode:1044 });
+    }
+    if (decoded.type === "doctor") {
+      const doctors = await doctor.findOne({
+        _id: decoded.id,
+        "clinics.clinicId": decoded._id 
+      });
+    
+      if (doctors && !doctors.clinics.some(clinic => clinic.clinicId.equals(decoded._id) && clinic.subscription)) {
+        return res.status(400).send({ success: false, message: errormesaages[1049], errorcode: 1049 });
+      }
+    }
+    
+    if(decoded.type==="receptionist"){
+      const receptionist=await Receptionist.findById(decoded.id) 
+      if(receptionist.subscription=== false){
+        return res.status(400).send({success:false, message: errormesaages[1050],errorcode:1050 });
+
+      }
     }
 
     next();

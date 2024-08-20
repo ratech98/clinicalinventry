@@ -35,7 +35,9 @@ const clinicSchema = new mongoose.Schema({
   subscription: { type: Boolean, default: false },
   subscription_details: [subscriptionDetailSchema],
   profile: { type: String },
-  details: { type: Boolean, default: false }
+  details: { type: Boolean, default: false },
+  type:{type:String,default:"clinic"}
+
 }, { timestamps: true });
 
 async function ensureIndexes(db) {

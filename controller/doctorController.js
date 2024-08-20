@@ -447,7 +447,7 @@ const sendDoctorOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: errormesaages[1008], errorcode: 1008 });
     }
 
-    let doctorData = await doctor.findOne({ email,mobile_number });
+    let doctorData = await doctor.findOne({ email });
 
     if (doctorData) {
       const clinicExists = doctorData.clinics.some(c => c.clinicId.toString() === clinicId);
@@ -497,8 +497,9 @@ const verifyDoctorOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: errormesaages[1015], errorcode: 1015 });
 
     }
+ 
     const doctorData = await doctor.findOne({ email:email });
-
+    console.log(email,doctorData)
     if (!doctorData) {
       return res.status(404).json({success:false,  message: errormesaages[1002], errorcode: 1002 });
     }

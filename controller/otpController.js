@@ -174,6 +174,7 @@ const generateToken = async (req, res) => {
       name: doctors.name,
       mobile_number: doctors.mobile_number,
       clinics: [clinicDetails],
+      type:"doctor"
     };
 
     const token = signInToken(doctordata);

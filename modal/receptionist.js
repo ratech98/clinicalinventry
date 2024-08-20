@@ -58,7 +58,9 @@ const receptionistSchema = new Schema({
     type:Boolean,
     default:false
   },
-  details:{type:Boolean,default:false}
+  details:{type:Boolean,default:false},
+  type:{type:String,default:"receptionist"},
+  subscription:{type:Boolean,default:false},
   
 
 }, { timestamps: true });

@@ -21,6 +21,8 @@ const clinicSubSchema = new Schema({
   block_reason:{type:String,default:null},
   unblock_reason:{type:String,default:null},
   scheduled:{ type: Boolean, default: false },
+  subscription:{type:Boolean,default:false},
+
 });
 
 const doctorSchema = new Schema({
@@ -76,7 +78,8 @@ const doctorSchema = new Schema({
   details:{type:Boolean,default:false},
   email:{
     type:String
-  }
+  },
+  type:{type:String,default:"doctor"}
 
 
 

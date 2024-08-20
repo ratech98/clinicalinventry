@@ -484,21 +484,48 @@ const getsubscriptiondays = async (req, res) => {
   }
 };
 
-const verify_subscription=async (req, res) => {
+const verify_subscription = async (req, res) => {
   try {
+    const { id } = req.params;
+    const { subscription } = req.body;
+
     const clinic = await Clinic.findOneAndUpdate(
-      { _id: req.params.id },
-      req?.body ,
+      { _id: id },
+      { subscription },
       { new: true }
     );
-    createNotification("clinic",req.params.id,"clinic subscription verified by admin successfully")
 
-    res.status(200).json({ success: true, message: 'clinic subscription verified successfully', clinic });
+    if (!clinic) {
+      return res.status(404).json({ success: false, message: 'Clinic not found' });
+    }
+
+    createNotification("clinic", id, "Clinic subscription verified by admin successfully");
+
+    const receptionists = await Receptionist.updateMany(
+      { clinic: id },
+      { subscription },
+      { new: true }
+    );
+
+    const doctors = await doctor.updateMany(
+      { "clinics.clinicId": id },
+      { $set: { "clinics.$.subscription": subscription } },
+      { new: true }
+    );
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Clinic subscription verified successfully and updated for associated doctors and receptionists', 
+      clinic,
+      updatedReceptionists: receptionists.modifiedCount,
+      updatedDoctors: doctors.modifiedCount  
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
-}
+};
+
 const calculateTotalSubscriptionAmount = async (req, res) => {
   const { clinicId,subscription_id } = req.params;
 
@@ -535,6 +562,40 @@ const calculateTotalSubscriptionAmount = async (req, res) => {
     res.status(500).send({ success: false, error: error.message });
   }
 }
+const verifyDoctorSubscription = async (req, res) => {
+  try {
+    const doctors = await doctor.findOneAndUpdate(
+      { _id: req.params.id, "clinics.clinicId": req.body.clinicId },
+      { "clinics.$.subscription": req.body.subscription },
+      { new: true }
+    );
+
+    createNotification("doctor", req.params.id, "Doctor subscription verified by admin successfully");
+
+    res.status(200).json({ success: true, message: 'Doctor subscription verified successfully', doctors });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+const verifyReceptionistSubscription = async (req, res) => {
+  try {
+    const receptionist = await Receptionist.findOneAndUpdate(
+      { _id: req.params.id, clinic: req.body.clinicId },
+      { subscription: req.body.subscription },
+      { new: true }
+    );
+
+    createNotification("receptionist", req.params.id, "Receptionist subscription verified by admin successfully");
+
+    res.status(200).json({ success: true, message: 'Receptionist subscription verified successfully', receptionist });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 
 module.exports = { addClinic,
                    getAllClinics, 
@@ -549,5 +610,7 @@ module.exports = { addClinic,
                    update_Subscription,
                    getsubscriptiondays,
                    verify_subscription,
-                   calculateTotalSubscriptionAmount
+                   calculateTotalSubscriptionAmount,
+                   verifyDoctorSubscription,
+                   verifyReceptionistSubscription
                   };
