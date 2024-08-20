@@ -249,7 +249,7 @@ const verify_clinic_certificate=async (req, res) => {
 const getDoctorsAndAvailabilityByClinic = async (req, res) => {
   try {
     const { id } = req.params;
-    const { specialist, recently_joined, onleave, page = 1, limit = 10, verify } = req.query;
+    const { specialist, recently_joined, onleave, page = 1, limit = 10, verify,subscription } = req.query;
 
     const todayUTC = new Date().toISOString().split('T')[0]; // Outputs 'YYYY-MM-DD'
 
@@ -263,7 +263,9 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     if (verify) {
       doctorQuery["clinics.verified"] = true;
     }
-
+    if (subscription) {
+      doctorQuery["clinics.subscription"] = true;
+    }
     const totalDoctors = await doctor.countDocuments(doctorQuery);
     const totalPages = Math.ceil(totalDoctors / limit);
     const startIndex = (page - 1) * limit;
@@ -394,6 +396,17 @@ const update_Subscription = async (req, res) => {
         subscription_startdate: subscription_startdate,
         subscription_enddate: subscription_enddate
       });
+      const receptionists = await Receptionist.updateMany(
+        { clinic: clinicId },
+        { subscription:true },
+        { new: true }
+      );
+  
+      const doctors = await doctor.updateMany(
+        { "clinics.clinicId": clinicId },
+        { $set: { "clinics.$.subscription": true } },
+        { new: true }
+      );
     } else {
       let currentDate = moment();
       if (clinic.subscription_details.length > 0) {
