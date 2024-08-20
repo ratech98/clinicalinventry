@@ -17,7 +17,7 @@ router.delete('/subscription_Title/:id',verifyToken, deleteSubscriptionTitle);
 
 router.post('/subscription_durations',verifyToken, addSubscriptionDuration);
 
-router.get('/subscription_durations',verifyToken, getSubscriptionDurations);
+router.get('/subscription_durations', getSubscriptionDurations);
 
 router.get('/subscription_durations/:id',verifyToken, getSubscriptionDurationById);
 

@@ -28,7 +28,7 @@
     1027:"No doctors found for this clinic",
     1028:"Appointment not found",
     1029:"Medicines should be an array",
-    1030:'clinic with this mobile number  already exists',
+    1030:'clinic with this mailid already exists',
     1031:"subscription title already exist",
     1032:"subscription duration already exist",
     1033:"subscription not found",

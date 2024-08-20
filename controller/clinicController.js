@@ -7,6 +7,7 @@ const Template = require("../modal/prescriptiontemplate");
 const moment = require('moment');
 const { createNotification } = require("../lib/notification");
 const { SubscriptionDuration } = require("../modal/subscription");
+const Receptionist = require("../modal/receptionist");
 
 
 require("dotenv").config();
@@ -498,7 +499,42 @@ const verify_subscription=async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 }
+const calculateTotalSubscriptionAmount = async (req, res) => {
+  const { clinicId,subscription_id } = req.params;
 
+  try {
+    const clinic = await Clinic.findById(clinicId);
+
+    if (!clinic) {
+      return res.status(404).send({ success: false, error: "Clinic not found" });
+    }
+
+
+    const subscriptionDuration = await SubscriptionDuration.findById(subscription_id);
+
+    if (!subscriptionDuration) {
+      return res.status(404).send({ success: false, error: "Subscription duration not found" });
+    }
+
+    const doctorsCount = await doctor.countDocuments({ 'clinics.clinicId': clinicId });
+    const receptionistsCount = await Receptionist.countDocuments({ clinic: clinicId });
+
+    const totalStaffCount = doctorsCount + receptionistsCount;
+
+    const totalAmount = subscriptionDuration.pricePerMonth * totalStaffCount;
+
+    res.status(200).send({
+      success: true,
+      clinicName: clinic.clinic_name,
+      subscriptionAmountPerStaff: subscriptionDuration.amount,
+      totalStaffCount,
+      totalAmount
+    });
+  } catch (error) {
+    console.error('Error calculating total subscription amount:', error);
+    res.status(500).send({ success: false, error: error.message });
+  }
+}
 
 module.exports = { addClinic,
                    getAllClinics, 
@@ -512,5 +548,6 @@ module.exports = { addClinic,
                    getClinicId,
                    update_Subscription,
                    getsubscriptiondays,
-                   verify_subscription
+                   verify_subscription,
+                   calculateTotalSubscriptionAmount
                   };

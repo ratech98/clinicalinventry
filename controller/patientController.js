@@ -361,8 +361,8 @@ const deletePatient = async (req, res) => {
 
 // Send Patient OTP
 const sendPatientOtp = async (req, res) => {
-  const { mobile_number } = req.body;
-  const otp = "1234"; 
+  const { email,mobile_number } = req.body;
+  const otp = generate4DigitOtp(); 
   try {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
       return res.status(400).json({ success: false,  message: errormesaages[1008], errorcode: 1008});
@@ -370,11 +370,24 @@ const sendPatientOtp = async (req, res) => {
     const { tenantDBConnection } = req;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const patient = await PatientModel.findOneAndUpdate(
-      { mobile_number },
-      { otp },
+      { email },
+      { otp ,mobile_number},
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
     res.status(200).json({ success: true, message: 'OTP sent successfully', patient });
+    const templateFile = 'OTP.ejs';
+    const subject = 'Di application OTP Verification';
+    console.log("otp", otp);
+
+    const data = {
+      otp: otp,
+    };
+    sendEmail(
+      email,
+      subject,
+      templateFile,
+      data,
+    );
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -383,14 +396,14 @@ const sendPatientOtp = async (req, res) => {
 
 // Verify Patient OTP
 const verifyPatientOtp = async (req, res) => {
-  const { mobile_number, otp } = req.body;
+  const { email, otp } = req.body;
   try {
-    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false,  message: errormesaages[1008], errorcode: 1008 });
-    }
+    // if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
+    //   return res.status(400).json({ success: false,  message: errormesaages[1008], errorcode: 1008 });
+    // }
     const { tenantDBConnection } = req;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
-    const patient = await PatientModel.findOne({ mobile_number });
+    const patient = await PatientModel.findOne({ email });
     if (!patient) {
       return res.status(404).json({success:false, error: errormesaages[1021] ,errorcode:1021});
     }
@@ -480,6 +493,8 @@ const getPrescription = async (req, res) => {
 };
 
 const moment = require('moment');
+const { generate4DigitOtp } = require('../lib/generateOtp');
+const sendEmail = require('../lib/sendEmail');
 
 const addAppointmentWithToken = async (req, res) => {
   try {

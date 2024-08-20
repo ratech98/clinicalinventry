@@ -61,7 +61,11 @@ const patientSchema = new Schema({
   otp: { type: String },
   otpVerified: { type: Boolean, default: false },
   diagnose_reports: [diagnoseReportSchema],
-  bond:{type:String, default:"myself"}
+  bond:{type:String, default:"myself"},
+  email: {
+    type: String,
+
+  },
 
 }, { timestamps: true });
 

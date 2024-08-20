@@ -1,5 +1,5 @@
 const express = require('express');
-const { addClinic, getAllClinics, getClinicById, updateClinic, deleteClinic, verify_clinic, getClinics, getDoctorsAndAvailabilityByClinic, blockOrUnblockClinic, verify_clinic_certificate, getClinicId, update_Subscription, getsubscriptiondays, verify_subscription } = require('../controller/clinicController');
+const { addClinic, getAllClinics, getClinicById, updateClinic, deleteClinic, verify_clinic, getClinics, getDoctorsAndAvailabilityByClinic, blockOrUnblockClinic, verify_clinic_certificate, getClinicId, update_Subscription, getsubscriptiondays, verify_subscription, calculateTotalSubscriptionAmount } = require('../controller/clinicController');
 const router = express.Router();
 
 const multer = require('multer');
@@ -31,7 +31,9 @@ router.get('/doctersby_clinic/:id',isAuth,getDoctorsAndAvailabilityByClinic)
 router.post('/clinic/:id',isAdmin,blockOrUnblockClinic)
 router.post('/updateSubscription/:id',verifyToken, update_Subscription);
 router.get('/remainingDays/:id',verifyToken, getsubscriptiondays);  
-  
+ 
+router.post('/totalamount/:clinicId/:subscription_id',calculateTotalSubscriptionAmount)
+
 
 
 

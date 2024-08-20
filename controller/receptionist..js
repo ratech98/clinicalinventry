@@ -1,6 +1,8 @@
 const { signInToken } = require("../config/auth");
 const { errormesaages } = require("../errormessages");
+const { generate4DigitOtp } = require("../lib/generateOtp");
 const { createNotification } = require("../lib/notification");
+const sendEmail = require("../lib/sendEmail");
 const Availability = require("../modal/availablity");
 const { ReceptionistAvailability } = require("../modal/availablity");
 const Clinic = require("../modal/clinic.");
@@ -153,18 +155,18 @@ const updateReceptionistVerify = async (req, res) => {
 
 
 const sendReceptionistOtpForLogin = async (req, res) => {
-  const { mobile_number } = req.body;
-  const otp = "1234";
+  const { email } = req.body;
+  const otp = generate4DigitOtp()
 
   try {
-    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false, message: errormesaages[1008], errorcode: 1008 });
-    }
+    // if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
+    //   return res.status(400).json({ success: false, message: errormesaages[1008], errorcode: 1008 });
+    // }
 
 
     const receptionist = await Receptionist.findOneAndUpdate(
-      { mobile_number },
-      { mobile_number, otp},
+      { email },
+      { email, otp},
     );
 
     if (!receptionist) {
@@ -177,6 +179,19 @@ const sendReceptionistOtpForLogin = async (req, res) => {
     }
 
     await receptionist.save();
+    const templateFile = 'OTP.ejs';
+    const subject = 'Di application OTP Verification';
+    console.log("otp", otp);
+
+    const data = {
+      otp: otp,
+    };
+    sendEmail(
+      email,
+      subject,
+      templateFile,
+      data,
+    );
 
     // Code to send OTP via SMS
     // sendOtpSms(mobile_number, otp); // Uncomment and implement this function
@@ -189,28 +204,40 @@ const sendReceptionistOtpForLogin = async (req, res) => {
 
 
 const sendReceptionistOtp = async (req, res) => {
-  const { mobile_number, clinicId } = req.body;
-  const otp = "1234";
+  const { mobile_number, clinicId ,email} = req.body;
+  const otp = generate4DigitOtp()
 
   try {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
       return res.status(400).json({ success: false,message: errormesaages[1008], errorcode: 1008 });
     }
-    const existingReceptionist = await Receptionist.findOne({ mobile_number, clinic: clinicId });
+    const existingReceptionist = await Receptionist.findOne({  clinic: clinicId,email });
     if (existingReceptionist) {
       return res.status(400).json({ success: false, message: errormesaages[1018], errorcode: 1018 });
     }
     
 
     const receptionist = await Receptionist.findOneAndUpdate(
-      { mobile_number },
-      { mobile_number, otp, clinic: clinicId },
+      { email },
+      { mobile_number, otp, clinic: clinicId,email },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
     
 
     await receptionist.save();
+    const templateFile = 'OTP.ejs';
+    const subject = 'Di application OTP Verification';
+    console.log("otp", otp);
 
+    const data = {
+      otp: otp,
+    };
+    sendEmail(
+      email,
+      subject,
+      templateFile,
+      data,
+    );
     // Code to send OTP via SMS
     // sendOtpSms(mobile_number, otp); // Uncomment and implement this function
 
@@ -221,17 +248,17 @@ const sendReceptionistOtp = async (req, res) => {
 };
 
 const verifyReceptionistOtp = async (req, res) => {
-  const { mobile_number, otp } = req.body;
+  const { email, otp } = req.body;
 
   try {
-    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false, message: errormesaages[1008], errorcode: 1008  });
-    }
+    // if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
+    //   return res.status(400).json({ success: false, message: errormesaages[1008], errorcode: 1008  });
+    // }
     if(!otp||otp===""){
       return res.status(400).json({ success: false,message: errormesaages[1015], errorcode: 1015 });
 
     }
-    const receptionist = await Receptionist.findOne({ mobile_number });
+    const receptionist = await Receptionist.findOne({ email });
 
     if (!receptionist) {
       return res.status(404).json({ success: false,message: errormesaages[1004], errorcode: 1004 });

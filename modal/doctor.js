@@ -73,7 +73,10 @@ const doctorSchema = new Schema({
   postgraduate_certificate: {
     type: String
   },
-  details:{type:Boolean,default:false}
+  details:{type:Boolean,default:false},
+  email:{
+    type:String
+  }
 
 
 

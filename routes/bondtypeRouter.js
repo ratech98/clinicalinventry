@@ -5,13 +5,13 @@ const { createbondtype, getAllbondtypes, getbondtypeById, updatebondtype, delete
 const { isAuth } = require('../config/auth');
 const router = express.Router();
 
-router.post('/bondtype',isAuth, createbondtype);
+router.post('/bondtype', createbondtype);
 
 router.get('/allbondtype', getAllbondtypes);
 
-router.get('/bondtype/:id',isAuth, getbondtypeById);
+router.get('/bondtype/:id', getbondtypeById);
 
-router.put('/bondtype/:id',isAuth, updatebondtype);
+router.put('/bondtype/:id', updatebondtype);
 
 
 

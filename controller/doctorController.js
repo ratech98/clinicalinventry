@@ -1,7 +1,9 @@
 
 const { signInToken } = require("../config/auth");
 const { errormesaages } = require("../errormessages");
+const { generate4DigitOtp } = require("../lib/generateOtp");
 const { createNotification } = require("../lib/notification");
+const sendEmail = require("../lib/sendEmail");
 const Availability = require("../modal/availablity");
 const Clinic = require("../modal/clinic.");
 const doctor = require("../modal/doctor");
@@ -383,15 +385,13 @@ const updateDoctorAvailabilitty = async (req, res) => {
 
 
 const sendDoctorOtpForLogin = async (req, res) => {
-  const { mobile_number } = req.body;
-  const otp = "1234"; 
+  const { email } = req.body;
+  const otp =generate4DigitOtp()
 
   try {
-    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false,message: errormesaages[1008], errorcode: 1008 });
-    }
+ 
     const doctorData = await doctor.findOneAndUpdate(
-      { mobile_number },
+      { email },
       { $set: { otp } },
     );
 
@@ -399,6 +399,19 @@ const sendDoctorOtpForLogin = async (req, res) => {
     if (!doctorData) {
       return res.status(404).json({ success: false,message: errormesaages[1002], errorcode: 1002 });
     }
+    const templateFile = 'OTP.ejs';
+    const subject = 'Di application OTP Verification';
+    console.log("otp", otp);
+
+    const data = {
+      otp: otp,
+    };
+    sendEmail(
+      email,
+      subject,
+      templateFile,
+      data,
+    );
 
     // if (!doctorData.otpVerified) {
     //   return res.status(400).json({ success: false, message: 'Your mobile number is not verified' });
@@ -426,15 +439,15 @@ const sendDoctorOtpForLogin = async (req, res) => {
 
 
 const sendDoctorOtp = async (req, res) => {
-  const { mobile_number, clinicId } = req.body;
-  const otp = "1234"; 
+  const { mobile_number, clinicId,email } = req.body;
+  const otp = generate4DigitOtp() 
 
   try {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
       return res.status(400).json({ success: false, message: errormesaages[1008], errorcode: 1008 });
     }
 
-    let doctorData = await doctor.findOne({ mobile_number });
+    let doctorData = await doctor.findOne({ email,mobile_number });
 
     if (doctorData) {
       const clinicExists = doctorData.clinics.some(c => c.clinicId.toString() === clinicId);
@@ -446,13 +459,24 @@ const sendDoctorOtp = async (req, res) => {
     }
 
     doctorData.otp = otp;
+    doctorData.email=email
     doctorData.clinics.push({ clinicId, verified: false });
 
     await doctorData.save();
+    const templateFile = 'OTP.ejs';
+    const subject = 'Di application OTP Verification';
+    console.log("otp", otp);
 
-    // Code to send OTP via SMS
-    // sendOtpSms(mobile_number, otp); // Uncomment and implement this function
-
+    const data = {
+      otp: otp,
+    };
+    sendEmail(
+      email,
+      subject,
+      templateFile,
+      data,
+    );
+   
     res.status(200).json({ success: true, message: 'OTP sent successfully and clinic processed', doctor: doctorData });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -463,17 +487,17 @@ const sendDoctorOtp = async (req, res) => {
 
 
 const verifyDoctorOtp = async (req, res) => {
-  const { mobile_number, otp } = req.body;
+  const { email, otp } = req.body;
 
   try {
-    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
-      return res.status(400).json({ success: false,  message: errormesaages[1008], errorcode: 1008 });
-    }
+    // if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
+    //   return res.status(400).json({ success: false,  message: errormesaages[1008], errorcode: 1008 });
+    // }
     if(!otp||otp===""){
       return res.status(400).json({ success: false, message: errormesaages[1015], errorcode: 1015 });
 
     }
-    const doctorData = await doctor.findOne({ mobile_number });
+    const doctorData = await doctor.findOne({ email:email });
 
     if (!doctorData) {
       return res.status(404).json({success:false,  message: errormesaages[1002], errorcode: 1002 });

@@ -14,6 +14,9 @@ const receptionistSchema = new Schema({
   mobile_number: {
     type: Number
   },
+  email: {
+    type: String
+  },
   address: {
     type: String
   },
