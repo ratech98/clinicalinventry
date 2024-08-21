@@ -55,8 +55,7 @@ const getAllClinics = async (req, res) => {
       .skip(startIndex)
       .limit(limit);
 
-    // Calculate remaining days and hours for each clinic's subscription
-    clinics.forEach(clinic => {
+    await Promise.all(clinics.map(async (clinic) => {
       const currentDate = moment();
       let remainingDays = 0;
       let remainingHours = 0;
@@ -81,7 +80,15 @@ const getAllClinics = async (req, res) => {
 
       clinic._doc.remainingDays = remainingDays;
       clinic._doc.remainingHours = remainingHours;
-    });
+
+      const doctorsCount = await doctor.countDocuments({ 'clinics.clinicId': clinic._id });
+      const receptionistsCount = await Receptionist.countDocuments({ clinic: clinic._id });
+      const totalStaffCount = doctorsCount + receptionistsCount;
+
+      clinic._doc.doctorsCount = doctorsCount;
+      clinic._doc.receptionistsCount = receptionistsCount;
+      clinic._doc.totalStaffCount = totalStaffCount;
+    }));
 
     res.json({
       success: true,
@@ -100,6 +107,7 @@ const getAllClinics = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 const getClinicById = async (req, res) => {
