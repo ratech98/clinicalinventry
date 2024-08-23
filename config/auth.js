@@ -8,6 +8,8 @@ const Receptionist = require("../modal/receptionist");
 
 const signInToken = (user) => {
   // console.log("JWT_SECRET during sign-in:","alamsfdfsdsdfsdfsdfsdfsdfsdrafdar!@#$0fddlfjdfdfdssfds");   
+
+
   const userId = user.clinics && user.clinics.length > 0 
   ? user.clinics[0].clinicId 
   : (user.clinic ? user.clinic : user._id);
@@ -106,24 +108,24 @@ const isAuth = async (req, res, next) => {
     } else {
       return res.status(403).send({success:false, message: errormesaages[1044],errorcode:1044 });
     }
-    if (decoded.type === "doctor") {
-      const doctors = await doctor.findOne({
-        _id: decoded.id,
-        "clinics.clinicId": decoded._id 
-      });
+    // if (decoded.type === "doctor") {
+    //   const doctors = await doctor.findOne({
+    //     _id: decoded.id,
+    //     "clinics.clinicId": decoded._id 
+    //   });
     
-      if (doctors && !doctors.clinics.some(clinic => clinic.clinicId.equals(decoded._id) && clinic.subscription)) {
-        return res.status(400).send({ success: false, message: errormesaages[1049], errorcode: 1049 });
-      }
-    }
+    //   if (doctors && !doctors.clinics.some(clinic => clinic.clinicId.equals(decoded._id) && clinic.subscription)) {
+    //     return res.status(400).send({ success: false, message: errormesaages[1049], errorcode: 1049 });
+    //   }
+    // }
     
-    if(decoded.type==="receptionist"){
-      const receptionist=await Receptionist.findById(decoded.id) 
-      if(receptionist.subscription=== false){
-        return res.status(400).send({success:false, message: errormesaages[1050],errorcode:1050 });
+    // if(decoded.type==="receptionist"){
+    //   const receptionist=await Receptionist.findById(decoded.id) 
+    //   if(receptionist.subscription=== false){
+    //     return res.status(400).send({success:false, message: errormesaages[1050],errorcode:1050 });
 
-      }
-    }
+    //   }
+    // }
 
     next();
   } catch (error) {

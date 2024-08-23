@@ -250,6 +250,8 @@ const sendReceptionistOtp = async (req, res) => {
 const verifyReceptionistOtp = async (req, res) => {
   const { email, otp } = req.body;
 
+  console.log('otp', otp);
+  
   try {
     // if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
     //   return res.status(400).json({ success: false, message: errormesaages[1008], errorcode: 1008  });
@@ -261,14 +263,23 @@ const verifyReceptionistOtp = async (req, res) => {
     const receptionist = await Receptionist.findOne({ email });
 
     if (!receptionist) {
+  console.log('otp');
+
       return res.status(404).json({ success: false,message: errormesaages[1004], errorcode: 1004 });
     }
     if (receptionist.block) {
+  console.log('otp1');
+
       return res.status(400).json({ success: false, message:errormesaages[1047],errorcode:1047 });
     }
     if (otp !== receptionist.otp) {
+  console.log('otp2');
+
       return res.status(400).json({message: errormesaages[1016], errorcode: 1016  });
     }
+
+  console.log('otp3');
+
 
     receptionist.otpVerified = true;
     await receptionist.save()
