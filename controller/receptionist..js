@@ -319,7 +319,7 @@ const getReceptionistsByClinic = async (req, res) => {
       .populate('clinic');
 
     if (!receptionists.length) {
-      return res.status(404).json({success:true,message: errormesaages[1017], errorcode: 1017});
+      return res.status(200).json({success:true, receptionists: []});
     }
 
     res.status(200).json({

@@ -11,6 +11,9 @@ const {
 } = require("../controller/adminController");
 const { updateMedicineStatus } = require("../controller/medicineController");
 const { isAdmin } = require("../config/adminAuth");
+const { getDoctorById } = require("../controller/doctorController");
+const { getDoctorsAndAvailabilityByClinic } = require("../controller/clinicController");
+const { getReceptionistsByClinic, getReceptionistById } = require("../controller/receptionist.");
 
 const multerStorage = multer.memoryStorage();
 const upload = multer({
@@ -31,5 +34,11 @@ router.put("/updateadmin/:id",upload, updateAdmin);
 router.post('/admin/block/:id',blockAdmin)
 router.get('/admins',getAdminList)
 router.get('/admin',isAdmin,getAdminId)
+router.get('/admin/doctors/:id',isAdmin, getDoctorById);
+router.get('/admin/doctersby_clinic/:id',isAdmin,getDoctorsAndAvailabilityByClinic)
+router.get('/admin/receptionist/clinic/:id',isAdmin, getReceptionistsByClinic)
+router.get('/admin/receptionists/:id',isAdmin, getReceptionistById);
+
+
 
 module.exports = router;

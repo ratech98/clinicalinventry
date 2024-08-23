@@ -284,7 +284,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
       .skip(startIndex);
 
     if (!doctors.length) {
-      return res.status(404).json({ success: false, error: errormesaages[1027], errorcode: 1027 });
+      return res.status(200).json({ success: true, doctorAvailability: [] });
     }
 
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
