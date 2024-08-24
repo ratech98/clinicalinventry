@@ -14,7 +14,6 @@ const connectDB = async () => {
     });
     console.log("mongodb connection success!");
 
-    // Fetch all tenants and connect to their databases if they have a dbUri
     const clinics = await Clinic.find({});
     for (const clinic of clinics) {
       if (clinic.dbUri) {

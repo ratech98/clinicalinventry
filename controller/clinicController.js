@@ -110,48 +110,85 @@ const getAllClinics = async (req, res) => {
 
 
 
-const getClinicById = async (req, res) => {
+const getClinicById= async (req, res) => {
   try {
 
     const id=req.user._id
-    console.log("id",id)
-    const clinic = await Clinic.findById(id) .populate({
-      path: 'subscription_details.subscription_id',
-      populate: {
-        path: 'title',
-      }
-    })
+    const clinic = await Clinic.findById(id)
+      .populate({
+        path: 'subscription_details.subscription_id',
+        populate: {
+          path: 'title',
+        }
+      });
+
     if (!clinic) {
-      return res.status(404).json({ error:errormesaages[1001],errorcode:1001 });
+      return res.status(404).json({ error: errormesaages[1001], errorcode: 1001 });
     }
-      if (clinic.block) {
-      return res.status(400).send({ message:errormesaages[1042], block_reason: clinic.block_reason,errorcode:1042 });
-    }
-    res.json({ success: true, message: "Clinic fetched successfully", clinic });
+
+    const doctorsUnsubscribed = await doctor.countDocuments({
+      'clinics.clinicId': req.params.id,
+      'clinics.subscription': false
+    });
+    const receptionistsSubscribed = await Receptionist.countDocuments({
+      clinic: req.params.id,
+      subscription: false
+    });
+
+    // Determine the balancedue status
+    const balancedue = (doctorsUnsubscribed === 0 && receptionistsSubscribed === 0) ? false : true;
+
+    res.json({
+      success: true,
+      message: "Clinic fetched successfully",
+      clinic,
+      balancedue
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 const getClinicId = async (req, res) => {
   try {
-     const clinic = await Clinic.findById(req?.params.id) .populate({
-      path: 'subscription_details.subscription_id',
-      populate: {
-        path: 'title',
-      }
-    })
+    const clinic = await Clinic.findById(req.params.id)
+      .populate({
+        path: 'subscription_details.subscription_id',
+        populate: {
+          path: 'title',
+        }
+      });
+
     if (!clinic) {
-      return res.status(404).json({ error:errormesaages[1001],errorcode:1001 });
+      return res.status(404).json({ error: errormesaages[1001], errorcode: 1001 });
     }
-    res.json({ success: true, message: "Clinic fetched successfully", clinic });
+
+    const doctorsUnsubscribed = await doctor.countDocuments({
+      'clinics.clinicId': req.params.id,
+      'clinics.subscription': false
+    });
+    const receptionistsSubscribed = await Receptionist.countDocuments({
+      clinic: req.params.id,
+      subscription: false
+    });
+
+    const balancedue = (doctorsUnsubscribed === 0 && receptionistsSubscribed === 0) ? false : true;
+
+    res.json({
+      success: true,
+      message: "Clinic fetched successfully",
+      clinic,
+      balancedue
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 const updateClinic = async (req, res) => {
   try {
@@ -390,11 +427,11 @@ const update_Subscription = async (req, res) => {
     }
 
  
-if (transaction_id === "free_trial") {
+if (transaction_id === "free_trail") {
 
       const subscriptionDuration = await freetrail.findById(subscription_id);
       if (!subscriptionDuration) {
-        return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1041 });
+        return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1042});
       }
       console.log("Free trial subscription detected");
 
@@ -423,7 +460,7 @@ if (transaction_id === "free_trial") {
     } else {
       const subscriptionDuration = await SubscriptionDuration.findById(subscription_id);
       if (!subscriptionDuration) {
-        return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1041 });
+        return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1043 });
       }
       let currentDate = moment();
       if (clinic.subscription_details.length > 0) {
@@ -645,6 +682,11 @@ const calculateUnsubscriptionAmount = async (req, res) => {
       return res.status(404).send({ success: false, error: "Subscription duration not found" });
     }
 
+    const subscriptionDurations = await SubscriptionDuration.findById(subscription_id).populate("title")
+
+    if (!subscriptionDuration) {
+      return res.status(404).send({ success: false, error: "Subscription duration not found" });
+    }
 
     const doctorsSubscribed = await doctor.countDocuments({
       'clinics.clinicId': clinicId,
@@ -677,6 +719,7 @@ console.log(doctorsSubscribed,doctorsUnsubscribed)
         unsubscriptionAmount: unsubscriptionAmountReceptionists,
       },
       totalUnsubscriptionAmount,
+      subscriptionDurations
     });
   } catch (error) {
     console.error('Error calculating unsubscription amount:', error);

@@ -241,7 +241,7 @@ const sendReceptionistOtp = async (req, res) => {
     // Code to send OTP via SMS
     // sendOtpSms(mobile_number, otp); // Uncomment and implement this function
 
-    res.status(200).json({ success: true, message: 'OTP sent successfully ', receptionist });
+    res.status(200).json({ success: true, message: 'OTP sent successfully '});
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
