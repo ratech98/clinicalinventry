@@ -127,11 +127,11 @@ const getClinicById= async (req, res) => {
     }
 
     const doctorsUnsubscribed = await doctor.countDocuments({
-      'clinics.clinicId': req.params.id,
+      'clinics.clinicId': id,
       'clinics.subscription': false
     });
     const receptionistsSubscribed = await Receptionist.countDocuments({
-      clinic: req.params.id,
+      clinic: id,
       subscription: false
     });
 
