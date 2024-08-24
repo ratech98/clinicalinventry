@@ -7,6 +7,8 @@ const { errormesaages } = require('../errormessages');
 const Availability = require('../modal/availablity');
 const doctor = require('../modal/doctor');
 const { createNotification } = require('../lib/notification');
+const PDFDocument = require('pdfkit');
+
 
 require("dotenv").config();
 const bucketName = process.env.bucketName;
@@ -457,7 +459,68 @@ const updateAppointmentWithPrescription = async (req, res) => {
     appointment.status="FINISHED"
     await patient.save();
 
-    res.status(200).json({ success: true, message: "Prescription and medicines added successfully", patient });
+
+    const clinic = await Clinic.findOne({ _id: req.user._id })
+    if (!clinic) {
+      return res.status(404).json({ success: false, error: 'Clinic not found', errorcode: 1030 });
+    }
+
+    const doctors = await doctor.findById(appointment.doctor).exec();
+    if (!doctors) {
+      return res.status(404).json({ success: false, error: 'Doctor not found', errorcode: 1031 });
+    }
+
+    const doc = new PDFDocument({ size: 'A4' });
+
+    doc.fontSize(16).text('Prescription Report', { align: 'center' });
+    doc.moveDown();
+    
+    doc.fontSize(12).text(` ${clinic.name}`);
+    doc.text(` ${clinic.mobile_number}`);
+    doc.text(` ${clinic.email}`);
+    doc.text(`${clinic.address}`);
+    doc.moveDown();
+    doc.fontSize(12).text(` ${doctors.name}`);
+    
+    doc.text(`${doctors.specialist}`);
+    doc.text(`${doctors.pg_qualification}`);
+    doc.text(` ${clinic.address}`);
+    doc.moveDown();
+
+    doc.text(`${patient.name}`);
+    doc.text(`${patient.age}`);
+    doc.text(` ${patient.gender}`);
+    doc.text(`${prescription.date}`)
+    doc.moveDown();
+    if (prescription) {
+      doc.text('Prescription Details:', { underline: true });
+      doc.text(` ${prescription.provisional_diagnosis}`);
+      doc.text(` ${prescription.advice}`);
+      doc.text(`${prescription.clinical_notes}`);
+      doc.text(` ${prescription.observation}`);
+      doc.text(` ${prescription.investigation_with_reports}`);
+      doc.moveDown();
+    }
+
+    if (medicines && medicines.length > 0) {
+      doc.text('Medicines:', { underline: true });
+      medicines.forEach(medicine => {
+        doc.text(`- ${medicine.name} (Dosage: ${medicine.dosage})`);
+        doc.text(`  Timings: Morning: ${medicine.timings.morning ? 'Yes' : 'No'}, Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}, Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`);
+        doc.text(`  Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}, After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`);
+        doc.moveDown();
+      });
+    }
+
+    doc.end();
+
+    res.setHeader('Content-Disposition', 'attachment; filename="prescription_report.pdf"');
+    res.setHeader('Content-Type', 'application/pdf');
+
+    doc.pipe(res);
+
+    
+    // res.status(200).json({ success: true, message: "Prescription and medicines added successfully", patient });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -497,6 +560,7 @@ const getPrescription = async (req, res) => {
 const moment = require('moment');
 const { generate4DigitOtp } = require('../lib/generateOtp');
 const sendEmail = require('../lib/sendEmail');
+const Clinic = require('../modal/clinic.');
 
 const addAppointmentWithToken = async (req, res) => {
   try {
@@ -718,7 +782,6 @@ const get_diagnose_report=async (req, res) => {
 
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const patient = await PatientModel.findById(patientId);
-    // const patient = await PatientModel.findOne({mobile_number});
 
     if (!patient) {
       return res.status(404).json({success:false, error: errormesaages[1021], errorcode: 1021 });
@@ -726,7 +789,7 @@ const get_diagnose_report=async (req, res) => {
 
     const diagnoseReports = patient.diagnose_reports;
 
-    res.status(200).json({ success: true, diagnoseReports });
+    res.status(200).json({ success: true, diagnoseReports,patient });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });

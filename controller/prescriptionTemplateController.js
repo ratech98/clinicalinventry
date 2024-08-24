@@ -1,6 +1,7 @@
 const { default: mongoose } = require("mongoose");
 const Template = require("../modal/prescriptiontemplate");
 const { Storage } = require("@google-cloud/storage");
+const PDFDocument = require('pdfkit');
 
 require("dotenv").config();
 const bucketName = process.env.bucketName;
@@ -164,12 +165,44 @@ const update_logo = async (req, res) => {
   }
 };
 
-
+const generatePDF = (details) => {
+    const doc = new PDFDocument({ size: 'A4' });
+    
+    doc.fontSize(12).text(`Title: ${details.title}`, {
+      align: 'center',
+    });
+  
+    doc.fontSize(10).text(`Description: ${details.description}`, {
+      align: 'left',
+    });
+  
+    
+    return doc;
+  };
+  
+  const sendPDFResponse = (req, res) => {
+    try {
+      const details = req.body; 
+      
+      const doc = generatePDF(details);
+      
+      res.setHeader('Content-Disposition', 'attachment; filename="document.pdf"');
+      res.setHeader('Content-Type', 'application/pdf');
+      
+      doc.pipe(res);
+      
+      doc.end();
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+  
 
 module.exports = {
     getTemplatesByClinicId,
     add_field_to_template,
     update_field_in_template,
     delete_field_from_template,
-    update_logo
+    update_logo,
+    sendPDFResponse
 };
