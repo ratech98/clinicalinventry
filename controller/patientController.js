@@ -143,9 +143,11 @@ query.bond={ $regex: "myself", $options: 'i' }
       .select('name mobile_number address gender age dob otp otpVerified diagnose_reports bond appointment_history');
 
     const patientData = patients.map(patient => {
-      const totalVisits = patient.appointment_history.length;
-      const lastVisit = totalVisits > 0 ? patient.appointment_history[totalVisits - 1].appointment_date : null;
-
+      const finishedVisits = patient.appointment_history.filter(appointment => appointment.status === 'FINISHED');
+      const totalVisits = finishedVisits.length;
+      const lastVisit = totalVisits > 0 
+      ? finishedVisits[totalVisits - 1].appointment_date 
+      : null;
       // Remove appointment history from the result
       const { appointment_history, ...patientWithoutHistory } = patient.toObject();
 
@@ -308,7 +310,8 @@ const getPatientById = async (req, res) => {
     if (!patient) {
       return res.status(404).json({success:false, error:  errormesaages[1021], errorcode: 1005 });
     }
-    const totalVisits = patient.appointment_history.length;
+    const finishedVisits = patient.appointment_history.filter(appointment => appointment.status === 'FINISHED');
+    const totalVisits = finishedVisits.length;
     res.json({
       success: true,
       message: "Patient fetched successfully",
@@ -329,7 +332,6 @@ const updatePatient = async (req, res) => {
     const { id } = req.params;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     
-    // Find the patient by ID and update the fields from req.body
     const patient = await PatientModel.findByIdAndUpdate(id, req.body, { new: true });
 
     if (!patient) {
