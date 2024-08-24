@@ -6,12 +6,19 @@ const Template = require('./prescriptiontemplate');
 const smsTemplateSchema = require('./smstemplate').SMSTemplate.schema;
 const smsTypeSchema = require('./smstemplate').SMSType.schema;
 
+const billingHistorySchema = new mongoose.Schema({
+  transaction_id: { type: String },
+  amount: { type: Number },
+  doctor: { type: Number },
+  receptionist: { type: Number }
+}, { _id: true }); 
+
 const subscriptionDetailSchema = new mongoose.Schema({
   subscription_id: { type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionDuration' },
-  transaction_id: { type: String },
   subscription_startdate: { type: String },
   subscription_enddate: { type: String },
-}, { _id: false });
+  billinghistory: [billingHistorySchema]
+}, { _id: true });
 
 const clinicSchema = new mongoose.Schema({
   clinic_name: { type: String },

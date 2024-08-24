@@ -6,7 +6,7 @@ const { Storage } = require("@google-cloud/storage");
 const Template = require("../modal/prescriptiontemplate");
 const moment = require('moment');
 const { createNotification } = require("../lib/notification");
-const { SubscriptionDuration } = require("../modal/subscription");
+const { SubscriptionDuration, freetrail } = require("../modal/subscription");
 const Receptionist = require("../modal/receptionist");
 
 
@@ -381,7 +381,7 @@ const blockOrUnblockClinic = async (req, res) => {
 
 const update_Subscription = async (req, res) => {
   try {
-    const { subscription_id, transaction_id, subscription_startdate, subscription_enddate } = req.body;
+    const { subscription_id, transaction_id, subscription_startdate, subscription_enddate,amount } = req.body;
     const clinicId = req.params.id;
 
     const clinic = await Clinic.findById(clinicId);
@@ -389,18 +389,23 @@ const update_Subscription = async (req, res) => {
       return res.status(404).send({ success: false, error: errormesaages[1001], errorcode: 1001 });
     }
 
-    const subscriptionDuration = await SubscriptionDuration.findById(subscription_id);
-    if (!subscriptionDuration) {
-      return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1041 });
-    }
+ 
+if (transaction_id === "free_trial") {
 
-    if (transaction_id === "free_trial") {
+      const subscriptionDuration = await freetrail.findById(subscription_id);
+      if (!subscriptionDuration) {
+        return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1041 });
+      }
       console.log("Free trial subscription detected");
+
+      const doctorsUnsubscribed = await doctor.countDocuments({ 'clinics.clinicId': clinicId, subscription: false });
+    const receptionistsUnsubscribed = await Receptionist.countDocuments({ clinic: clinicId, subscription: false });
+
       clinic.subscription = true;
 
       clinic.subscription_details.push({
         subscription_id: subscription_id,
-        transaction_id: transaction_id || 'N/A',
+        billinghistory: [{ transaction_id, amount, doctor:doctorsUnsubscribed, receptionist:receptionistsUnsubscribed }],
         subscription_startdate: subscription_startdate,
         subscription_enddate: subscription_enddate
       });
@@ -416,6 +421,10 @@ const update_Subscription = async (req, res) => {
         { new: true }
       );
     } else {
+      const subscriptionDuration = await SubscriptionDuration.findById(subscription_id);
+      if (!subscriptionDuration) {
+        return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1041 });
+      }
       let currentDate = moment();
       if (clinic.subscription_details.length > 0) {
         const lastSubscription = clinic.subscription_details[clinic.subscription_details.length - 1];
@@ -439,10 +448,12 @@ const update_Subscription = async (req, res) => {
 
       const formattedStartDate = currentDate.format('DD-MM-YYYY HH:mm:ss');
       const formattedEndDate = endDate.format('DD-MM-YYYY HH:mm:ss');
+      const receptionistsUnsubscribed = await Receptionist.countDocuments({ clinic: clinicId, subscription: false });
+      const doctorsUnsubscribed = await doctor.countDocuments({ 'clinics.clinicId': clinicId, subscription: false });
 
       clinic.subscription_details.push({
         subscription_id,
-        transaction_id: transaction_id || 'N/A',
+        billinghistory: [{ transaction_id, amount, doctor:doctorsUnsubscribed, receptionist:receptionistsUnsubscribed }],
         subscription_startdate: formattedStartDate,
         subscription_enddate: formattedEndDate
       });
@@ -603,7 +614,7 @@ const verifyDoctorSubscription = async (req, res) => {
 const verifyReceptionistSubscription = async (req, res) => {
   try {
     const receptionist = await Receptionist.findOneAndUpdate(
-      { _id: req.params.id, clinic: req.body.clinicId },
+      { _id: req.params.id },
       { subscription: req.body.subscription },
       { new: true }
     );
@@ -616,6 +627,101 @@ const verifyReceptionistSubscription = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
+const calculateUnsubscriptionAmount = async (req, res) => {
+  const { clinicId,subscription_id } = req.params;
+
+  try {
+    const clinic = await Clinic.findById(clinicId).populate('subscription_details.subscription_id');
+
+    if (!clinic) {
+      return res.status(404).send({ success: false, error: "Clinic not found" });
+    }
+
+    const subscriptionDuration = await SubscriptionDuration.findById(subscription_id);
+
+    if (!subscriptionDuration) {
+      return res.status(404).send({ success: false, error: "Subscription duration not found" });
+    }
+
+
+    const doctorsSubscribed = await doctor.countDocuments({
+      'clinics.clinicId': clinicId,
+      'clinics.subscription': true
+    });
+
+    const doctorsUnsubscribed = await doctor.countDocuments({
+      'clinics.clinicId': clinicId,
+      'clinics.subscription': false
+    });
+    const receptionistsSubscribed = await Receptionist.countDocuments({ clinic: clinicId, subscription: true });
+    const receptionistsUnsubscribed = await Receptionist.countDocuments({ clinic: clinicId, subscription: false });
+console.log(doctorsSubscribed,doctorsUnsubscribed)
+    const unsubscriptionAmountDoctors = doctorsUnsubscribed * subscriptionDuration.pricePerMonth;
+    const unsubscriptionAmountReceptionists = receptionistsUnsubscribed * subscriptionDuration.pricePerMonth;
+
+    const totalUnsubscriptionAmount = unsubscriptionAmountDoctors + unsubscriptionAmountReceptionists;
+
+    res.status(200).send({
+      success: true,
+      clinicName: clinic.clinic_name,
+      doctors: {
+        subscribed: doctorsSubscribed,
+        unsubscribed: doctorsUnsubscribed,
+        unsubscriptionAmount: unsubscriptionAmountDoctors,
+      },
+      receptionists: {
+        subscribed: receptionistsSubscribed,
+        unsubscribed: receptionistsUnsubscribed,
+        unsubscriptionAmount: unsubscriptionAmountReceptionists,
+      },
+      totalUnsubscriptionAmount,
+    });
+  } catch (error) {
+    console.error('Error calculating unsubscription amount:', error);
+    res.status(500).send({ success: false, error: error.message });
+  }
+};
+
+
+const   updateBillingHistory = async (req, res) => {
+  try {
+    const { clinicId, subscriptionDetailId } = req.params;
+    const { transaction_id, amount } = req.body;
+
+    const clinic = await Clinic.findById(clinicId);
+    if (!clinic) {
+      return res.status(404).send({ success: false, error: 'Clinic not found', errorcode: 1001 });
+    }
+
+    const subscriptionDetail = clinic.subscription_details.id(subscriptionDetailId);
+    if (!subscriptionDetail) {
+      return res.status(404).send({ success: false, error: 'Subscription detail not found', errorcode: 1041 });
+    }
+    const receptionistsUnsubscribed = await Receptionist.countDocuments({ clinic: clinicId, subscription: false });
+    const doctorsUnsubscribed = await doctor.countDocuments({
+      'clinics.clinicId': clinicId,
+      'clinics.subscription': false
+    });
+
+    subscriptionDetail.billinghistory.push({
+      transaction_id,
+      amount,
+      doctor: doctorsUnsubscribed,
+      receptionist: receptionistsUnsubscribed
+    });
+
+    await clinic.save();
+
+    res.status(200).send({ success: true, message: 'Billing history updated successfully', clinic });
+  } catch (error) {
+    console.error('Error updating billing history:', error);
+    res.status(500).send({ success: false, error: error.message });
+  }
+};
+
+
 
 
 module.exports = { addClinic,
@@ -633,5 +739,7 @@ module.exports = { addClinic,
                    verify_subscription,
                    calculateTotalSubscriptionAmount,
                    verifyDoctorSubscription,
-                   verifyReceptionistSubscription
+                   verifyReceptionistSubscription,
+                   calculateUnsubscriptionAmount,
+                   updateBillingHistory
                   };

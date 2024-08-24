@@ -353,7 +353,7 @@ const updateDoctorAvailabilitty = async (req, res) => {
     const nextOccurrences = calculateNextOccurrences(days);
 
     const newAvailabilities = nextOccurrences.map(date => ({
-      date: formatDate(date), // Format date as YYYY-MM-DD
+      date: formatDate(date),
       day: getDayOfWeek(date),
       slots: slots.map(slot => ({ timeSlot: slot, available: true }))
     }));

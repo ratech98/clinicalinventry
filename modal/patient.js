@@ -48,7 +48,7 @@ const appointmentSchema = new Schema({
 const diagnoseReportSchema = new Schema({
   report_name: { type: String },
   diagnose_report:{ type: String }
-});
+},{ timestamps: true });
 
 const patientSchema = new Schema({
   name: { type: String, required: false },

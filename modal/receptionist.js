@@ -31,6 +31,9 @@ const receptionistSchema = new Schema({
   profile: {
     type: String
   },
+  qualification: {
+    type: String
+  },
   gender: {
     type: String
   },
