@@ -501,6 +501,7 @@ const sendEmail = require('../lib/sendEmail');
 const addAppointmentWithToken = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
+    const clinicId=req.user._id
     const { patientId, appointment_date, time, reason, doctorId, temp, Bp } = req.body;
 
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
@@ -510,17 +511,52 @@ const addAppointmentWithToken = async (req, res) => {
       return res.status(404).json({ success: false, error: errormesaages[1021], errorcode: 1021 });
     }
 
+    const appointmentDate = moment(appointment_date, 'DD-MM-YYYY');
     const currentDate = moment();
-    const appointmentDate = moment(appointment_date, 'DD-MM-YYYY'); 
-console.log(currentDate,appointmentDate)
+
     if (appointmentDate.isBefore(currentDate, 'day') || appointmentDate.diff(currentDate, 'days') > 7) {
-      return res.status(400).json({ success: false, error:errormesaages[1039] , errorcode: 1039 });
+      return res.status(400).json({ success: false, error: errormesaages[1039], errorcode: 1039 });
     }
 
-    const allPatients = await PatientModel.find({ 'appointment_history.appointment_date': appointment_date });
+    const dayOfWeek = appointmentDate.format('dddd');
+console.log(clinicId,doctorId,dayOfWeek)
+    const availability = await Availability.findOne({
+      doctorId,
+      clinicId,
+      'availabilities.day': dayOfWeek
+    });
+
+    if (!availability) {
+      return res.status(400).json({ success: false, error: "Doctor is not available on this day at the selected clinic.", errorcode: 1040 });
+    }
+
+    const dayAvailability = availability.availabilities.find(avail => avail.day === dayOfWeek);
+    const timeSlot = dayAvailability.slots.find(slot => slot.timeSlot === time && slot.available);
+
+    if (!timeSlot) {
+      return res.status(400).json({ success: false, error: "Doctor is not available at this time at the selected clinic.", errorcode: 1041 });
+    }
+
+    const unavailableSlot = availability.unavailable.find(unavail => 
+      moment(unavail.date).isSame(appointmentDate, 'day') &&
+      unavail.slots.some(slot => slot.timeSlot === time && slot.available === false)
+    );
+
+    if (unavailableSlot) {
+      return res.status(400).json({ success: false, error: "Doctor is unavailable for this date and time at the selected clinic.", errorcode: 1042 });
+    }
+
+    const allPatients = await PatientModel.find({
+      'appointment_history.appointment_date': appointment_date,
+      'appointment_history.doctor': doctorId,
+    });
+
     let tokenCount = 0;
     allPatients.forEach(patient => {
-      tokenCount += patient.appointment_history.filter(a => a.appointment_date === appointment_date).length;
+      tokenCount += patient.appointment_history.filter(a => 
+        a.appointment_date === appointment_date && 
+        a.doctor.toString() === doctorId
+      ).length;
     });
 
     const newTokenNumber = tokenCount + 1;
@@ -529,6 +565,7 @@ console.log(currentDate,appointmentDate)
       time,
       reason,
       doctor: doctorId,
+     
       token_number: newTokenNumber,
       temp,
       Bp
@@ -536,28 +573,9 @@ console.log(currentDate,appointmentDate)
 
     patient.appointment_history.push(newAppointment);
 
-    // if (diagnose_reports && diagnose_reports.length > 0) {
-    //   diagnose_reports.forEach(report => {
-    //     patient.diagnose_reports.push({
-    //       report_name: report.report_name,
-    //       diagnose_report: report.diagnose_report
-    //     });
-    //   });
-    // }
-    // const whatsappNumber = `whatsapp:${patient.mobile_number}`;
-    // const messageBody = `Dear ${patient.name}, your appointment with Doctor ${doctorId} is confirmed for ${appointment_date} at ${time}. Your token number is ${newTokenNumber}.`;
-
-    // client.messages.create({
-    //   body: messageBody,
-    //   from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`, // Your Twilio WhatsApp number
-    //   to: whatsappNumber
-    // })
-    // .then(message => console.log(`Message sent: ${message.sid}`))
-    // .catch(error => console.error(`Failed to send message: ${error.message}`));
-
-
     await patient.save();
-    createNotification("doctor", doctorId, `You have an appointment on ${appointment_date} at ${time}`);
+
+    createNotification("doctor", doctorId, `You have an appointment on ${appointment_date} at ${time} at clinic ${clinicId}`);
 
     res.status(200).json({ success: true, message: "Appointment added successfully", patient });
   } catch (error) {
