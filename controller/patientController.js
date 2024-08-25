@@ -8,7 +8,9 @@ const Availability = require('../modal/availablity');
 const doctor = require('../modal/doctor');
 const { createNotification } = require('../lib/notification');
 const PDFDocument = require('pdfkit');
-
+const { promisify } = require('util');
+const { PassThrough } = require('stream');
+const stream = require('stream');
 
 require("dotenv").config();
 const bucketName = process.env.bucketName;
@@ -422,21 +424,20 @@ const verifyPatientOtp = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
 const updateAppointmentWithPrescription = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
     const { patientId, appointmentId, prescription, medicines } = req.body;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
-    
+
     const patient = await PatientModel.findById(patientId);
     if (!patient) {
-      return res.status(404).json({success:false, error: errormesaages[1021], errorcode: 1021 });
+      return res.status(404).json({ success: false, error: 'Patient not found', errorcode: 1021 });
     }
 
     const appointment = patient.appointment_history.id(appointmentId);
     if (!appointment) {
-      return res.status(404).json({ success:false, error: errormesaages[1028], errorcode: 1028});
+      return res.status(404).json({ success: false, error: 'Appointment not found', errorcode: 1028 });
     }
 
     if (medicines && Array.isArray(medicines)) {
@@ -452,15 +453,14 @@ const updateAppointmentWithPrescription = async (req, res) => {
         }
       }));
     } else {
-      return res.status(400).json({success:false, error: errormesaages[1029], errorcode: 1029 });
+      return res.status(400).json({ success: false, error: 'Invalid medicines data', errorcode: 1029 });
     }
 
     appointment.prescription = prescription;
-    appointment.status="FINISHED"
+    appointment.status = "FINISHED";
     await patient.save();
 
-
-    const clinic = await Clinic.findOne({ _id: req.user._id })
+    const clinic = await Clinic.findOne({ _id: req.user._id }).exec();
     if (!clinic) {
       return res.status(404).json({ success: false, error: 'Clinic not found', errorcode: 1030 });
     }
@@ -470,37 +470,84 @@ const updateAppointmentWithPrescription = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Doctor not found', errorcode: 1031 });
     }
 
+    const template = await Template.findOne({ clinic_id: req.user._id }).exec();
+    if (!template) {
+      return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
+    }
+
+    // Create PDF and store in a buffer
     const doc = new PDFDocument({ size: 'A4' });
+    const buffers = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', async () => {
+      const pdfData = Buffer.concat(buffers);
+
+      // Prepare email data
+      const data = { name: patient.name };
+      const emailSubject = `You have received a prescription receipt from ${clinic.clinic_name}`;
+      
+      // Attach the PDF and send the email
+      await sendEmail(
+        patient.email,
+        emailSubject,
+        "sendrecipt.ejs",
+        data,
+        {
+          filename: 'prescription_report.pdf',
+          content: pdfData,
+          contentType: 'application/pdf',
+        }
+      );
+
+      res.status(200).json({ success: true, message: "Prescription and medicines added successfully", patient });
+    });
+
+    if (template.logo) {
+      const imageUrl = template.logo;
+      const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+      const imageBuffer = Buffer.from(response.data, 'binary');
+      doc.image(imageBuffer, { fit: [100, 100], align: 'left', valign: 'top' });
+      doc.moveDown();
+    }
 
     doc.fontSize(16).text('Prescription Report', { align: 'center' });
     doc.moveDown();
-    
-    doc.fontSize(12).text(` ${clinic.name}`);
-    doc.text(` ${clinic.mobile_number}`);
-    doc.text(` ${clinic.email}`);
-    doc.text(`${clinic.address}`);
-    doc.moveDown();
-    doc.fontSize(12).text(` ${doctors.name}`);
-    
-    doc.text(`${doctors.specialist}`);
-    doc.text(`${doctors.pg_qualification}`);
-    doc.text(` ${clinic.address}`);
+
+    // Add clinic details
+    doc.fontSize(12).text(`Clinic Name: ${clinic.name}`);
+    doc.text(`Mobile Number: ${clinic.mobile_number}`);
+    doc.text(`Email: ${clinic.email}`);
+    // doc.text(`Address: ${clinic.ad}`);
     doc.moveDown();
 
-    doc.text(`${patient.name}`);
-    doc.text(`${patient.age}`);
-    doc.text(` ${patient.gender}`);
-    doc.text(`${prescription.date}`)
+    // Add a line
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+    doc.moveDown(1);
+
+    doc.fontSize(12).text(`Doctor: ${doctors.name}`);
+    doc.text(`Specialist: ${doctors.specialist}`);
+    doc.text(`Qualification: ${doctors.ug_qualification}`);
     doc.moveDown();
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+    doc.moveDown(1);
+    doc.text(`Patient Name: ${patient.name}`);
+    doc.text(`Age: ${patient.age}`);
+    doc.text(`Gender: ${patient.gender}`);
+    doc.text(`Date: ${prescription.date}`);
+    doc.moveDown();
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+    doc.moveDown(1);
     if (prescription) {
       doc.text('Prescription Details:', { underline: true });
-      doc.text(` ${prescription.provisional_diagnosis}`);
-      doc.text(` ${prescription.advice}`);
-      doc.text(`${prescription.clinical_notes}`);
-      doc.text(` ${prescription.observation}`);
-      doc.text(` ${prescription.investigation_with_reports}`);
+      doc.text(`Provisional Diagnosis: ${prescription.provisional_diagnosis}`);
+      doc.text(`Advice: ${prescription.advice}`);
+      doc.text(`Clinical Notes: ${prescription.clinical_notes}`);
+      doc.text(`Observation: ${prescription.observation}`);
+      doc.text(`Investigation with Reports: ${prescription.investigation_with_reports}`);
       doc.moveDown();
     }
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+    doc.moveDown(1);
 
     if (medicines && medicines.length > 0) {
       doc.text('Medicines:', { underline: true });
@@ -514,13 +561,6 @@ const updateAppointmentWithPrescription = async (req, res) => {
 
     doc.end();
 
-    res.setHeader('Content-Disposition', 'attachment; filename="prescription_report.pdf"');
-    res.setHeader('Content-Type', 'application/pdf');
-
-    doc.pipe(res);
-
-    
-    // res.status(200).json({ success: true, message: "Prescription and medicines added successfully", patient });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -528,7 +568,7 @@ const updateAppointmentWithPrescription = async (req, res) => {
 };
 
 
-// Get Prescription
+
 const getPrescription = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
@@ -561,6 +601,8 @@ const moment = require('moment');
 const { generate4DigitOtp } = require('../lib/generateOtp');
 const sendEmail = require('../lib/sendEmail');
 const Clinic = require('../modal/clinic.');
+const Template = require('../modal/prescriptiontemplate');
+const { default: axios } = require('axios');
 
 const addAppointmentWithToken = async (req, res) => {
   try {
