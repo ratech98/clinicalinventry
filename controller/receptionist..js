@@ -490,7 +490,36 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
   }
 };
 
+const resendOtp = async (req, res) => {
+  const { email } = req.body;
+  const OTP = generate4DigitOtp();
 
+  try {
+    let receptionist = await Receptionist.findOne({ email });
+
+    if (!receptionist) {
+      return res.status(404).json({ success: false, message:errormesaages[1004], errorcode: 1004 });
+    }
+
+    receptionist.otp = OTP;
+    // doctors.otpVerified = false;
+
+    const templateFile = 'OTP.ejs';
+    const subject = 'Di application OTP Verification';
+
+    const data = { otp: OTP };
+    sendEmail(email, subject, templateFile, data);
+
+    await receptionist.save();
+
+    console.log("OTP resent", OTP);
+
+    return res.status(200).json({ success: true, message: 'OTP resent successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
 
 
 
@@ -514,5 +543,6 @@ module.exports = {
   blockOrUnblockReceptionist,
   sendReceptionistOtpForLogin,
   verify_receptionist_certificate,
-  getDoctorsAndAvailabilityByClinic
+  getDoctorsAndAvailabilityByClinic,
+  resendOtp
 };

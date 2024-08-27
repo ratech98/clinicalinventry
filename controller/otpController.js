@@ -187,9 +187,42 @@ const generateToken = async (req, res) => {
 };
 
 
+const resendOtp = async (req, res) => {
+  const { email } = req.body;
+  const OTP = generate6DigitOtp();
+
+  try {
+    let clinic = await Clinic.findOne({ email });
+
+    if (!clinic) {
+      return res.status(404).json({ success: false, message:errormesaages[1001], errorcode: 1001 });
+    }
+
+    clinic.otp = OTP;
+    // clinic.otpVerified = false;
+
+    const templateFile = 'OTP.ejs';
+    const subject = 'Di application OTP Verification';
+
+    const data = { otp: OTP };
+    sendEmail(email, subject, templateFile, data);
+
+    await clinic.save();
+
+    console.log("OTP resent", OTP);
+
+    return res.status(200).json({ success: true, message: 'OTP resent successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
 module.exports = {
   sendOtp,
   verifyOtp,
   generateToken,
-  loginsendOtp
+  loginsendOtp,
+  resendOtp
 };

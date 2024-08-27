@@ -212,19 +212,20 @@ const getAllrelationlist = async (req, res) => {
 
 const getPatients = async (req, res) => {
   try {
-    const today = new Date();
+    // Get the date from the query parameters
+    const { date } = req.query;
+    const { doctor } = req.params;
 
-    const day = String(today.getDate()).padStart(2, '0');
-    const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
-    const year = today.getFullYear();
-    
-    const formattedDate = `${day}-${month}-${year}`;
+    // Parse the date string from DD-MM-YYYY to a Date object
+    const [day, month, year] = date.split('-').map(Number);
+    const parsedDate = new Date(year, month - 1, day);
+
+    const formattedDate = date
     
     console.log(`Formatted Date: ${formattedDate}`);
-    
+
     const { tenantDBConnection } = req;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
-    const mainDBConnection = mongoose.connection;
 
     const patients = await PatientModel.aggregate([
       {
@@ -235,7 +236,7 @@ const getPatients = async (req, res) => {
               as: "appointment",
               cond: {
                 $and: [
-                  { $eq: ["$$appointment.doctor",new mongoose.Types.ObjectId(req.params.doctor)] },
+                  { $eq: ["$$appointment.doctor", new mongoose.Types.ObjectId(doctor)] },
                   { $eq: ["$$appointment.appointment_date", formattedDate] },
                   { $ne: ["$$appointment.status", "FINISHED"] }
                 ]
@@ -297,6 +298,7 @@ const getPatients = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 // Get Patient by ID
@@ -465,7 +467,7 @@ const updateAppointmentWithPrescription = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Clinic not found', errorcode: 1030 });
     }
 
-    const doctors = await doctor.findById(appointment.doctor).exec();
+    const doctors = await Doctor.findById(appointment.doctor).exec();
     if (!doctors) {
       return res.status(404).json({ success: false, error: 'Doctor not found', errorcode: 1031 });
     }
@@ -475,18 +477,15 @@ const updateAppointmentWithPrescription = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
     }
 
-    // Create PDF and store in a buffer
     const doc = new PDFDocument({ size: 'A4' });
     const buffers = [];
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', async () => {
       const pdfData = Buffer.concat(buffers);
 
-      // Prepare email data
       const data = { name: patient.name };
       const emailSubject = `You have received a prescription receipt from ${clinic.clinic_name}`;
-      
-      // Attach the PDF and send the email
+
       await sendEmail(
         patient.email,
         emailSubject,
@@ -513,20 +512,25 @@ const updateAppointmentWithPrescription = async (req, res) => {
     doc.fontSize(16).text('Prescription Report', { align: 'center' });
     doc.moveDown();
 
-    // Add clinic details
-    doc.fontSize(12).text(`Clinic Name: ${clinic.name}`);
-    doc.text(`Mobile Number: ${clinic.mobile_number}`);
-    doc.text(`Email: ${clinic.email}`);
-    // doc.text(`Address: ${clinic.ad}`);
-    doc.moveDown();
+    const applyFieldStyles = (field) => {
+      doc.font(field.styles.font)
+        .fontSize(parseInt(field.styles.size))
+        .fillColor(field.styles.color)
+        .text(field.value || '', { align: field.styles.align });
+    };
 
-    // Add a line
+    template.dynamicFields.forEach(field => {
+      doc.fontSize(parseInt(field.styles.size)).text(`${field.section}: `, { align: 'left' });
+      applyFieldStyles(field);
+      doc.moveDown();
+    });
+
     doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
     doc.moveDown(1);
 
-    doc.fontSize(12).text(`Doctor: ${doctors.name}`);
-    doc.text(`Specialist: ${doctors.specialist}`);
-    doc.text(`Qualification: ${doctors.ug_qualification}`);
+    doc.fontSize(12).text(`Doctor Name: ${doctors.name}`);
+    doc.text(`Speciality: ${doctors.specialist}`);
+    doc.text(`Degree: ${doctors.ug_qualification}`);
     doc.moveDown();
     doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
     doc.moveDown(1);
@@ -566,6 +570,7 @@ const updateAppointmentWithPrescription = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 

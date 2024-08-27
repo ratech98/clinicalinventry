@@ -442,7 +442,7 @@ if (transaction_id === "free_trail") {
 
       clinic.subscription_details.push({
         subscription_id: subscription_id,
-        billinghistory: [{ transaction_id, amount, doctor:doctorsUnsubscribed, receptionist:receptionistsUnsubscribed }],
+        billinghistory: [{ transaction_id, amount:amount, doctor:doctorsUnsubscribed, receptionist:receptionistsUnsubscribed }],
         subscription_startdate: subscription_startdate,
         subscription_enddate: subscription_enddate
       });

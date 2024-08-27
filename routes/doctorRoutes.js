@@ -1,5 +1,5 @@
 const express = require('express');
-const { addDoctor, getAllDoctors, getDoctorById, updateDoctor, deleteDoctor, updateDoctorAvailabilitty, updateDoctorVerify, addClinicToDoctor, addAvailability, updateAvailability, getClinicDetailsByDoctorId, sendDoctorOtp, verifyDoctorOtp, verifyDoctorClinic, updateDoctorAvailability, addDoctorAvailability, blockOrUnblockDoctor, sendDoctorOtpForLogin, get_availability, verify_certificate, addUnavailableSlots } = require('../controller/doctorController');
+const { addDoctor, getAllDoctors, getDoctorById, updateDoctor, deleteDoctor, updateDoctorAvailabilitty, updateDoctorVerify, addClinicToDoctor, addAvailability, updateAvailability, getClinicDetailsByDoctorId, sendDoctorOtp, verifyDoctorOtp, verifyDoctorClinic, updateDoctorAvailability, addDoctorAvailability, blockOrUnblockDoctor, sendDoctorOtpForLogin, get_availability, verify_certificate, addUnavailableSlots, resendOtp } = require('../controller/doctorController');
 const { isAuth } = require('../config/auth');
 const router = express.Router();
 const multer = require('multer');
@@ -25,8 +25,8 @@ router.delete('/doctors/:id',isAuth, deleteDoctor);
 router.put('/doctors/status',isAuth, updateDoctorAvailability);
 router.put('/doctors/verify/clinic',isAuth, verifyDoctorClinic);
 router.post('/update_clinic_to_doctor',isAuth,addClinicToDoctor)
-router.post('/adddoctor_availablity',isAuth,addDoctorAvailability)
-router.put('/updatedoctor_availablity',isAuth,updateDoctorAvailabilitty)
+router.post('/adddoctor_availablity',addDoctorAvailability)
+router.put('/updatedoctor_availablity',updateDoctorAvailabilitty)
 router.post('/sendotp/doctor',isAuth,sendDoctorOtp)
 router.post('/sendotp/doctor/login',sendDoctorOtpForLogin)
 router.post('/verifyotp/doctor',verifyDoctorOtp)
@@ -35,5 +35,7 @@ router.get('/get/availability',isAuth,get_availability)
 router.post('/unavaialbleslots',isAuth,addUnavailableSlots)
 
 router.put('/verify/certificate/:id',isAuth, verify_certificate);
+router.post('/resendotp/doctor',resendOtp)
+
 
 module.exports=router

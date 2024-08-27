@@ -1,5 +1,5 @@
 const express = require('express');
-const { addReceptionist, getAllReceptionists, getReceptionistById, updateReceptionist, deleteReceptionist, updateReceptionistStatus, updateReceptionistVerify, addClinicToReceptionist, addReceptionistAvailability, updateReceptionistAvailability, getReceptionists, getClinicDetailsByreceptionistId, sendReceptionistOtp, verifyReceptionistOtp, getReceptionistsByClinic, blockOrUnblockReceptionist, sendReceptionistOtpForLogin, verify_receptionist_certificate, getDoctorsAndAvailabilityByClinic } = require('../controller/receptionist.');
+const { addReceptionist, getAllReceptionists, getReceptionistById, updateReceptionist, deleteReceptionist, updateReceptionistStatus, updateReceptionistVerify, addClinicToReceptionist, addReceptionistAvailability, updateReceptionistAvailability, getReceptionists, getClinicDetailsByreceptionistId, sendReceptionistOtp, verifyReceptionistOtp, getReceptionistsByClinic, blockOrUnblockReceptionist, sendReceptionistOtpForLogin, verify_receptionist_certificate, getDoctorsAndAvailabilityByClinic, resendOtp } = require('../controller/receptionist.');
 const { updateAvailability } = require('../controller/doctorController');
 
 const router = express.Router();
@@ -41,5 +41,8 @@ router.put('/verify/receptionist/certificate/:id',isAuth, verify_receptionist_ce
 
       
 router.get('/doctersby_clinic/token/:id',isAuth,connectTenantDB,getDoctorsAndAvailabilityByClinic);
+
+router.post('/resendotp/receptionist',resendOtp)
+
 module.exports=router
  

@@ -1,7 +1,7 @@
 
 const { signInToken } = require("../config/auth");
 const { errormesaages } = require("../errormessages");
-const { generate4DigitOtp } = require("../lib/generateOtp");
+const { generate4DigitOtp, generate6DigitOtp } = require("../lib/generateOtp");
 const { createNotification } = require("../lib/notification");
 const sendEmail = require("../lib/sendEmail");
 const Availability = require("../modal/availablity");
@@ -744,6 +744,36 @@ const addUnavailableSlots = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+const resendOtp = async (req, res) => {
+  const { email } = req.body;
+  const OTP = generate4DigitOtp();
+
+  try {
+    let doctors = await doctor.findOne({ email });
+
+    if (!doctors) {
+      return res.status(404).json({ success: false, message:errormesaages[1002], errorcode: 1002 });
+    }
+
+    doctors.otp = OTP;
+    // doctors.otpVerified = false;
+
+    const templateFile = 'OTP.ejs';
+    const subject = 'Di application OTP Verification';
+
+    const data = { otp: OTP };
+    sendEmail(email, subject, templateFile, data);
+
+    await doctors.save();
+
+    console.log("OTP resent", OTP);
+
+    return res.status(200).json({ success: true, message: 'OTP resent successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
 
 
 module.exports = { 
@@ -765,5 +795,6 @@ module.exports = {
                sendDoctorOtpForLogin,
                get_availability,
                verify_certificate,
-               addUnavailableSlots
+               addUnavailableSlots,
+               resendOtp
                 };

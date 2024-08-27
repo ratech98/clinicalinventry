@@ -3,113 +3,192 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Hefgro</title>
+        <title>DI</title>
+        <style>
+            /* Base Styles */
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: Arial, sans-serif;
+                background-color: #f0f0f0;
+                color: #333;
+                height: 100%;
+            }
+
+            table {
+                width: 100%;
+                border: 0;
+                cellspacing: 0;
+                cellpadding: 0;
+            }
+
+            p {
+                margin: 1% 0;
+                font-size: 1.571em;
+            }
+
+            h1 {
+                font-size: 3.42em;
+                text-align: center;
+            }
+
+            /* Container for theme color content */
+            .theme-color {
+                display: flex;
+                height: 10.85em;
+                background-color: rgba(2, 107, 147, 1);
+                position: relative;
+            }
+
+            /* Container for image and body content */
+            .content-container {
+                margin-top: -10em;
+                position: absolute;
+                width: 80%;
+                border: 0.1px solid rgba(66, 70, 81, 0.2);
+                box-shadow: 0.4em 0.6em 0.9em rgba(0, 0, 0, 0.1);
+                background-color: #fff;
+                padding: 0% 6% 3%;
+                margin-bottom: 1%;
+            }
+
+            .img-center {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+            }
+
+            .img-center img {
+                max-width: 40%;
+                height: auto;
+                display: block;
+            }
+
+            /* Styles for contact support section */
+            .contact-support {
+                display: flex;
+            }
+
+            .contact-support table {
+                width: 80%;
+                border: 0;
+                cellspacing: 0;
+                cellpadding: 0;
+                bgcolor: #d6e3e8;
+                border: 0.1px solid rgba(66, 70, 81, 0.2);
+            }
+
+            .contact-support td {
+                padding: 2em 0;
+                text-align: center;
+                font-size: 1.571em;
+            }
+
+            .contact-support span {
+                color: #027193;
+            }
+
+            /* Footer styles */
+            .footer {
+                width: 80%;
+                margin: 0 auto;
+                text-align: left;
+            }
+
+            .footer img {
+                max-width: 30%;
+                height: auto;
+                display: block;
+            }
+
+            .footer p {
+                margin: 0 0 10% 0;
+                font-size: 1.14285714em;
+                color: rgba(66, 70, 81, 0.3);
+            }
+
+            .footer a {
+                color: #027193;
+                text-decoration: none;
+                margin: 0 2%;
+            }
+
+            /* Responsive Styles */
+            @media screen and (max-width: 768px) {
+                .content-container {
+                    width: 90%;
+                    padding: 5% 7% 5%;
+                }
+
+                .img-center img {
+                    max-width: 60%;
+                }
+
+                .footer img {
+                    max-width: 50%;
+                }
+            }
+
+            @media screen and (max-width: 600px) {
+                p, td {
+                    font-size: 1.2em;
+                }
+
+                h1 {
+                    font-size: 2.5em;
+                }
+
+                .content-container {
+                    width: 95%;
+                    padding: 5% 5% 5%;
+                }
+
+                .img-center img {
+                    max-width: 80%;
+                }
+
+                .footer img {
+                    max-width: 60%;
+                }
+
+                .footer p {
+                    font-size: 1em;
+                }
+
+                .footer a {
+                    font-size: 1em;
+                }
+            }
+        </style>
     </head>
-    <body
-        style="
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            color: #333;
-            height: 100%;
-        "
-    >
-        <!--  theme color & img & body of content -->
-        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+    <body>
+        <!-- Theme color & content -->
+        <table>
             <tr>
                 <td align="center">
-                    <!-- app theme color content -->
-                    <div
-                        width="100%"
-                        style="
-                            display: flex;
-                            height: 10.85em;
-                            background-color: rgba(2, 107, 147, 1);
-                            position: relative;
-                        "
-                    ></div>
+                    <!-- App theme color content -->
+                    <div class="theme-color"></div>
 
-                    <!-- img and body of content -->
-                    <div style="margin-top: -10em; position: absolute">
-                        <table
-                            width="80%"
-                            border="0"
-                            cellspacing="0"
-                            cellpadding="0"
-                            style="
-                                border: .1px solid rgba(66, 70, 81, 0.2); 
-                                box-shadow: 0.4em 0.6em 0.9em rgba(0, 0, 0, 0.1);
-                                background-color: #fff;
-                                padding: 0% 6% 3%;
-                                margin-bottom: 1%;
-                                position: absolute;
-                            "
-                        >
-                            <div
-                                style="
-                                    display: flex;
-                                    justify-content: center;
-                                    align-self: center;
-                                    align-items: center;
-                                    align-content: center;
-                                    width: 100%;
-                                "
-                            >
-                                <img
-                                    src="cid:Mailbox.png"
-                                    alt="Example Image"
-                                    style="
-                                        max-width: 40%;
-                                        height: auto;
-                                        display: block;
-                                        margin: 0 auto;
-                                        justify-content: center;
-                                        align-self: center;
-                                        align-items: center;
-                                        align-content: center;
-                                    "
-                                />
-                            </div>
-
+                    <!-- Image and body content -->
+                    <div class="content-container">
+                        <div class="img-center">
+                            <img
+                                src="https://storage.googleapis.com/clinicalinventory/email/Mailbox.png"
+                                alt="Example Image"
+                            />
+                        </div>
+                        <table>
                             <tr>
                                 <td>
-                                    <p
-                                        style="
-                                            margin: 1% 0;
-                                            font-size: 1.571em;
-                                            
-                                        "
-                                    >
-                                        Hello
-                                    </p>
-                                    <p
-                                        style="
-                                            margin: 5% 0;
-                                            font-size: 1.571em;
-                                            
-                                        "
-                                    >
-                                        
-                                    </p>
-                                    <h1
-                                        style="
-                                            font-size: 3.42em;
-                                            text-align: center;
-                                        "
-                                    >
-                                        Hi <%=name  %>
-                                    </h1>
-                                    <p style="margin: 1% 0; font-size: 1.571em">
+                                    <p>Hello</p>
+                                    <h1>Hi <%= name %></h1>
+                                    <p>
                                         If you didn’t request this, you can
                                         ignore this email or let us know.
                                     </p>
-                                    <p style="margin: 1% 0; font-size: 1.571em">
-                                        Thanks!
-                                    </p>
-                                    <p style="margin: 1% 0; font-size: 1.571em">
-                                        Di clinics Team
-                                    </p>
+                                    <p>Thanks!</p>
+                                    <p>Di clinics Team</p>
                                 </td>
                             </tr>
                         </table>
@@ -118,113 +197,33 @@
             </tr>
         </table>
 
-        <!-- contact Support Content -->
-        <div style="display: flex">
-            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <!-- Contact support content -->
+        <div class="contact-support">
+            <table align="center">
                 <tr>
-                    <td align="center">
-                        <table
-                            width="80%"
-                            border="0"
-                            cellspacing="0"
-                            cellpadding="0"
-                            bgcolor="#D6E3E8"
-                            style="border: .1px solid  rgba(66, 70, 81, 0.2);"
-                        >
-                            <tr>
-                                <td align="center" style="padding: 2em 0">
-                                    <p
-                                        style="font-size: 1.571em"
-                                    >
-                                        If you have any questions, please
-                                        <span style="color: #027193"
-                                            >contact Support</span
-                                        >.
-                                    </p>
-                                </td>
-                            </tr>
-                        </table>
+                    <td>
+                        <p>
+                            If you have any questions, please
+                            <span>contact Support</span>.
+                        </p>
                     </td>
                 </tr>
             </table>
         </div>
 
-        <!-- APP icon & privacy policy,help,contact Content -->
-        <table width="100%" border="0" cellspacing="0" cellpadding="0">
-            <tr>
-                <td align="center">
-                    <table
-                        width="80%"
-                        border="0"
-                        cellspacing="0"
-                        cellpadding="0"
-                        align="flex-start"
-                    >
-                        <tr></tr>
-                            <td>
-                                <div
-                                style="display: flex; align-items: flex-start;  width: 100%;  max-height: 10%;">
-                                
-                                    <img
-                                        src="cid:logo.png"
-                                        alt="App Image"
-                                        style="
-                                            max-width: 30%;
-                                            height: auto;
-                                            display: block;
-                                        "
-                                    />
-                                </div>
-                                <p
-                                    style="
-                                        margin: 0 0 10% 0;
-                                        font-size: 1.14285714em;
-                                        color: rgba(66, 70, 81, 0.3);
-                                    "
-                                >
-                                    <a
-                                        href="#"
-                                        style="
-                                            color: #027193;
-                                            text-decoration: none;
-                                            margin: 0 2% 0 0;
-                                        "
-                                        >Privacy Policy</a
-                                    >
-                                    |
-                                    <a
-                                        href="#"
-                                        style="
-                                            color: #027193;
-                                            text-decoration: none;
-                                            margin: 0 2% 0 2%;
-                                        "
-                                        >Help</a
-                                    >
-                                    |
-                                    <a
-                                        href="#"
-                                        style="
-                                            color: #027193;
-                                            text-decoration: none;
-                                            margin: 0 2% 0 2%;
-                                        "
-                                        >About Us</a
-                                    >
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-        <style>
-          /* Media query for smaller screens */
-          @media screen and (max-width: 600px) {
-              p {
-                  font-size: .5em; /* Adjust the font size for smaller screens */
-              }
-          }
-      </style>
+        <!-- Footer content -->
+        <div class="footer">
+            <div>
+                <img
+                    src="https://storage.googleapis.com/clinicalinventory/email/WhatsApp%20Image%202024-08-27%20at%2012.18.17%20PM.jpeg"
+                    alt="App Image"
+                />
+            </div>
+            <p>
+                <a href="#">Privacy Policy</a> |
+                <a href="#">Help</a> |
+                <a href="#">About Us</a>
+            </p>
+        </div>
     </body>
 </html>
