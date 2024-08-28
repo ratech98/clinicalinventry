@@ -1,5 +1,5 @@
 const express = require('express');
-const { addPatient, getAllPatients, getPatientById, updatePatient, deletePatient, getPatients, sendPatientOtp, verifyPatientOtp, updateAppointmentWithPrescription, getPrescription, todayappointment, addAppointmentWithToken, addFollowUpAppointment, getPatientsWithTodayAppointments, upload_diagnose_report, get_diagnose_report, getFollowUpList, getAllPatientslist, getAllrelationlist } = require('../controller/patientController');
+const { addPatient, getAllPatients, getPatientById, updatePatient, deletePatient, getPatients, sendPatientOtp, verifyPatientOtp, updateAppointmentWithPrescription, getPrescription, todayappointment, addAppointmentWithToken, addFollowUpAppointment, getPatientsWithTodayAppointments, upload_diagnose_report, get_diagnose_report, getFollowUpList, getAllPatientslist, getAllrelationlist, resendOtp } = require('../controller/patientController');
 const { isAuth } = require('../config/auth');
 const { connectTenantDB } = require('../config/db');
 const { sendDoctorOtp } = require('../controller/doctorController');
@@ -38,5 +38,5 @@ router.get('/diagnose_reports/:patientId',isAuth,connectTenantDB,get_diagnose_re
 
 router.get('/followuplist',isAuth,connectTenantDB,getFollowUpList)
   
-
+router.post('/resendotp/patient',isAuth,connectTenantDB,resendOtp)
 module.exports=router

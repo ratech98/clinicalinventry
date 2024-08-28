@@ -17,64 +17,85 @@
         table {
             border-spacing: 0;
             border-collapse: collapse;
+            width: 100%;
         }
 
         img {
-            border: 0;
-            display: block;
-            height: auto;
+            max-width:165px;
+                                        height: 165px;;
+                                        display: block;
+                                        margin: 0 auto;
+                                        justify-content: center;
+                                        align-self: center;
+                                        align-items: center;
+                                        align-content: center;
+            
         }
 
-        /* Rectangle box styling */
         .box {
             background-color: #E6F2FF;
-            border-radius: 10px;
+            border-radius: 5px;
             box-shadow: 0.4em 0.6em 0.9em rgba(0, 0, 0, 0.1);
             margin-top: 5em;
-            padding: 5em 6% 2em;
+            padding: 6em 6% 2em; 
             position: relative;
             text-align: center;
         }
 
         .content img {
             position: absolute;
-            top: -50%; /* Move the image up by 50% of its height */
+            top: -50%; 
             left: 50%;
-            transform: translateX(-50%);
-            max-width: 40%;
+            transform: translate(-50%, 0);
+            max-width: 50%;
+            width: auto;
+            height: auto;
+            z-index: 1; 
         }
 
         .otp-box {
             background-color: #fff;
             border-radius: 5px;
             padding: 0.5em 1em;
-            margin: 2em auto; /* Centering the OTP box */
+            margin: 2em auto; 
             display: inline-block;
             font-size: 3.42em;
             text-align: center;
-            width: fit-content; /* Ensures the box wraps around the OTP text */
+            width: fit-content; 
         }
 
         p, h1 {
             margin: 1em 0;
         }
 
-        /* Style for "Hello user" */
         .greeting {
             font-size: 1.571em;
-            font-weight: bold; /* Makes the text darker */
-            color: #333; /* Slightly darker color */
+            font-weight: bold;
+            color: #333;
+            text-align: left;
+        }
+
+        .unsubscribe {
+            margin-top: 2em;
+            font-size: 0.85em;
+            color: hsl(0, 83%, 2%);
+            text-align: center;
+        }
+
+        .unsubscribe a {
+            color: #027193;
+            text-decoration: none;
         }
 
         /* Responsive styles */
         @media screen and (max-width: 600px) {
             .box {
-                padding: 8em 5% 2em;
+                padding: 8em 5% 2em; /* Adjusted top padding for smaller screens */
             }
 
             .content img {
-                width: 80% !important;
-                top: -40%;
+                max-width: 80%;
+                top: -40%; /* Adjust the position on smaller screens */
             }
 
             h1 {
@@ -98,46 +119,36 @@
 </head>
 <body>
     <!-- Theme color & img & body of content -->
-    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+    <table border="0" cellspacing="0" cellpadding="0">
         <tr>
-            <td>
+            <td align="center">
                 <!-- App theme color content -->
-                <div
-                    class="header"
-                    width="100%"
-                    style="
-                        display: flex;
-                        height: 10.85em;
-                        background-color: rgba(2, 107, 147, 1);
-                        position: relative;
-                    "
-                ></div>
+                <!-- <div class="header" style="display: flex; height: 10.85em; background-color: rgba(2, 107, 147, 1); position: relative;"></div> -->
 
                 <!-- Image and body of content -->
                 <div class="box">
                     <div class="content">
-                        <img
-                            src="https://storage.googleapis.com/clinicalinventory/email/clinic%20icon.png"
-                            alt="Example Image"
-                        />
+                        <img src="https://storage.googleapis.com/clinicalinventory/email/clinic%20icon.png" alt="Clinic Icon" />
                     </div>
                     <p class="greeting">Hello user</p> <!-- Apply the new class here -->
-                    <p style="font-size: 1.571em;">
+                    <p style="font-size: 1.571em;text-align: left;">
                         Please use the OTP below on the DI clinic website to complete your sign-up procedures and verify your account.
                     </p>
                     <div class="otp-box">
                         <%= otp %>
                     </div>
-                    <p style="font-size: 1.571em;">Thanks!</p>
-                    <p style="font-size: 1.571em;">DI Clinics</p>
-
+                    <p style="font-size: 1.571em;text-align: left;">Thanks!</p>
+                    <p style="font-size: 1.571em;text-align: left;">DI Clinics</p>
                     <p style="font-size: 1.571em">
                         If you didn’t request this, you can ignore this email or let us know by 
                         <span style="color: #027193">contacting us</span>.
                     </p>
-                </div>
+             </div>
             </td>
         </tr>
     </table>
+    <p class="unsubscribe">
+        No longer want to receive these emails? <a href="">Unsubscribe</a>.
+    </p>
 </body>
 </html>

@@ -170,7 +170,20 @@ clinicSchema.pre('save', async function (next) {
         { name: "Doctor Name", section: "doctorDetails", value: "" },
         { name: "Speciality", section: "doctorDetails", value: "" },
         { name: "Degree", section: "doctorDetails", value: "" },
-        { name: "Work", section: "doctorDetails", value: "" }
+        { name: "Work", section: "doctorDetails", value: "" },
+        { name: "Patient Name", section: "patientDetails", value: "" },
+        { name: "Age", section: "patientDetails", value: "" },
+        { name: "Gender", section: "patientDetails", value: "" },
+        { name: "Investigation with Reports", section: "prescriptionDetails", value: "" },
+        { name: "Provisional Diagnosis", section: "prescriptionDetails", value: "" },
+        { name: "Advice", section: "prescriptionDetails", value: "" },
+        { name: "Clinical Notes", section: "prescriptionDetails", value: "" },  
+        { name: "Observation", section: "prescriptionDetails", value: "" },
+        { name: "Medicine Name", section: "medicines", value: "" },
+        { name: "Dosage", section: "medicines", value: "" },
+        { name: "Timings", section: "medicines", value: "" },
+        { name: "Before Food", section: "medicines", value: "" },  
+        { name: "After Food", section: "medicines", value: "" }
       ];
 
       const template = new Template({

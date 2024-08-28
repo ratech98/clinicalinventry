@@ -554,6 +554,74 @@ const blockOrUnblockDoctor = async (req, res) => {
   }
 };
 
+// const get_availability = async (req, res) => {
+//   try {
+//     const { doctorId, clinicId, date, day } = req.query;
+//     let query = {};
+
+//     if (doctorId) {
+//       query.doctorId = doctorId;
+//     }
+//     if (clinicId) {
+//       query.clinicId = clinicId;
+//     }
+
+//     let dayFilter = {};
+//     if (date) {
+//       const targetDate = new Date(date);
+//       dayFilter = {
+//         day: targetDate.toLocaleString('en-us', { weekday: 'long' }),
+//         date: targetDate
+//       };
+//     } else if (day) {
+//       dayFilter = {
+//         day: new RegExp(day, 'i')
+//       };
+//     }
+
+//     const availabilities = await Availability.find(query);
+
+//     const clinicAvailabilities = availabilities.map(item => {
+//       const filteredAvailabilities = item.availabilities.filter(avail => {
+//         let dayMatch = true;
+//         let slotsMatch = true;
+
+//         if (date) {
+//           dayMatch = dayFilter.day === avail.day;
+//           const unavailableSlots = item.unavailable.find(u => u.date.toDateString() === dayFilter.date.toDateString());
+//           if (unavailableSlots) {
+//             avail.slots = avail.slots.filter(slot => 
+//               !unavailableSlots.slots.some(unavailableSlot => unavailableSlot.timeSlot === slot.timeSlot)
+//             );
+//           }
+//         } else if (day) {
+//           dayMatch = dayFilter.day.test(avail.day);
+//         }
+
+//         if (dayMatch) {
+//           const availableSlots = avail.slots.filter(slot => slot.available === true);
+//           slotsMatch = availableSlots.length > 0;
+//         }
+
+//         return dayMatch && slotsMatch;
+//       });
+
+//       return {
+//         doctorId: item.doctorId,
+//         clinicId: item.clinicId,
+//         availabilities: filteredAvailabilities.map(avail => ({
+//           day: avail.day,
+//           slots: avail.slots.filter(slot => slot.available)
+//         }))
+//       };
+//     }).filter(item => item.availabilities.length > 0);
+
+//     res.json({ success: true, message: "Availabilities fetched successfully", availabilities: clinicAvailabilities });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, error: "Internal Server Error" });
+//   }
+// };
 const get_availability = async (req, res) => {
   try {
     const { doctorId, clinicId, date, day } = req.query;
@@ -562,32 +630,27 @@ const get_availability = async (req, res) => {
     if (doctorId) {
       query.doctorId = doctorId;
     }
-    if (clinicId) {
-      query.clinicId = clinicId;
-    }
-
-    let dayFilter = {};
-    if (date) {
-      const targetDate = new Date(date);
-      dayFilter = {
-        day: targetDate.toLocaleString('en-us', { weekday: 'long' }),
-        date: targetDate
-      };
-    } else if (day) {
-      dayFilter = {
-        day: new RegExp(day, 'i')
-      };
-    }
 
     const availabilities = await Availability.find(query);
 
-    const matchedAvailabilities = availabilities.map(item => {
+    let clinicAvailabilities = [];
+    let otherclinicAvailabilities = [];
+
+    availabilities.forEach(item => {
       const filteredAvailabilities = item.availabilities.filter(avail => {
         let dayMatch = true;
         let slotsMatch = true;
+        let dayFilter = {};
 
         if (date) {
+          const targetDate = new Date(date);
+          dayFilter = {
+            day: targetDate.toLocaleString('en-us', { weekday: 'long' }),
+            date: targetDate
+          };
           dayMatch = dayFilter.day === avail.day;
+
+          // Filter out unavailable slots for the specific date
           const unavailableSlots = item.unavailable.find(u => u.date.toDateString() === dayFilter.date.toDateString());
           if (unavailableSlots) {
             avail.slots = avail.slots.filter(slot => 
@@ -595,6 +658,7 @@ const get_availability = async (req, res) => {
             );
           }
         } else if (day) {
+          dayFilter = { day: new RegExp(day, 'i') };
           dayMatch = dayFilter.day.test(avail.day);
         }
 
@@ -606,7 +670,7 @@ const get_availability = async (req, res) => {
         return dayMatch && slotsMatch;
       });
 
-      return {
+      const availabilityData = {
         doctorId: item.doctorId,
         clinicId: item.clinicId,
         availabilities: filteredAvailabilities.map(avail => ({
@@ -614,14 +678,31 @@ const get_availability = async (req, res) => {
           slots: avail.slots.filter(slot => slot.available)
         }))
       };
-    }).filter(item => item.availabilities.length > 0);
 
-    res.json({ success: true, message: "Availabilities fetched successfully", availabilities: matchedAvailabilities });
+      // Ensure both doctorId and clinicId are matched correctly
+      if (item.clinicId.toString() === clinicId && item.doctorId.toString() === doctorId) {
+        clinicAvailabilities.push(availabilityData);
+      } else {
+        otherclinicAvailabilities.push(availabilityData);
+      }
+    });
+
+    // Filter out empty availabilities
+    clinicAvailabilities = clinicAvailabilities.filter(item => item.availabilities.length > 0);
+    otherclinicAvailabilities = otherclinicAvailabilities.filter(item => item.availabilities.length > 0);
+
+    res.json({
+      success: true,
+      message: "Availabilities fetched successfully",
+      clinicAvailabilities,
+      otherclinicAvailabilities
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
 
 
 // const get_availability = async (req, res) => {
@@ -650,7 +731,7 @@ const get_availability = async (req, res) => {
 
 //     const availabilities = await Availability.find(query);
 
-//     const matchedAvailabilities = availabilities.map(item => {
+//     const clinicAvailabilities = availabilities.map(item => {
 //       const filteredAvailabilities = item.availabilities.filter(avail => {
 //         let dayMatch = true;
 //         let slotsMatch = true;
@@ -679,7 +760,7 @@ const get_availability = async (req, res) => {
 //       };
 //     }).filter(item => item.availabilities.length > 0);
 
-//     res.json({ success: true, message: "Availabilities fetched successfully", availabilities: matchedAvailabilities });
+//     res.json({ success: true, message: "Availabilities fetched successfully", availabilities: clinicAvailabilities });
 //   } catch (error) {
 //     console.error(error);
 //     res.status(500).json({ success: false, error: "Internal Server Error" });

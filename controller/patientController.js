@@ -11,6 +11,12 @@ const PDFDocument = require('pdfkit');
 const { promisify } = require('util');
 const { PassThrough } = require('stream');
 const stream = require('stream');
+const moment = require('moment');
+const { generate4DigitOtp } = require('../lib/generateOtp');
+const sendEmail = require('../lib/sendEmail');
+const Clinic = require('../modal/clinic.');
+const Template = require('../modal/prescriptiontemplate');
+const axios=require('axios')
 
 require("dotenv").config();
 const bucketName = process.env.bucketName;
@@ -426,6 +432,42 @@ const verifyPatientOtp = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
+const resendOtp = async (req, res) => {
+
+  const { tenantDBConnection } = req;
+  const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
+  const { email } = req.body;
+  const OTP = generate4DigitOtp();
+
+  try {
+    let patient = await PatientModel.findOne({ email });
+
+    if (!patient) {
+      return res.status(404).json({ success: false, message:errormesaages[1021], errorcode: 1021 });
+    }
+
+    patient.otp = OTP;
+    // doctors.otpVerified = false;
+
+    const templateFile = 'OTP.ejs';
+    const subject = 'Di application Resend OTP Verification';
+
+    const data = { otp: OTP };
+    sendEmail(email, subject, templateFile, data);
+
+    await patient.save();
+
+    console.log("OTP resent", OTP);
+
+    return res.status(200).json({ success: true, message: 'OTP resent successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 const updateAppointmentWithPrescription = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
@@ -467,7 +509,7 @@ const updateAppointmentWithPrescription = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Clinic not found', errorcode: 1030 });
     }
 
-    const doctors = await Doctor.findById(appointment.doctor).exec();
+    const doctors = await doctor.findById(appointment.doctor).exec();
     if (!doctors) {
       return res.status(404).json({ success: false, error: 'Doctor not found', errorcode: 1031 });
     }
@@ -477,6 +519,7 @@ const updateAppointmentWithPrescription = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
     }
 
+    // Create PDF and store it in a buffer
     const doc = new PDFDocument({ size: 'A4' });
     const buffers = [];
     doc.on('data', buffers.push.bind(buffers));
@@ -485,7 +528,7 @@ const updateAppointmentWithPrescription = async (req, res) => {
 
       const data = { name: patient.name };
       const emailSubject = `You have received a prescription receipt from ${clinic.clinic_name}`;
-
+      
       await sendEmail(
         patient.email,
         emailSubject,
@@ -509,59 +552,145 @@ const updateAppointmentWithPrescription = async (req, res) => {
       doc.moveDown();
     }
 
-    doc.fontSize(16).text('Prescription Report', { align: 'center' });
-    doc.moveDown();
-
-    const applyFieldStyles = (field) => {
-      doc.font(field.styles.font)
-        .fontSize(parseInt(field.styles.size))
-        .fillColor(field.styles.color)
-        .text(field.value || '', { align: field.styles.align });
+    const applyStyles = (text, styles) => {
+      if (styles.size) doc.fontSize(parseInt(styles.size, 10));
+      if (styles.color) doc.fillColor(styles.color);
+      if (styles.align) doc.text(text, { align: styles.align });
+      else doc.text(text);
     };
 
+    // Apply dynamic styles and values for clinic details
     template.dynamicFields.forEach(field => {
-      doc.fontSize(parseInt(field.styles.size)).text(`${field.section}: `, { align: 'left' });
-      applyFieldStyles(field);
-      doc.moveDown();
+      if (field.section === 'clinicDetails') {
+        let value = '';
+
+        switch (field.name) {
+          case 'Clinic Name':
+            value = clinic.clinic_name;
+            break;
+          case 'Address':
+            value = clinic.address;
+            break;
+            case 'Contact number':
+              value = clinic.mobile_number;
+              break;
+              
+          default:
+            value = ''; 
+        }
+
+        applyStyles(`${field.name}: ${value}`, field.styles);
+      }
     });
-
-    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
     doc.moveDown(1);
 
-    doc.fontSize(12).text(`Doctor Name: ${doctors.name}`);
-    doc.text(`Speciality: ${doctors.specialist}`);
-    doc.text(`Degree: ${doctors.ug_qualification}`);
-    doc.moveDown();
-    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-    doc.moveDown(1);
-    doc.text(`Patient Name: ${patient.name}`);
-    doc.text(`Age: ${patient.age}`);
-    doc.text(`Gender: ${patient.gender}`);
-    doc.text(`Date: ${prescription.date}`);
-    doc.moveDown();
-    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-    doc.moveDown(1);
-    if (prescription) {
-      doc.text('Prescription Details:', { underline: true });
-      doc.text(`Provisional Diagnosis: ${prescription.provisional_diagnosis}`);
-      doc.text(`Advice: ${prescription.advice}`);
-      doc.text(`Clinical Notes: ${prescription.clinical_notes}`);
-      doc.text(`Observation: ${prescription.observation}`);
-      doc.text(`Investigation with Reports: ${prescription.investigation_with_reports}`);
-      doc.moveDown();
-    }
-    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+    template.dynamicFields.forEach(field => {
+      if (field.section === 'doctorDetails') {
+        let value = '';
+
+        switch (field.name) {
+          case 'Doctor Name':
+            value = doctors.name;
+            break;
+          case 'Speciality':
+            value = doctors.specialist;
+            break;
+            case 'Degree':
+              value = doctors.pg_qualification||doctors.ug_qualification;
+              break;
+             
+          default:
+            value = ''; 
+        }
+
+        applyStyles(`${field.name}: ${value}`, field.styles);
+      }
+    });
     doc.moveDown(1);
 
-    if (medicines && medicines.length > 0) {
-      doc.text('Medicines:', { underline: true });
-      medicines.forEach(medicine => {
-        doc.text(`- ${medicine.name} (Dosage: ${medicine.dosage})`);
-        doc.text(`  Timings: Morning: ${medicine.timings.morning ? 'Yes' : 'No'}, Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}, Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`);
-        doc.text(`  Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}, After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`);
-        doc.moveDown();
-      });
-    }
+    template.dynamicFields.forEach(field => {
+      if (field.section === 'patientDetails') {
+        let value = '';
+
+        switch (field.name) {
+          case 'Patient Name':
+            value = patient.name;
+            break;
+          case 'Age':
+            value = patient.age;
+            break;
+          case 'Gender':
+            value = patient.gender;
+            break;
+          case 'Date':
+            value = prescription.date;
+            break;
+          default:
+            value = ''; 
+        }
+
+        applyStyles(`${field.name}: ${value}`, field.styles);
+      }
+    });
+    doc.moveDown(1);
+
+    template.dynamicFields.forEach(field => {
+      if (field.section === 'prescriptionDetails') {
+        let value = '';
+
+        switch (field.name) {
+          case 'Provisional Diagnosis':
+            value = prescription.provisional_diagnosis;
+            break;
+          case 'Advice':
+            value = prescription.advice;
+            break;
+          case 'Clinical Notes':
+            value = prescription.clinical_notes;
+            break;
+          case 'Observation':
+            value = prescription.observation;
+            break;
+          case 'Investigation with Reports':
+            value = prescription.investigation_with_repo;
+            break;
+          default:
+            value = '';
+        }
+
+        applyStyles(`${field.name}: ${value}`, field.styles);
+      }
+    });
+    doc.moveDown(1);
+
+    template.dynamicFields.forEach(field => {
+      if (field.section === 'medicines') {
+        applyStyles(field.name, field.styles); 
+
+        medicines.forEach(medicine => {
+          switch (field.name) {
+            case 'Medicine Name':
+              applyStyles(`- ${medicine.name}`, field.styles);
+              break;
+            case 'Dosage':
+              applyStyles(`  Dosage: ${medicine.dosage}`, field.styles);
+              break;
+            case 'Timings':
+              applyStyles(`  Timings: Morning: ${medicine.timings.morning ? 'Yes' : 'No'}, Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}, Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`, field.styles);
+              break;
+            case 'Before Food':
+              applyStyles(`  Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`, field.styles);
+              break;
+            case 'After Food':
+              applyStyles(`  After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`, field.styles);
+              break;
+            default:
+              break;
+          }
+        });
+      }
+    });
+    doc.moveDown(1);
 
     doc.end();
 
@@ -570,8 +699,6 @@ const updateAppointmentWithPrescription = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
-
 
 
 const getPrescription = async (req, res) => {
@@ -602,12 +729,7 @@ const getPrescription = async (req, res) => {
   }
 };
 
-const moment = require('moment');
-const { generate4DigitOtp } = require('../lib/generateOtp');
-const sendEmail = require('../lib/sendEmail');
-const Clinic = require('../modal/clinic.');
-const Template = require('../modal/prescriptiontemplate');
-const { default: axios } = require('axios');
+
 
 const addAppointmentWithToken = async (req, res) => {
   try {
@@ -923,5 +1045,6 @@ module.exports = {
   get_diagnose_report,
   getFollowUpList,
   getAllPatientslist,
-  getAllrelationlist
+  getAllrelationlist,
+  resendOtp
 };
