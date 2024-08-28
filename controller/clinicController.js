@@ -325,6 +325,8 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     }
 
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
+      doctor.clinics = doctor.clinics.filter(clinic => clinic.clinicId.toString() === id);
+
       const availabilityDoc = await Availability.findOne({
         doctorId: doctor._id,
         clinicId: id
