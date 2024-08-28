@@ -400,16 +400,19 @@ const verify_receptionist_certificate=async (req, res) => {
 const getDoctorsAndAvailabilityByClinic = async (req, res) => {
   try {
     const { id } = req.params;
-    const { specialist, page = 1, limit = 10 } = req.query;
+    const { search, page = 1, limit = 10 } = req.query;
 
     const todayUTC = moment().format('DD-MM-YYYY');    
     const todayDay = new Date(todayUTC).getDay(); // Get the day of the week (0-6)
 
-    const doctorQuery = { 'clinics.clinicId': id };
-    if (specialist) {
-      doctorQuery.specialist = { $regex: specialist, $options: 'i' };
+    const doctorQuery = { 'clinics.clinicId': id,"clinics.verified":true };
+    if (search) {
+      doctorQuery.$or = [
+        { specialist: { $regex: search, $options: 'i' } },
+        { name: { $regex: search, $options: 'i' } }
+      ];
     }
-
+    
     const totalDoctors = await doctor.countDocuments(doctorQuery);
     const totalPages = Math.ceil(totalDoctors / limit);
     const startIndex = (page - 1) * limit;
