@@ -519,17 +519,138 @@ const updateAppointmentWithPrescription = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
     }
 
-    // Create PDF and store it in a buffer
-    const doc = new PDFDocument({ size: 'A4' });
-    const buffers = [];
-    doc.on('data', buffers.push.bind(buffers));
-    doc.on('end', async () => {
-      const pdfData = Buffer.concat(buffers);
+const createPdf = async (doc, content, styles = {}) => {
+  const buffers = [];
+  doc.on('data', buffers.push.bind(buffers));
+  doc.on('end', async () => {
+    const pdfData = Buffer.concat(buffers);
+    content.callback(pdfData);
+  });
 
+  // Set default styles with dynamic overrides
+  const defaultStyles = {
+    margin: 20,
+    fontSize: 10,
+    fontColor: 'black',
+  };
+  const appliedStyles = { ...defaultStyles, ...styles };
+
+  // Apply margins and common settings
+  doc.margin = appliedStyles.margin;
+
+  // Load and position logo with consistent margins
+  if (template.logo) {
+    try {
+      const imageUrl = template.logo;
+      const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+      const imageBuffer = Buffer.from(response.data, 'binary');
+
+      doc.image(imageBuffer, appliedStyles.margin, appliedStyles.margin, {
+        width: doc.page.width * 0.15,
+        align: 'left',
+        valign: 'top',
+      });
+    } catch (error) {
+      console.error('Error loading logo image:', error);
+    }
+  }
+
+  // Define positions for details using the same margin
+  const detailsStartY = appliedStyles.margin;
+  const clinicDetailsX = appliedStyles.margin + 100;
+  const doctorDetailsX = clinicDetailsX + 200;
+
+  // Set font styles dynamically
+  doc.fontSize(appliedStyles.fontSize).fillColor(appliedStyles.fontColor);
+
+  // Clinic Details
+  doc.text(`Clinic Name: ${clinic.clinic_name}`, clinicDetailsX, detailsStartY);
+  doc.text(`Contact Number: ${clinic.mobile_number}`, clinicDetailsX, detailsStartY + 15);
+  doc.text(`Address: ${clinic.address}`, clinicDetailsX, detailsStartY + 30);
+
+  // Doctor Details
+  doc.text(`Doctor Name: ${doctors.name}`, doctorDetailsX, detailsStartY);
+  doc.text(`Speciality: ${doctors.specialist}`, doctorDetailsX, detailsStartY + 15);
+  doc.text(`Degree: ${doctors.pg_qualification || doctors.ug_qualification}`, doctorDetailsX, detailsStartY + 30);
+
+  // Vertical line in the middle of the first row
+  const lineStartX = (clinicDetailsX + doctorDetailsX) / 2;
+  const firstRowHeight = 45;
+  doc.moveTo(lineStartX, detailsStartY - 5)
+     .lineTo(lineStartX, detailsStartY + firstRowHeight)
+     .lineWidth(0.5)
+     .stroke();
+
+  // Horizontal line below the first row
+  const horizontalLineY = detailsStartY + firstRowHeight + 10;
+  doc.moveTo(appliedStyles.margin, horizontalLineY)
+     .lineTo(doc.page.width - appliedStyles.margin, horizontalLineY)
+     .lineWidth(0.5)
+     .stroke();
+
+  doc.moveDown(2);
+
+  // Patient Details
+  const patientDetailsY = horizontalLineY + 20;
+  doc.text(`Patient Name: ${patient.name}`, appliedStyles.margin, patientDetailsY, { continued: true });
+  doc.text(`              `, { continued: true });
+  doc.text(`Age: ${patient.age}`, { continued: true });
+  doc.text(`             `, { continued: true });
+  doc.text(`Gender: ${patient.gender}`);
+  doc.moveDown(2);
+
+  // Prescription Details
+  doc.text('Prescription Details', appliedStyles.margin, detailsStartY + 80, { underline: true });
+  doc.moveDown();
+  doc.text(`Provisional Diagnosis: `, { indent: 20 });
+  doc.text(`${prescription.provisional_diagnosis}`, { indent: 80 });
+
+  doc.text(`Advice: ${prescription.advice}`, { indent: 20 });
+  doc.text(`${prescription.advice}`, { indent: 80 });
+
+  doc.text(`Clinical Notes: `, { indent: 20 });
+  doc.text(`${prescription.clinical_notes}`, { indent: 80 });
+
+  doc.text(`Observation: `, { indent: 20 });
+  doc.text(`${prescription.observation}`, { indent: 80 });
+
+  doc.text(`Investigation with Reports: `, { indent: 20 });
+  doc.text(`${prescription.investigation_with_repo}`, { indent: 80 });
+
+  doc.moveDown();
+
+  // Medicines details section
+  doc.text('Medicines Details', { underline: true });
+  doc.moveDown();
+  medicines.forEach(medicine => {
+    doc.text(`Medicine Name: ${medicine.name}`, { indent: 20 });
+    doc.text(`${medicine.name}`, { indent: 80 });
+
+    doc.text(`Dosage: ${medicine.dosage}`, { indent: 20 });
+    doc.text(`${medicine.dosage}`, { indent: 80 });
+
+    doc.text(`Timings:`, { indent: 20 });
+    doc.text(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'},`, { indent: 80 });
+    doc.text(` Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`, { indent: 80 });
+    doc.text(` Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`, { indent: 80 });
+
+    doc.text(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`, { indent: 20 });
+    doc.text(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`, { indent: 20 });
+    doc.moveDown();
+  });
+
+  doc.end();
+};
+
+    
+    
+    
+
+    const sendPrescriptionPdf = (pdfData) => {
       const data = { name: patient.name };
       const emailSubject = `You have received a prescription receipt from ${clinic.clinic_name}`;
-      
-      await sendEmail(
+
+      sendEmail(
         patient.email,
         emailSubject,
         "sendrecipt.ejs",
@@ -540,165 +661,69 @@ const updateAppointmentWithPrescription = async (req, res) => {
           contentType: 'application/pdf',
         }
       );
-
-      res.status(200).json({ success: true, message: "Prescription and medicines added successfully", patient });
-    });
-
-    if (template.logo) {
-      const imageUrl = template.logo;
-      const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-      const imageBuffer = Buffer.from(response.data, 'binary');
-      doc.image(imageBuffer, { fit: [100, 100], align: 'left', valign: 'top' });
-      doc.moveDown();
-    }
-
-    const applyStyles = (text, styles) => {
-      if (styles.size) doc.fontSize(parseInt(styles.size, 10));
-      if (styles.color) doc.fillColor(styles.color);
-      if (styles.align) doc.text(text, { align: styles.align });
-      else doc.text(text);
     };
 
-    // Apply dynamic styles and values for clinic details
-    template.dynamicFields.forEach(field => {
-      if (field.section === 'clinicDetails') {
-        let value = '';
+    const sendMedicinesPdf = (pdfData) => {
+      const data = { name: patient.name };
+      const emailSubject = `You have received a medicines report from ${clinic.clinic_name}`;
 
-        switch (field.name) {
-          case 'Clinic Name':
-            value = clinic.clinic_name;
-            break;
-          case 'Address':
-            value = clinic.address;
-            break;
-            case 'Contact number':
-              value = clinic.mobile_number;
-              break;
-              
-          default:
-            value = ''; 
+      sendEmail(
+        patient.email,
+        emailSubject,
+        "sendrecipt.ejs",
+        data,
+        {
+          filename: 'medicines_report.pdf',
+          content: pdfData,
+          contentType: 'application/pdf',
         }
+      );
+    };
 
-        applyStyles(`${field.name}: ${value}`, field.styles);
-      }
-    });
-    doc.moveDown(1);
+    // Create and send prescription PDF
+// Create and send prescription PDF
+const prescriptionDoc = new PDFDocument({ size: 'A4' });
+await createPdf(prescriptionDoc, {
+  sections: [
+    {
+      title: 'Prescription Details',
+      items: [
+        { text: `Provisional Diagnosis: ${prescription.provisional_diagnosis}`, styles: {} },
+        { text: `Advice: ${prescription.advice}`, styles: {} },
+        { text: `Clinical Notes: ${prescription.clinical_notes}`, styles: {} },
+        { text: `Observation: ${prescription.observation}`, styles: {} },
+        { text: `Investigation with Reports: ${prescription.investigation_with_repo}`, styles: {} },
+      ]
+    }
+  ],
+  callback: sendPrescriptionPdf
+});
 
-    template.dynamicFields.forEach(field => {
-      if (field.section === 'doctorDetails') {
-        let value = '';
+// Create and send medicines PDF
+const medicinesDoc = new PDFDocument({ size: 'A4' });
+await createPdf(medicinesDoc, {
+  sections: [
+    {
+      title: 'Medicines Details',
+      items: medicines.map(medicine => ({
+        text: `- Name: ${medicine.name}, Dosage: ${medicine.dosage}, Morning: ${medicine.timings.morning ? 'Yes' : 'No'}, Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}, Evening: ${medicine.timings.evening ? 'Yes' : 'No'}, Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}, After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`,
+        styles: {}
+      }))
+    }
+  ],
+  callback: sendMedicinesPdf
+});
 
-        switch (field.name) {
-          case 'Doctor Name':
-            value = doctors.name;
-            break;
-          case 'Speciality':
-            value = doctors.specialist;
-            break;
-            case 'Degree':
-              value = doctors.pg_qualification||doctors.ug_qualification;
-              break;
-             
-          default:
-            value = ''; 
-        }
 
-        applyStyles(`${field.name}: ${value}`, field.styles);
-      }
-    });
-    doc.moveDown(1);
-
-    template.dynamicFields.forEach(field => {
-      if (field.section === 'patientDetails') {
-        let value = '';
-
-        switch (field.name) {
-          case 'Patient Name':
-            value = patient.name;
-            break;
-          case 'Age':
-            value = patient.age;
-            break;
-          case 'Gender':
-            value = patient.gender;
-            break;
-          case 'Date':
-            value = prescription.date;
-            break;
-          default:
-            value = ''; 
-        }
-
-        applyStyles(`${field.name}: ${value}`, field.styles);
-      }
-    });
-    doc.moveDown(1);
-
-    template.dynamicFields.forEach(field => {
-      if (field.section === 'prescriptionDetails') {
-        let value = '';
-
-        switch (field.name) {
-          case 'Provisional Diagnosis':
-            value = prescription.provisional_diagnosis;
-            break;
-          case 'Advice':
-            value = prescription.advice;
-            break;
-          case 'Clinical Notes':
-            value = prescription.clinical_notes;
-            break;
-          case 'Observation':
-            value = prescription.observation;
-            break;
-          case 'Investigation with Reports':
-            value = prescription.investigation_with_repo;
-            break;
-          default:
-            value = '';
-        }
-
-        applyStyles(`${field.name}: ${value}`, field.styles);
-      }
-    });
-    doc.moveDown(1);
-
-    template.dynamicFields.forEach(field => {
-      if (field.section === 'medicines') {
-        applyStyles(field.name, field.styles); 
-
-        medicines.forEach(medicine => {
-          switch (field.name) {
-            case 'Medicine Name':
-              applyStyles(`- ${medicine.name}`, field.styles);
-              break;
-            case 'Dosage':
-              applyStyles(`  Dosage: ${medicine.dosage}`, field.styles);
-              break;
-            case 'Timings':
-              applyStyles(`  Timings: Morning: ${medicine.timings.morning ? 'Yes' : 'No'}, Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}, Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`, field.styles);
-              break;
-            case 'Before Food':
-              applyStyles(`  Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`, field.styles);
-              break;
-            case 'After Food':
-              applyStyles(`  After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`, field.styles);
-              break;
-            default:
-              break;
-          }
-        });
-      }
-    });
-    doc.moveDown(1);
-
-    doc.end();
+    res.status(200).json({ success: true, message: "Prescription and medicines added successfully", patient });
 
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
 
 
 const getPrescription = async (req, res) => {
