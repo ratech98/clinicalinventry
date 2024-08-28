@@ -137,12 +137,15 @@ const getClinicById= async (req, res) => {
 
     // Determine the balancedue status
     const balancedue = (doctorsUnsubscribed === 0 && receptionistsSubscribed === 0) ? false : true;
-
+    const doctorsCount = await doctor.countDocuments({ 'clinics.clinicId': id });
+    const receptionistsCount = await Receptionist.countDocuments({ clinic: id });
     res.json({
       success: true,
       message: "Clinic fetched successfully",
       clinic,
-      balancedue
+      balancedue,
+      doctorsCount,
+      receptionistsCount
     });
   } catch (error) {
     console.error(error);
@@ -176,12 +179,15 @@ const getClinicId = async (req, res) => {
     });
 
     const balancedue = (doctorsUnsubscribed === 0 && receptionistsSubscribed === 0) ? false : true;
-
+    const doctorsCount = await doctor.countDocuments({ 'clinics.clinicId': req.params.id });
+    const receptionistsCount = await Receptionist.countDocuments({ clinic: req.params.id });
     res.json({
       success: true,
       message: "Clinic fetched successfully",
       clinic,
-      balancedue
+      balancedue,
+      doctorsCount,
+      receptionistsCount
     });
   } catch (error) {
     console.error(error);
