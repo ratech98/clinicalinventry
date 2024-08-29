@@ -544,11 +544,12 @@ const updateAppointmentWithPrescription = async (req, res) => {
       };
     
       const applyStyles = (doc, fieldStyles) => {
-        doc.font( 'Helvetica')
+        doc.font('Helvetica')
           .fontSize(parseInt(fieldStyles.size) || appliedStyles.fontSize)
           .fillColor(fieldStyles.color || appliedStyles.fontColor);
       };
     
+      // Load and place logo image if available
       if (template.logo) {
         try {
           const imageUrl = template.logo;
@@ -565,28 +566,31 @@ const updateAppointmentWithPrescription = async (req, res) => {
         }
       }
     
-      const detailsStartY = appliedStyles.margin;
+      const detailsStartY = 30;
       const clinicDetailsX = appliedStyles.margin + 100;
-      const doctorDetailsX = clinicDetailsX + 200;
+      const doctorDetailsX = doc.page.width - appliedStyles.margin - 200; 
     
+      // Clinic details
       applyStyles(doc, getStyles('clinicDetails', 'Clinic Name'));
-      doc.text(`Clinic Name: ${clinic.clinic_name}`, clinicDetailsX, detailsStartY);
+      doc.text(` ${clinic.clinic_name}`, clinicDetailsX, detailsStartY);
     
       applyStyles(doc, getStyles('clinicDetails', 'Contact number'));
-      doc.text(`Contact Number: ${clinic.mobile_number}`, clinicDetailsX, detailsStartY + 15);
+      doc.text(` ${clinic.mobile_number}`, clinicDetailsX, detailsStartY + 15);
     
       applyStyles(doc, getStyles('clinicDetails', 'Address'));
-      doc.text(`Address: ${clinic.address}`, clinicDetailsX, detailsStartY + 30);
+      doc.text(`${clinic.address||"11th cross street,chennai"}`, clinicDetailsX, detailsStartY + 30);
     
+      // Doctor details right-aligned
       applyStyles(doc, getStyles('doctorDetails', 'Doctor Name'));
-      doc.text(`Doctor Name: ${doctors.name}`, doctorDetailsX, detailsStartY);
+      doc.text(` ${doctors.name}`, doctorDetailsX, detailsStartY, { align: 'right' });
     
       applyStyles(doc, getStyles('doctorDetails', 'Speciality'));
-      doc.text(`Speciality: ${doctors.specialist}`, doctorDetailsX, detailsStartY + 15);
+      doc.text(` ${doctors.specialist}`, doctorDetailsX, detailsStartY + 15, { align: 'right' });
     
       applyStyles(doc, getStyles('doctorDetails', 'Degree'));
-      doc.text(`Degree: ${doctors.pg_qualification || doctors.ug_qualification}`, doctorDetailsX, detailsStartY + 30);
+      doc.text(` ${doctors.pg_qualification || doctors.ug_qualification|| "MBBS"}`, doctorDetailsX, detailsStartY + 30, { align: 'right' });
     
+      // Draw a horizontal line below the doctor and clinic details
       const firstRowHeight = 45;
       const horizontalLineY = detailsStartY + firstRowHeight + 10;
       doc.moveTo(appliedStyles.margin, horizontalLineY)
@@ -596,71 +600,101 @@ const updateAppointmentWithPrescription = async (req, res) => {
     
       doc.moveDown(2);
     
+      // Patient details section
       const patientDetailsY = horizontalLineY + 20;
       applyStyles(doc, getStyles('patientDetails', 'Patient Name'));
       doc.text(`Patient Name: ${patient.name}`, appliedStyles.margin, patientDetailsY, { continued: true });
-      doc.text(`              `, { continued: true });
+      doc.text(`                     `, { continued: true });
       applyStyles(doc, getStyles('patientDetails', 'Age'));
       doc.text(`Age: ${patient.age}`, { continued: true });
-      doc.text(`              `, { continued: true });
+      doc.text(`                     `, { continued: true });
       applyStyles(doc, getStyles('patientDetails', 'Gender'));
-      doc.text(`Gender: ${patient.gender}`);
+      doc.text(`Gender: ${patient.gender}`, { continued: true });
+      doc.text(`                     `, { continued: true });
+      applyStyles(doc, getStyles('patientDetails', 'Gender'));
+      doc.text(`reason: ${appointment.reason}`);
+    
+    
+      const secondHorizontalLineY = patientDetailsY + 20;
+      doc.moveTo(appliedStyles.margin, secondHorizontalLineY)
+         .lineTo(doc.page.width - appliedStyles.margin, secondHorizontalLineY)
+         .lineWidth(0.5)
+         .stroke();
+    
+      const dateY = secondHorizontalLineY + 15;
+      const dateX = doc.page.width - appliedStyles.margin - 150; // Right alignment for date
+      applyStyles(doc, getStyles('prescriptionDetails', 'Date'));
+      doc.text(`Date: ${prescription.date}`, dateX, dateY, { align: 'right' });
+    
       doc.moveDown(5);
     
+      // Prescription details
       applyStyles(doc, getStyles('prescriptionDetails', 'Provisional Diagnosis'));
-      doc.text('Prescription Details', appliedStyles.margin, detailsStartY + 100, { underline: true });
+      doc.text('Prescription Details', appliedStyles.margin, dateY + 20, { underline: true });
       doc.moveDown();
     
       doc.text(`Provisional Diagnosis: `, { indent: 20 });
+      doc.moveDown()
       doc.text(`${prescription.provisional_diagnosis}`, { indent: 80 });
-    
+      doc.moveDown()
       applyStyles(doc, getStyles('prescriptionDetails', 'Advice'));
-      doc.text(`Advice: ${prescription.advice}`, { indent: 20 });
-    
+      doc.moveDown()
+      doc.text(`Advice: `, { indent: 20 });
+      doc.moveDown()
+      doc.text(`${prescription.advice}`, { indent: 80 });
+      doc.moveDown()
       applyStyles(doc, getStyles('prescriptionDetails', 'Clinical Notes'));
       doc.text(`Clinical Notes: `, { indent: 20 });
+      doc.moveDown()
       doc.text(`${prescription.clinical_notes}`, { indent: 80 });
-    
+      doc.moveDown()
       applyStyles(doc, getStyles('prescriptionDetails', 'Observation'));
       doc.text(`Observation: `, { indent: 20 });
+      doc.moveDown()
       doc.text(`${prescription.observation}`, { indent: 80 });
-    
+      doc.moveDown()
       applyStyles(doc, getStyles('prescriptionDetails', 'Investigation with Reports'));
       doc.text(`Investigation with Reports: `, { indent: 20 });
-      doc.text(`${prescription.investigation_with_repo}`, { indent: 80 });
+      doc.moveDown()
+      doc.text(`${prescription.investigation_with_reports}`, { indent: 80 });
     
       doc.moveDown();
     
+      // Medicines details
       applyStyles(doc, getStyles('medicines', 'Medicines Details'));
       doc.text('Medicines Details', { underline: true });
       doc.moveDown();
     
       medicines.forEach(medicine => {
         applyStyles(doc, getStyles('medicines', 'Medicine Name'));
-        doc.text(`Medicine Name: ${medicine.name}`, { indent: 20 });
-    
+        doc.text(`-:  Medicine Name: ${medicine.name}`, { indent: 15 });
+        doc.moveDown()
         applyStyles(doc, getStyles('medicines', 'Dosage'));
         doc.text(`Dosage: ${medicine.dosage}`, { indent: 20 });
-    
+        doc.moveDown()
         applyStyles(doc, getStyles('medicines', 'Timings'));
         doc.text(`Timings:`, { indent: 20 });
+        doc.moveDown()
         doc.text(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'},`, { indent: 80 });
+        doc.moveDown()
         doc.text(` Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`, { indent: 80 });
+        doc.moveDown()
         doc.text(` Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`, { indent: 80 });
+        doc.moveDown()
     
         applyStyles(doc, getStyles('medicines', 'Before Food'));
         doc.text(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`, { indent: 20 });
-    
+        doc.moveDown()
         applyStyles(doc, getStyles('medicines', 'After Food'));
         doc.text(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`, { indent: 20 });
         doc.moveDown();
+        doc.moveDown()
       });
     
       doc.end();
     };
     
-    
-    
+ 
     
 
     const sendPrescriptionPdf = (pdfData) => {
