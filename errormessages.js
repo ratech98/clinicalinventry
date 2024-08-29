@@ -49,6 +49,8 @@
     1048:"No patients appointment  found  ",
     1049:'No active subscription for doctor',
     1050:'No active subscription for receptionist',
+    1051:"Clinic not verified by admin",
+    1052:"receptionist not verfied by admin"
 
     
 

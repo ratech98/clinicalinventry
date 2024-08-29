@@ -483,7 +483,7 @@ const updateAppointmentWithPrescription = async (req, res) => {
     if (!appointment) {
       return res.status(404).json({ success: false, error: 'Appointment not found', errorcode: 1028 });
     }
-
+console.log(appointment)
     if (medicines && Array.isArray(medicines)) {
       appointment.medicines = medicines.map(medicine => ({
         name: medicine.name,
@@ -518,6 +518,7 @@ const updateAppointmentWithPrescription = async (req, res) => {
     if (!template) {
       return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
     }
+
 
     const createPdf = async (doc, content, styles = {}) => {
       const buffers = [];
@@ -556,8 +557,15 @@ const updateAppointmentWithPrescription = async (req, res) => {
           const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
           const imageBuffer = Buffer.from(response.data, 'binary');
     
+          const availableWidth = doc.page.width * 0.15;
+          const img = doc.openImage(imageBuffer);
+          const scalingFactor = availableWidth / img.width;
+          const finalWidth = img.width * scalingFactor;
+          const finalHeight = img.height * scalingFactor;
+    
           doc.image(imageBuffer, appliedStyles.margin, appliedStyles.margin, {
-            width: doc.page.width * 0.15,
+            width: finalWidth,
+            height: finalHeight,
             align: 'left',
             valign: 'top',
           });
@@ -566,135 +574,164 @@ const updateAppointmentWithPrescription = async (req, res) => {
         }
       }
     
-      const detailsStartY = 30;
-      const clinicDetailsX = appliedStyles.margin + 100;
-      const doctorDetailsX = doc.page.width - appliedStyles.margin - 200; 
+      let currentY = appliedStyles.margin + (template.logo ? 50 : 0); // Adjust initial Y based on logo height if present
     
       // Clinic details
+      const clinicDetailsX = appliedStyles.margin + 100;
       applyStyles(doc, getStyles('clinicDetails', 'Clinic Name'));
-      doc.text(` ${clinic.clinic_name}`, clinicDetailsX, detailsStartY);
+      doc.text(` ${clinic.clinic_name}`, clinicDetailsX, currentY);
+      currentY += doc.heightOfString(clinic.clinic_name) + 5; // Adjust Y position dynamically
     
       applyStyles(doc, getStyles('clinicDetails', 'Contact number'));
-      doc.text(` ${clinic.mobile_number}`, clinicDetailsX, detailsStartY + 15);
+      doc.text(` ${clinic.mobile_number}`, clinicDetailsX, currentY);
+      currentY += doc.heightOfString(clinic.mobile_number) + 5;
     
       applyStyles(doc, getStyles('clinicDetails', 'Address'));
-      doc.text(`${clinic.address||"11th cross street,chennai"}`, clinicDetailsX, detailsStartY + 30);
-    
+      doc.text(`${clinic.address || "11th cross street, Chennai"}`, clinicDetailsX, currentY);
+      currentY += doc.heightOfString(clinic.address) + 5;
+
+      const verticalLineX = (clinicDetailsX + (doc.page.width - appliedStyles.margin - 100)) / 2;
+  doc.moveTo(verticalLineX, appliedStyles.margin + (template.logo ? 50 : 0))
+    .lineTo(verticalLineX, currentY + 40) 
+    .lineWidth(0.5)
+    .stroke();
       // Doctor details right-aligned
+      const doctorDetailsX = doc.page.width - appliedStyles.margin - 200;
+      currentY = appliedStyles.margin + (template.logo ? 50 : 0); // Reset Y position for doctor details
       applyStyles(doc, getStyles('doctorDetails', 'Doctor Name'));
-      doc.text(` ${doctors.name}`, doctorDetailsX, detailsStartY, { align: 'right' });
+      doc.text(` ${doctors.name}`, doctorDetailsX, currentY, { align: 'right' });
+      currentY += doc.heightOfString(doctors.name) + 5;
     
       applyStyles(doc, getStyles('doctorDetails', 'Speciality'));
-      doc.text(` ${doctors.specialist}`, doctorDetailsX, detailsStartY + 15, { align: 'right' });
+      doc.text(` ${doctors.specialist}`, doctorDetailsX, currentY, { align: 'right' });
+      currentY += doc.heightOfString(doctors.specialist) + 5;
     
       applyStyles(doc, getStyles('doctorDetails', 'Degree'));
-      doc.text(` ${doctors.pg_qualification || doctors.ug_qualification|| "MBBS"}`, doctorDetailsX, detailsStartY + 30, { align: 'right' });
+      doc.text(` ${ "MBBS"}`, doctorDetailsX, currentY, { align: 'right' });
+      currentY += doc.heightOfString(doctors.pg_qualification || doctors.ug_qualification || "MBBS") + 5;
     
       // Draw a horizontal line below the doctor and clinic details
-      const firstRowHeight = 45;
-      const horizontalLineY = detailsStartY + firstRowHeight + 10;
-      doc.moveTo(appliedStyles.margin, horizontalLineY)
-         .lineTo(doc.page.width - appliedStyles.margin, horizontalLineY)
-         .lineWidth(0.5)
-         .stroke();
+      currentY += 10; // Add some padding before the line
+      doc.moveTo(appliedStyles.margin, currentY)
+        .lineTo(doc.page.width - appliedStyles.margin, currentY)
+        .lineWidth(0.5)
+        .stroke();
     
-      doc.moveDown(2);
+      // Adjust position after the line for next section
+      currentY += 20;
     
       // Patient details section
-      const patientDetailsY = horizontalLineY + 20;
       applyStyles(doc, getStyles('patientDetails', 'Patient Name'));
-      doc.text(`Patient Name: ${patient.name}`, appliedStyles.margin, patientDetailsY, { continued: true });
-      doc.text(`                     `, { continued: true });
+      doc.text(`Patient Name: ${patient.name}`, appliedStyles.margin, currentY, { continued: true });
+      doc.text(`                `, { continued: true });
       applyStyles(doc, getStyles('patientDetails', 'Age'));
       doc.text(`Age: ${patient.age}`, { continued: true });
-      doc.text(`                     `, { continued: true });
+      doc.text(`                  `, { continued: true });
       applyStyles(doc, getStyles('patientDetails', 'Gender'));
       doc.text(`Gender: ${patient.gender}`, { continued: true });
-      doc.text(`                     `, { continued: true });
+      doc.text(`                 `, { continued: true });
       applyStyles(doc, getStyles('patientDetails', 'Gender'));
-      doc.text(`reason: ${appointment.reason}`);
+      doc.text(`Reason: ${appointment.reason|| ""}`);
+      currentY += doc.heightOfString(`Patient Name: ${patient.name}`) + 5;
     
+      // Draw second horizontal line
+      doc.moveTo(appliedStyles.margin, currentY)
+        .lineTo(doc.page.width - appliedStyles.margin, currentY)
+        .lineWidth(0.5)
+        .stroke();
     
-      const secondHorizontalLineY = patientDetailsY + 20;
-      doc.moveTo(appliedStyles.margin, secondHorizontalLineY)
-         .lineTo(doc.page.width - appliedStyles.margin, secondHorizontalLineY)
-         .lineWidth(0.5)
-         .stroke();
+      currentY += 20; // Adjust for next content
     
-      const dateY = secondHorizontalLineY + 15;
-      const dateX = doc.page.width - appliedStyles.margin - 150; // Right alignment for date
+      const dateX = doc.page.width - appliedStyles.margin - 150;
       applyStyles(doc, getStyles('prescriptionDetails', 'Date'));
-      doc.text(`Date: ${prescription.date}`, dateX, dateY, { align: 'right' });
-    
-      doc.moveDown(5);
-    
-      // Prescription details
+      doc.text(`Date: ${prescription.date}`, dateX, currentY, { align: 'right' });
+      currentY += 20;
+      doc.moveDown();
       applyStyles(doc, getStyles('prescriptionDetails', 'Provisional Diagnosis'));
-      doc.text('Prescription Details', appliedStyles.margin, dateY + 20, { underline: true });
+      doc.text('Prescription Details', appliedStyles.margin, currentY, { underline: true });
+      currentY += doc.heightOfString('Prescription Details') + 5;
       doc.moveDown();
-    
+      applyStyles(doc, getStyles('prescriptionDetails', 'Provisional Diagnosis'));
       doc.text(`Provisional Diagnosis: `, { indent: 20 });
-      doc.moveDown()
+      currentY += doc.heightOfString('Provisional Diagnosis: ') + 5;
       doc.text(`${prescription.provisional_diagnosis}`, { indent: 80 });
-      doc.moveDown()
-      applyStyles(doc, getStyles('prescriptionDetails', 'Advice'));
-      doc.moveDown()
-      doc.text(`Advice: `, { indent: 20 });
-      doc.moveDown()
-      doc.text(`${prescription.advice}`, { indent: 80 });
-      doc.moveDown()
-      applyStyles(doc, getStyles('prescriptionDetails', 'Clinical Notes'));
-      doc.text(`Clinical Notes: `, { indent: 20 });
-      doc.moveDown()
-      doc.text(`${prescription.clinical_notes}`, { indent: 80 });
-      doc.moveDown()
-      applyStyles(doc, getStyles('prescriptionDetails', 'Observation'));
-      doc.text(`Observation: `, { indent: 20 });
-      doc.moveDown()
-      doc.text(`${prescription.observation}`, { indent: 80 });
-      doc.moveDown()
-      applyStyles(doc, getStyles('prescriptionDetails', 'Investigation with Reports'));
-      doc.text(`Investigation with Reports: `, { indent: 20 });
-      doc.moveDown()
-      doc.text(`${prescription.investigation_with_reports}`, { indent: 80 });
-    
+      currentY += doc.heightOfString(prescription.provisional_diagnosis) + 5;
       doc.moveDown();
-    
-      // Medicines details
+      applyStyles(doc, getStyles('prescriptionDetails', 'Advice'));
+
+      doc.text(`Advice:`, { indent: 20 });
+      currentY += doc.heightOfString('Advice: ') + 5;
+      doc.text(`${prescription.advice}`, { indent: 80 });
+      currentY += doc.heightOfString(prescription.advice) + 5;
+      doc.moveDown();
+      applyStyles(doc, getStyles('prescriptionDetails', 'Clinical Notes'));
+
+      doc.text(`Clinical Notes: `, { indent: 20 });
+      currentY += doc.heightOfString('Clinical Notes: ') + 5;
+      doc.text(`${prescription.clinical_notes}`, { indent: 80 });
+      currentY += doc.heightOfString(prescription.clinical_notes) + 5;
+      doc.moveDown();
+      applyStyles(doc, getStyles('prescriptionDetails', 'Observation'));
+
+      doc.text(`Observation:`, { indent: 20 });
+      currentY += doc.heightOfString('Observation: ') + 5;
+      doc.text(`${prescription.observation}`, { indent: 80 });
+      currentY += doc.heightOfString(prescription.observation) + 5;
+      doc.moveDown();
+      applyStyles(doc, getStyles('prescriptionDetails', 'Investigation with Reports'));
+
+      doc.text(`Investigation with Reports:`, { indent: 20 });
+      currentY += doc.heightOfString('Investigation with Reports: ') + 5;
+      doc.text(`${prescription.investigation_with_reports}`, { indent: 80 });
+      currentY += doc.heightOfString(prescription.investigation_with_reports) + 5;
+      doc.moveDown();
+      doc.moveDown();
       applyStyles(doc, getStyles('medicines', 'Medicines Details'));
       doc.text('Medicines Details', { underline: true });
+      currentY += doc.heightOfString('Medicines Details') + 5;
       doc.moveDown();
-    
       medicines.forEach(medicine => {
         applyStyles(doc, getStyles('medicines', 'Medicine Name'));
-        doc.text(`-:  Medicine Name: ${medicine.name}`, { indent: 15 });
-        doc.moveDown()
+        doc.text(`-:  Medicine Name: ${medicine.name}`, { indent: 10 });
+        currentY += doc.heightOfString(`-:  Medicine Name: ${medicine.name}`) + 5;
+    
+        doc.moveDown();
         applyStyles(doc, getStyles('medicines', 'Dosage'));
         doc.text(`Dosage: ${medicine.dosage}`, { indent: 20 });
-        doc.moveDown()
+        currentY += doc.heightOfString(`Dosage: ${medicine.dosage}`) + 5;
+        doc.moveDown();
         applyStyles(doc, getStyles('medicines', 'Timings'));
-        doc.text(`Timings:`, { indent: 20 });
-        doc.moveDown()
-        doc.text(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'},`, { indent: 80 });
-        doc.moveDown()
-        doc.text(` Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`, { indent: 80 });
-        doc.moveDown()
-        doc.text(` Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`, { indent: 80 });
-        doc.moveDown()
-    
+        doc.text(`Timings: `, { indent: 20 });
+        currentY += doc.heightOfString(`Timings:`) + 5;
+        doc.moveDown();
+        applyStyles(doc, getStyles('medicines', 'Timings'));
+
+        doc.text(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'},`, { indent: 20 });
+        currentY += doc.heightOfString(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'},`) + 5;
+        doc.moveDown();
+        applyStyles(doc, getStyles('medicines', 'Timings'));
+
+        doc.text(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`, { indent: 20 });
+        currentY += doc.heightOfString(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`) + 5;
+        doc.moveDown();
+        applyStyles(doc, getStyles('medicines', 'Timings'));
+
+        doc.text(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`, { indent: 20 });
+        currentY += doc.heightOfString(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`) + 5;
+        doc.moveDown();
         applyStyles(doc, getStyles('medicines', 'Before Food'));
         doc.text(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`, { indent: 20 });
-        doc.moveDown()
+        currentY += doc.heightOfString(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`) + 5;
+        doc.moveDown();
         applyStyles(doc, getStyles('medicines', 'After Food'));
         doc.text(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`, { indent: 20 });
+        currentY += doc.heightOfString(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`) + 5;
         doc.moveDown();
-        doc.moveDown()
+        doc.moveDown();
       });
     
       doc.end();
     };
-    
- 
     
 
     const sendPrescriptionPdf = (pdfData) => {

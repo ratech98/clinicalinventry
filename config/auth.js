@@ -88,7 +88,9 @@ const isAuth = async (req, res, next) => {
     if (!clinic) {
       return res.status(401).send({success:false, message: errormesaages[1001],errorcode:1001 });
     }
-
+    if (!clinic.adminVerified) {
+      return res.status(400).send({ message:errormesaages[1051], block_reason: clinic.block_reason,errorcode:1051 });
+    }
     if (clinic.block) {
       return res.status(400).send({ message:errormesaages[1042], block_reason: clinic.block_reason,errorcode:1042 });
     }
@@ -121,6 +123,10 @@ const isAuth = async (req, res, next) => {
     
     if(decoded.type==="receptionist"){
       const receptionist=await Receptionist.findById(decoded.id) 
+      if(receptionist.verify=== false){
+        return res.status(400).send({success:false, message: errormesaages[1052],errorcode:1052 });
+
+      }
       if(receptionist.subscription=== false){
         return res.status(400).send({success:false, message: errormesaages[1050],errorcode:1050 });
 

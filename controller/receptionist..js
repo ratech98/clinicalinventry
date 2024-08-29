@@ -405,7 +405,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     const todayUTC = moment().format('DD-MM-YYYY');    
     const todayDay = new Date(todayUTC).getDay(); // Get the day of the week (0-6)
 
-    const doctorQuery = { 'clinics.clinicId': id,"clinics.verified":true };
+    const doctorQuery = { 'clinics.clinicId': id,"clinics.verified":true ,'clinics.subscription':true};
     if (search) {
       doctorQuery.$or = [
         { specialist: { $regex: search, $options: 'i' } },
