@@ -519,129 +519,146 @@ const updateAppointmentWithPrescription = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
     }
 
-const createPdf = async (doc, content, styles = {}) => {
-  const buffers = [];
-  doc.on('data', buffers.push.bind(buffers));
-  doc.on('end', async () => {
-    const pdfData = Buffer.concat(buffers);
-    content.callback(pdfData);
-  });
-
-  // Set default styles with dynamic overrides
-  const defaultStyles = {
-    margin: 20,
-    fontSize: 10,
-    fontColor: 'black',
-  };
-  const appliedStyles = { ...defaultStyles, ...styles };
-
-  // Apply margins and common settings
-  doc.margin = appliedStyles.margin;
-
-  // Load and position logo with consistent margins
-  if (template.logo) {
-    try {
-      const imageUrl = template.logo;
-      const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-      const imageBuffer = Buffer.from(response.data, 'binary');
-
-      doc.image(imageBuffer, appliedStyles.margin, appliedStyles.margin, {
-        width: doc.page.width * 0.15,
-        align: 'left',
-        valign: 'top',
+    const createPdf = async (doc, content, styles = {}) => {
+      const buffers = [];
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', async () => {
+        const pdfData = Buffer.concat(buffers);
+        content.callback(pdfData);
       });
-    } catch (error) {
-      console.error('Error loading logo image:', error);
-    }
-  }
-
-  // Define positions for details using the same margin
-  const detailsStartY = appliedStyles.margin;
-  const clinicDetailsX = appliedStyles.margin + 100;
-  const doctorDetailsX = clinicDetailsX + 200;
-
-  // Set font styles dynamically
-  doc.fontSize(appliedStyles.fontSize).fillColor(appliedStyles.fontColor);
-
-  // Clinic Details
-  doc.text(`Clinic Name: ${clinic.clinic_name}`, clinicDetailsX, detailsStartY);
-  doc.text(`Contact Number: ${clinic.mobile_number}`, clinicDetailsX, detailsStartY + 15);
-  doc.text(`Address: ${clinic.address}`, clinicDetailsX, detailsStartY + 30);
-
-  // Doctor Details
-  doc.text(`Doctor Name: ${doctors.name}`, doctorDetailsX, detailsStartY);
-  doc.text(`Speciality: ${doctors.specialist}`, doctorDetailsX, detailsStartY + 15);
-  doc.text(`Degree: ${doctors.pg_qualification || doctors.ug_qualification}`, doctorDetailsX, detailsStartY + 30);
-
-  // Vertical line in the middle of the first row
-  // const lineStartX = (clinicDetailsX + doctorDetailsX) / 2;
-  const firstRowHeight = 45;
-  // doc.moveTo(lineStartX, detailsStartY - 5)
-  //    .lineTo(lineStartX, detailsStartY + firstRowHeight)
-  //    .lineWidth(0.5)
-  //    .stroke();
-
-  // Horizontal line below the first row
-  const horizontalLineY = detailsStartY + firstRowHeight + 10;
-  doc.moveTo(appliedStyles.margin, horizontalLineY)
-     .lineTo(doc.page.width - appliedStyles.margin, horizontalLineY)
-     .lineWidth(0.5)
-     .stroke();
-
-  doc.moveDown(2);
-
-  // Patient Details
-  const patientDetailsY = horizontalLineY + 20;
-  doc.text(`Patient Name: ${patient.name}`, appliedStyles.margin, patientDetailsY, { continued: true });
-  doc.text(`              `, { continued: true });
-  doc.text(`Age: ${patient.age}`, { continued: true });
-  doc.text(`             `, { continued: true });
-  doc.text(`Gender: ${patient.gender}`);
-  doc.moveDown(5);
-
-  // Prescription Details
-  doc.text('Prescription Details', appliedStyles.margin, detailsStartY + 100, { underline: true });
-  doc.moveDown();
-  doc.text(`Provisional Diagnosis: `, { indent: 20 });
-  doc.text(`${prescription.provisional_diagnosis}`, { indent: 80 });
-
-  doc.text(`Advice: ${prescription.advice}`, { indent: 20 });
-  doc.text(`${prescription.advice}`, { indent: 80 });
-
-  doc.text(`Clinical Notes: `, { indent: 20 });
-  doc.text(`${prescription.clinical_notes}`, { indent: 80 });
-
-  doc.text(`Observation: `, { indent: 20 });
-  doc.text(`${prescription.observation}`, { indent: 80 });
-
-  doc.text(`Investigation with Reports: `, { indent: 20 });
-  doc.text(`${prescription.investigation_with_repo}`, { indent: 80 });
-
-  doc.moveDown();
-
-  // Medicines details section
-  doc.text('Medicines Details', { underline: true });
-  doc.moveDown();
-  medicines.forEach(medicine => {
-    doc.text(`Medicine Name: ${medicine.name}`, { indent: 20 });
-    // doc.text(`${medicine.name}`, { indent: 80 });
-
-    doc.text(`Dosage: ${medicine.dosage}`, { indent: 20 });
-    // doc.text(`${medicine.dosage}`, { indent: 80 });
-
-    doc.text(`Timings:`, { indent: 20 });
-    doc.text(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'},`, { indent: 80 });
-    doc.text(` Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`, { indent: 80 });
-    doc.text(` Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`, { indent: 80 });
-
-    doc.text(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`, { indent: 20 });
-    doc.text(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`, { indent: 20 });
-    doc.moveDown();
-  });
-
-  doc.end();
-};
-
+    
+      const defaultStyles = {
+        margin: 20,
+        fontSize: 10,
+        fontColor: 'black',
+      };
+      const appliedStyles = { ...defaultStyles, ...styles };
+    
+      doc.margin = appliedStyles.margin;
+    
+      const getStyles = (section, name) => {
+        const field = template.dynamicFields.find(
+          (field) => field.section === section && field.name === name
+        );
+        return field ? field.styles : {};
+      };
+    
+      const applyStyles = (doc, fieldStyles) => {
+        doc.font( 'Helvetica')
+          .fontSize(parseInt(fieldStyles.size) || appliedStyles.fontSize)
+          .fillColor(fieldStyles.color || appliedStyles.fontColor);
+      };
+    
+      if (template.logo) {
+        try {
+          const imageUrl = template.logo;
+          const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+          const imageBuffer = Buffer.from(response.data, 'binary');
+    
+          doc.image(imageBuffer, appliedStyles.margin, appliedStyles.margin, {
+            width: doc.page.width * 0.15,
+            align: 'left',
+            valign: 'top',
+          });
+        } catch (error) {
+          console.error('Error loading logo image:', error);
+        }
+      }
+    
+      const detailsStartY = appliedStyles.margin;
+      const clinicDetailsX = appliedStyles.margin + 100;
+      const doctorDetailsX = clinicDetailsX + 200;
+    
+      applyStyles(doc, getStyles('clinicDetails', 'Clinic Name'));
+      doc.text(`Clinic Name: ${clinic.clinic_name}`, clinicDetailsX, detailsStartY);
+    
+      applyStyles(doc, getStyles('clinicDetails', 'Contact number'));
+      doc.text(`Contact Number: ${clinic.mobile_number}`, clinicDetailsX, detailsStartY + 15);
+    
+      applyStyles(doc, getStyles('clinicDetails', 'Address'));
+      doc.text(`Address: ${clinic.address}`, clinicDetailsX, detailsStartY + 30);
+    
+      applyStyles(doc, getStyles('doctorDetails', 'Doctor Name'));
+      doc.text(`Doctor Name: ${doctors.name}`, doctorDetailsX, detailsStartY);
+    
+      applyStyles(doc, getStyles('doctorDetails', 'Speciality'));
+      doc.text(`Speciality: ${doctors.specialist}`, doctorDetailsX, detailsStartY + 15);
+    
+      applyStyles(doc, getStyles('doctorDetails', 'Degree'));
+      doc.text(`Degree: ${doctors.pg_qualification || doctors.ug_qualification}`, doctorDetailsX, detailsStartY + 30);
+    
+      const firstRowHeight = 45;
+      const horizontalLineY = detailsStartY + firstRowHeight + 10;
+      doc.moveTo(appliedStyles.margin, horizontalLineY)
+         .lineTo(doc.page.width - appliedStyles.margin, horizontalLineY)
+         .lineWidth(0.5)
+         .stroke();
+    
+      doc.moveDown(2);
+    
+      const patientDetailsY = horizontalLineY + 20;
+      applyStyles(doc, getStyles('patientDetails', 'Patient Name'));
+      doc.text(`Patient Name: ${patient.name}`, appliedStyles.margin, patientDetailsY, { continued: true });
+      doc.text(`              `, { continued: true });
+      applyStyles(doc, getStyles('patientDetails', 'Age'));
+      doc.text(`Age: ${patient.age}`, { continued: true });
+      doc.text(`              `, { continued: true });
+      applyStyles(doc, getStyles('patientDetails', 'Gender'));
+      doc.text(`Gender: ${patient.gender}`);
+      doc.moveDown(5);
+    
+      applyStyles(doc, getStyles('prescriptionDetails', 'Provisional Diagnosis'));
+      doc.text('Prescription Details', appliedStyles.margin, detailsStartY + 100, { underline: true });
+      doc.moveDown();
+    
+      doc.text(`Provisional Diagnosis: `, { indent: 20 });
+      doc.text(`${prescription.provisional_diagnosis}`, { indent: 80 });
+    
+      applyStyles(doc, getStyles('prescriptionDetails', 'Advice'));
+      doc.text(`Advice: ${prescription.advice}`, { indent: 20 });
+    
+      applyStyles(doc, getStyles('prescriptionDetails', 'Clinical Notes'));
+      doc.text(`Clinical Notes: `, { indent: 20 });
+      doc.text(`${prescription.clinical_notes}`, { indent: 80 });
+    
+      applyStyles(doc, getStyles('prescriptionDetails', 'Observation'));
+      doc.text(`Observation: `, { indent: 20 });
+      doc.text(`${prescription.observation}`, { indent: 80 });
+    
+      applyStyles(doc, getStyles('prescriptionDetails', 'Investigation with Reports'));
+      doc.text(`Investigation with Reports: `, { indent: 20 });
+      doc.text(`${prescription.investigation_with_repo}`, { indent: 80 });
+    
+      doc.moveDown();
+    
+      applyStyles(doc, getStyles('medicines', 'Medicines Details'));
+      doc.text('Medicines Details', { underline: true });
+      doc.moveDown();
+    
+      medicines.forEach(medicine => {
+        applyStyles(doc, getStyles('medicines', 'Medicine Name'));
+        doc.text(`Medicine Name: ${medicine.name}`, { indent: 20 });
+    
+        applyStyles(doc, getStyles('medicines', 'Dosage'));
+        doc.text(`Dosage: ${medicine.dosage}`, { indent: 20 });
+    
+        applyStyles(doc, getStyles('medicines', 'Timings'));
+        doc.text(`Timings:`, { indent: 20 });
+        doc.text(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'},`, { indent: 80 });
+        doc.text(` Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`, { indent: 80 });
+        doc.text(` Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`, { indent: 80 });
+    
+        applyStyles(doc, getStyles('medicines', 'Before Food'));
+        doc.text(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`, { indent: 20 });
+    
+        applyStyles(doc, getStyles('medicines', 'After Food'));
+        doc.text(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`, { indent: 20 });
+        doc.moveDown();
+      });
+    
+      doc.end();
+    };
+    
     
     
     
@@ -1012,30 +1029,41 @@ const getFollowUpList = async (req, res) => {
 
     console.log('Dates:', { todayString, tomorrowString, dayAfterTomorrowString });
 
-    const patients = await PatientModel.find({
+    // Step 1: Find patients with follow-ups in the next three days
+    const patientsWithFollowUps = await PatientModel.find({
       'appointment_history': {
         $elemMatch: {
           follow_up_from: { $exists: true, $ne: null },
+          appointment_date: { $in: [todayString, tomorrowString, dayAfterTomorrowString] }
         }
       }
     });
 
-    console.log('Found patients:', patients.length);
+    console.log('Found patients with follow-ups:', patientsWithFollowUps.length);
 
-    const followUpList = patients.map(patient => {
-      console.log('Patient appointment history:', patient.appointment_history);
+    const mobileNumbers = patientsWithFollowUps.map(patient => patient.mobile_number);
 
-      const filteredAppointments = patient.appointment_history.filter(appointment => {
-     
-        console.log('Formatted appointment date:',appointment.appointment_date);
-        return [todayString, tomorrowString, dayAfterTomorrowString].includes(appointment.appointment_date) &&
-          appointment.follow_up_from;
-      });
+    const relatedPatients = await PatientModel.find({
+      $or: [
+        { mobile_number: { $in: mobileNumbers } },
+        { bond: "myself" }
+      ]
+    });
 
-      console.log('Filtered appointments for patient:', filteredAppointments);
+    const followUpList = patientsWithFollowUps.map(followUpPatient => {
+      const relatedPatientData = relatedPatients.filter(patient => 
+        patient.mobile_number === followUpPatient.mobile_number || 
+        patient.bond === "myself"
+      );
+
+      const filteredAppointments = followUpPatient.appointment_history.filter(appointment =>
+        [todayString, tomorrowString, dayAfterTomorrowString].includes(appointment.appointment_date) &&
+        appointment.follow_up_from
+      );
 
       return {
-        ...patient.toObject(),
+        ...followUpPatient.toObject(),
+        relatedPatients: relatedPatientData.map(patient => patient.toObject()), 
         appointment_history: filteredAppointments
       };
     });
@@ -1046,6 +1074,7 @@ const getFollowUpList = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 
 

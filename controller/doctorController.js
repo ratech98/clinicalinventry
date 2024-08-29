@@ -671,6 +671,7 @@ const get_availability = async (req, res) => {
       });
 
       const availabilityData = {
+        _id:item._id,
         doctorId: item.doctorId,
         clinicId: item.clinicId,
         availabilities: filteredAvailabilities.map(avail => ({

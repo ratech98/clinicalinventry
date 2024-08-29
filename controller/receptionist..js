@@ -457,10 +457,15 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
         }
       });
       const tokenCount = todayAppointments.reduce((count, appointment) => {
-        console.log("appoinment",appointment.appointment_history,todayUTC)
-
         const todayAppointment = appointment.appointment_history.find(app => 
-          app.appointment_date === todayUTC
+          app.appointment_date === todayUTC && app.status === "PENDING"
+        );
+        return todayAppointment ? count + 1 : count;
+      }, 0);
+
+      const finishedtokenCount = todayAppointments.reduce((count, appointment) => {
+        const todayAppointment = appointment.appointment_history.find(app => 
+          app.appointment_date === todayUTC && app.status === "FINISHED"
         );
         return todayAppointment ? count + 1 : count;
       }, 0);
@@ -468,7 +473,8 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
       return {
         doctor,
         availability: availabilityStatus,
-        tokenCount
+        tokenCount,
+        finishedtokenCount
       };
     });
 
