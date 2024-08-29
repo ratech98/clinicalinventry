@@ -574,12 +574,12 @@ const createPdf = async (doc, content, styles = {}) => {
   doc.text(`Degree: ${doctors.pg_qualification || doctors.ug_qualification}`, doctorDetailsX, detailsStartY + 30);
 
   // Vertical line in the middle of the first row
-  const lineStartX = (clinicDetailsX + doctorDetailsX) / 2;
+  // const lineStartX = (clinicDetailsX + doctorDetailsX) / 2;
   const firstRowHeight = 45;
-  doc.moveTo(lineStartX, detailsStartY - 5)
-     .lineTo(lineStartX, detailsStartY + firstRowHeight)
-     .lineWidth(0.5)
-     .stroke();
+  // doc.moveTo(lineStartX, detailsStartY - 5)
+  //    .lineTo(lineStartX, detailsStartY + firstRowHeight)
+  //    .lineWidth(0.5)
+  //    .stroke();
 
   // Horizontal line below the first row
   const horizontalLineY = detailsStartY + firstRowHeight + 10;
@@ -597,10 +597,10 @@ const createPdf = async (doc, content, styles = {}) => {
   doc.text(`Age: ${patient.age}`, { continued: true });
   doc.text(`             `, { continued: true });
   doc.text(`Gender: ${patient.gender}`);
-  doc.moveDown(2);
+  doc.moveDown(5);
 
   // Prescription Details
-  doc.text('Prescription Details', appliedStyles.margin, detailsStartY + 80, { underline: true });
+  doc.text('Prescription Details', appliedStyles.margin, detailsStartY + 100, { underline: true });
   doc.moveDown();
   doc.text(`Provisional Diagnosis: `, { indent: 20 });
   doc.text(`${prescription.provisional_diagnosis}`, { indent: 80 });
@@ -624,10 +624,10 @@ const createPdf = async (doc, content, styles = {}) => {
   doc.moveDown();
   medicines.forEach(medicine => {
     doc.text(`Medicine Name: ${medicine.name}`, { indent: 20 });
-    doc.text(`${medicine.name}`, { indent: 80 });
+    // doc.text(`${medicine.name}`, { indent: 80 });
 
     doc.text(`Dosage: ${medicine.dosage}`, { indent: 20 });
-    doc.text(`${medicine.dosage}`, { indent: 80 });
+    // doc.text(`${medicine.dosage}`, { indent: 80 });
 
     doc.text(`Timings:`, { indent: 20 });
     doc.text(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'},`, { indent: 80 });
@@ -663,22 +663,22 @@ const createPdf = async (doc, content, styles = {}) => {
       );
     };
 
-    const sendMedicinesPdf = (pdfData) => {
-      const data = { name: patient.name };
-      const emailSubject = `You have received a medicines report from ${clinic.clinic_name}`;
+    // const sendMedicinesPdf = (pdfData) => {
+    //   const data = { name: patient.name };
+    //   const emailSubject = `You have received a medicines report from ${clinic.clinic_name}`;
 
-      sendEmail(
-        patient.email,
-        emailSubject,
-        "sendrecipt.ejs",
-        data,
-        {
-          filename: 'medicines_report.pdf',
-          content: pdfData,
-          contentType: 'application/pdf',
-        }
-      );
-    };
+    //   sendEmail(
+    //     patient.email,
+    //     emailSubject,
+    //     "sendrecipt.ejs",
+    //     data,
+    //     {
+    //       filename: 'medicines_report.pdf',
+    //       content: pdfData,
+    //       contentType: 'application/pdf',
+    //     }
+    //   );
+    // };
 
     // Create and send prescription PDF
 // Create and send prescription PDF
@@ -700,19 +700,19 @@ await createPdf(prescriptionDoc, {
 });
 
 // Create and send medicines PDF
-const medicinesDoc = new PDFDocument({ size: 'A4' });
-await createPdf(medicinesDoc, {
-  sections: [
-    {
-      title: 'Medicines Details',
-      items: medicines.map(medicine => ({
-        text: `- Name: ${medicine.name}, Dosage: ${medicine.dosage}, Morning: ${medicine.timings.morning ? 'Yes' : 'No'}, Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}, Evening: ${medicine.timings.evening ? 'Yes' : 'No'}, Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}, After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`,
-        styles: {}
-      }))
-    }
-  ],
-  callback: sendMedicinesPdf
-});
+// const medicinesDoc = new PDFDocument({ size: 'A4' });
+// await createPdf(medicinesDoc, {
+//   sections: [
+//     {
+//       title: 'Medicines Details',
+//       items: medicines.map(medicine => ({
+//         text: `- Name: ${medicine.name}, Dosage: ${medicine.dosage}, Morning: ${medicine.timings.morning ? 'Yes' : 'No'}, Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}, Evening: ${medicine.timings.evening ? 'Yes' : 'No'}, Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}, After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`,
+//         styles: {}
+//       }))
+//     }
+//   ],
+//   callback: sendMedicinesPdf
+// });
 
 
     res.status(200).json({ success: true, message: "Prescription and medicines added successfully", patient });
