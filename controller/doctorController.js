@@ -70,31 +70,46 @@ const updateDoctor = async (req, res) => {
   try {
     const files = req.files;
     const uploadedFiles = {};
+
     for (const fieldName in files) {
       if (Object.hasOwnProperty.call(files, fieldName)) {
-        const file = files[fieldName][0]; 
-        const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
-        const imagePath = `docter_certificates/${Date.now()}_${sanitizedFilename}`;
-        await gcsStorage.bucket(bucketName).file(imagePath).save(file.buffer);
-        uploadedFiles[
-          fieldName
-        ] = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
+        if (fieldName === "postgraduate_certificate") {
+          const urls = [];
+
+          for (const file of files[fieldName]) {
+            const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
+            const imagePath = `doctor_certificates/${Date.now()}_${sanitizedFilename}`;
+            await gcsStorage.bucket(bucketName).file(imagePath).save(file.buffer);
+            const fileUrl = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
+            urls.push(fileUrl);
+          }
+
+          uploadedFiles[fieldName] = urls;
+        } else {
+          const file = files[fieldName][0];
+          const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
+          const imagePath = `doctor_certificates/${Date.now()}_${sanitizedFilename}`;
+          await gcsStorage.bucket(bucketName).file(imagePath).save(file.buffer);
+          uploadedFiles[fieldName] = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
+        }
       }
     }
 
-  req.body.details=true
+    req.body.details = true;
     const updateData = { ...req.body, ...uploadedFiles };
 
-    const doctors = await doctor.findByIdAndUpdate(req.params.id, updateData, { new: true })
+    const doctors = await doctor.findByIdAndUpdate(req.params.id, updateData, { new: true });
     if (!doctors) {
-      return res.status(400).json({success:false, error: errormesaages[1002], errorcode: 1002 });
+      return res.status(400).json({ success: false, error: errormesaages[1002], errorcode: 1002 });
     }
+
     res.status(200).json({ success: true, message: "Doctor updated successfully", doctors });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 const updateDoctorAvailability = async (req, res) => {
   const { doctorId, clinicId, date, timeSlot, available } = req.body;
   try {
@@ -125,7 +140,7 @@ const updateDoctorAvailability = async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
-};
+}
 const verifyDoctorClinic = async (req, res) => {
   const { doctorId, clinicId,verify } = req.body;
 
@@ -360,7 +375,6 @@ const updateDoctorAvailabilitty = async (req, res) => {
       slots: slots.map(slot => ({ timeSlot: slot, available: true }))
     }));
 
-    // Check for overlapping availability in other clinics
     const overlappingAvailability = await Availability.findOne({
       doctorId,
       clinicId: { $ne: clinicId },
@@ -372,13 +386,11 @@ const updateDoctorAvailabilitty = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Doctor has overlapping availability in another clinic' });
     }
 
-    // Find the existing availability record and update it
     const existingAvailability = await Availability.findOne({ doctorId, clinicId });
     if (!existingAvailability) {
       return res.status(404).json({ success: false, error: 'Availability record not found for this doctor and clinic' });
     }
 
-    // Update the availability
     existingAvailability.availabilities = newAvailabilities;
     await existingAvailability.save();
 
@@ -656,12 +668,11 @@ const get_availability = async (req, res) => {
           };
           dayMatch = dayFilter.day === avail.day;
 
-          // Filter out unavailable slots for the specific date
           const unavailableSlots = item.unavailable.find(u => u.date.toDateString() === dayFilter.date.toDateString());
           if (unavailableSlots) {
             avail.slots = avail.slots.filter(slot => 
               !unavailableSlots.slots.some(unavailableSlot => unavailableSlot.timeSlot === slot.timeSlot)
-            );
+            )
           }
         } else if (day) {
           dayFilter = { day: new RegExp(day, 'i') };

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const defaultStyles = {
-  font: 'sans-serif',
+  font: 'Roboto',
   size: '12px',
   color: '#000000',
   align: 'left',

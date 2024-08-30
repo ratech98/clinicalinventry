@@ -10,7 +10,7 @@ const upload = multer({
   storage: multerStorage,
 }).fields([
   { name: 'undergraduate_certificate', maxCount: 1 },
-  { name: 'postgraduate_certificate', maxCount: 1 },
+  { name: 'postgraduate_certificate'},
   {name:'profile',maxCount:1}
  
 ]);

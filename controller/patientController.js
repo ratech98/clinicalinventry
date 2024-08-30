@@ -532,6 +532,7 @@ console.log(appointment)
         margin: 20,
         fontSize: 10,
         fontColor: 'black',
+        font:"Roboto"
       };
       const appliedStyles = { ...defaultStyles, ...styles };
     
@@ -545,12 +546,11 @@ console.log(appointment)
       };
     
       const applyStyles = (doc, fieldStyles) => {
-        doc.font('Helvetica')
+        doc.font(fieldStyles.font||appliedStyles.font)
           .fontSize(parseInt(fieldStyles.size) || appliedStyles.fontSize)
           .fillColor(fieldStyles.color || appliedStyles.fontColor);
       };
     
-      // Load and place logo image if available
       if (template.logo) {
         try {
           const imageUrl = template.logo;
