@@ -464,14 +464,15 @@ const sendDoctorOtp = async (req, res) => {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
       return res.status(400).json({ success: false, message: errormesaages[1008], errorcode: 1008 });
     }
-    const existingdoctormobile = await doctor.findOne({ mobile_number });
+    const existingdoctormobile = await doctor.findOne({ mobile_number,'clinics.clinicId':clinicId  });
     if (existingdoctormobile) {
       return res.status(400).json({ success: false, message: errormesaages[1014], errorcode: 1014 });
     }
-    const existingdoctor= await doctor.findOne({email });
+    const existingdoctor= await doctor.findOne({email,'clinics.clinicId':clinicId  });
     if (existingdoctor) {
       return res.status(400).json({ success: false, message: errormesaages[1054], errorcode: 1054 });
-    }
+    } 
+
     let doctorData = await doctor.findOne({ email });
 
     if (doctorData) {
