@@ -464,7 +464,14 @@ const sendDoctorOtp = async (req, res) => {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
       return res.status(400).json({ success: false, message: errormesaages[1008], errorcode: 1008 });
     }
-
+    const existingdoctormobile = await doctor.findOne({ mobile_number });
+    if (existingdoctormobile) {
+      return res.status(400).json({ success: false, message: errormesaages[1014], errorcode: 1014 });
+    }
+    const existingdoctor= await doctor.findOne({email });
+    if (existingdoctor) {
+      return res.status(400).json({ success: false, message: errormesaages[1054], errorcode: 1054 });
+    }
     let doctorData = await doctor.findOne({ email });
 
     if (doctorData) {
@@ -478,7 +485,27 @@ const sendDoctorOtp = async (req, res) => {
 
     doctorData.otp = otp;
     doctorData.email=email
-    doctorData.clinics.push({ clinicId, verified: false });
+    const clinic = await Clinic.findById(clinicId)
+      .populate({
+        path: 'subscription_details.subscription_id',
+        populate: {
+          path: 'title',
+        }
+      });
+
+    if (!clinic) {
+      return res.status(404).json({ error: errormesaages[1001], errorcode: 1001 });
+    }
+console.log(clinic)
+    const subscriptionDetails = clinic.subscription_details;
+    
+      if(subscriptionDetails.length === 1 ){
+        doctorData.clinics.push({ clinicId, verified: false,subscription:true });
+console.log("ifffffffffffffffffffffff")
+      }else{
+        doctorData.clinics.push({ clinicId, verified: false });
+console.log("elseeeeeeeeeeeeeeeeeeeee")
+      }
 
     await doctorData.save();
     const templateFile = 'OTP.ejs';

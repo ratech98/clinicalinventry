@@ -211,9 +211,13 @@ const sendReceptionistOtp = async (req, res) => {
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
       return res.status(400).json({ success: false,message: errormesaages[1008], errorcode: 1008 });
     }
-    const existingReceptionist = await Receptionist.findOne({  clinic: clinicId,email });
-    if (existingReceptionist) {
+    const existingReceptionistmobile = await Receptionist.findOne({ mobile_number });
+    if (existingReceptionistmobile) {
       return res.status(400).json({ success: false, message: errormesaages[1018], errorcode: 1018 });
+    }
+    const existingReceptionist = await Receptionist.findOne({email });
+    if (existingReceptionist) {
+      return res.status(400).json({ success: false, message: errormesaages[1053], errorcode: 1053 });
     }
     
 
@@ -222,7 +226,24 @@ const sendReceptionistOtp = async (req, res) => {
       { mobile_number, otp, clinic: clinicId,email },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
-    
+    const clinic = await Clinic.findById(clinicId)
+    .populate({
+      path: 'subscription_details.subscription_id',
+      populate: {
+        path: 'title',
+      }
+    });
+
+  if (!clinic) {
+    return res.status(404).json({ error: errormesaages[1001], errorcode: 1001 });
+  }
+console.log(clinic)
+  const subscriptionDetails = clinic.subscription_details;
+  
+    if(subscriptionDetails.length === 1 ){
+      receptionist.subscription=true
+console.log("ifffffffffffffffffffffff")
+    }
 
     await receptionist.save();
     const templateFile = 'OTP.ejs';
@@ -423,7 +444,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
       .skip(startIndex);
 
     if (!doctors.length) {
-      return res.status(404).json({ success: false, error: 'No doctors found', errorcode: 1027 });
+      return res.status(200).json({success:true, doctorAvailability: []});
     }
 
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {

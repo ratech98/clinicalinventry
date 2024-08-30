@@ -77,7 +77,7 @@ const getAllMedicines = async (req, res) => {
     res.json({
       success: true,
       message: "Medicines fetched successfully",
-      medicines,
+      medicines:medicines?medicines:[],
       totalCount: totalMedicines,
       page,
       limit,

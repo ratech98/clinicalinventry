@@ -50,7 +50,9 @@
     1049:'No active subscription for doctor',
     1050:'No active subscription for receptionist',
     1051:"Clinic not verified by admin",
-    1052:"receptionist not verfied by admin"
+    1052:"receptionist not verfied by admin",
+    1053:'Receptionist with this emailId and clinic ID already exists',
+    1054:'Doctor with this emailId and clinic ID already exists',
 
     
 

@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 const medicineSchema = new Schema({
   name: { type: String, required: true },
   dosage: { type: String },
+  count:{type:Number},
   timings: {
     morning: { type: Boolean, default: false },
     afternoon: { type: Boolean, default: false },

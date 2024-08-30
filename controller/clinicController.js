@@ -123,26 +123,31 @@ const getClinicById = async (req, res) => {
     }
 
     let balancedue = false;
-    const subscription = clinic.subscription_details[0];
-    if(subscription){
-console.log("subscription",subscription)
-    if (!subscription.subscription_id || new Date(subscription.subscription_enddate) >= new Date()) {
-      balancedue = false;
-      console.log("if")
-    } else {
-      const doctorsUnsubscribed = await doctor.countDocuments({
-        'clinics.clinicId': id,
-        'clinics.subscription': false,
-      });
-      const receptionistsSubscribed = await Receptionist.countDocuments({
-        clinic: id,
-        subscription: false,
-      });
+    const subscriptionDetails = clinic.subscription_details;
+    const subscription = subscriptionDetails.length > 0 
+      ? subscriptionDetails[subscriptionDetails.length - 1]  // Take the last entry in subscription_details
+      : null;
 
-      balancedue = doctorsUnsubscribed > 0 || receptionistsSubscribed > 0;
-      console.log("else")
+    if (subscription) {
+      console.log("subscription", subscription);
+      if (!subscription.subscription_id || new Date(subscription.subscription_enddate) >= new Date()) {
+        balancedue = false;
+        console.log("if");
+      } else {
+        const doctorsUnsubscribed = await doctor.countDocuments({
+          'clinics.clinicId': id,
+          'clinics.subscription': false,
+        });
+        const receptionistsSubscribed = await Receptionist.countDocuments({
+          clinic: id,
+          subscription: false,
+        });
+
+        balancedue = doctorsUnsubscribed > 0 || receptionistsSubscribed > 0;
+        console.log("else");
+      }
     }
-  }
+
     const doctorsCount = await doctor.countDocuments({ 'clinics.clinicId': id });
     const receptionistsCount = await Receptionist.countDocuments({ clinic: id });
 
@@ -177,28 +182,31 @@ const getClinicId = async (req, res) => {
       return res.status(404).json({ error: errormesaages[1001], errorcode: 1001 });
     }
 
-   
     let balancedue = false;
-    const subscription = clinic.subscription_details[0];
-    if(subscription){
-console.log("subscription",subscription)
-    if (!subscription.subscription_id || new Date(subscription.subscription_enddate) >= new Date()) {
-      balancedue = false;
-      console.log("if")
-    } else {
-      const doctorsUnsubscribed = await doctor.countDocuments({
-        'clinics.clinicId': id,
-        'clinics.subscription': false,
-      });
-      const receptionistsSubscribed = await Receptionist.countDocuments({
-        clinic: id,
-        subscription: false,
-      });
+    const subscriptionDetails = clinic.subscription_details;
+    const subscription = subscriptionDetails.length > 0 
+      ? subscriptionDetails[subscriptionDetails.length - 1]  
+      : null;
 
-      balancedue = doctorsUnsubscribed > 0 || receptionistsSubscribed > 0;
-      console.log("else")
+    if (subscription) {
+      console.log("subscription", subscription);
+      if (!subscription.subscription_id || new Date(subscription.subscription_enddate) >= new Date()) {
+        balancedue = false;
+        console.log("if");
+      } else {
+        const doctorsUnsubscribed = await doctor.countDocuments({
+          'clinics.clinicId': id,
+          'clinics.subscription': false,
+        });
+        const receptionistsSubscribed = await Receptionist.countDocuments({
+          clinic: id,
+          subscription: false,
+        });
+
+        balancedue = doctorsUnsubscribed > 0 || receptionistsSubscribed > 0;
+        console.log("else");
+      }
     }
-  }
     const doctorsCount = await doctor.countDocuments({ 'clinics.clinicId': req.params.id });
     const receptionistsCount = await Receptionist.countDocuments({ clinic: req.params.id });
     res.json({

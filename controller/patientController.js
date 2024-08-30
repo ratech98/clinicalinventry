@@ -67,7 +67,7 @@ const getAllPatients = async (req, res) => {
       .limit(parseInt(limit));
 
     if (!patients.length) {
-      return res.status(404).json({ success: false, error: errormesaages[1048], errorcode: 1048 });
+      return res.status(200).json({ success: true, patients: [] });
     }
 
     const doctors = await mainDBConnection.model('doctor').find()
@@ -119,7 +119,7 @@ const getAllPatients = async (req, res) => {
       startIndex: startIndex + 1,
       endIndex: endIndex > totalPatients ? totalPatients : endIndex,
       currentPage: parseInt(page),
-      patients,
+      patients:patients?patients:[],
       availableDoctorsCount,
       unavailableDoctorsCount,
     });
@@ -488,6 +488,7 @@ console.log(appointment)
       appointment.medicines = medicines.map(medicine => ({
         name: medicine.name,
         dosage: medicine.dosage,
+        count:medicine.count,
         timings: {
           morning: !!medicine.timings?.morning,
           afternoon: !!medicine.timings?.afternoon,
@@ -532,7 +533,7 @@ console.log(appointment)
         margin: 20,
         fontSize: 10,
         fontColor: 'black',
-        font:"Roboto"
+        font:"Helvetica"
       };
       const appliedStyles = { ...defaultStyles, ...styles };
     
@@ -546,7 +547,7 @@ console.log(appointment)
       };
     
       const applyStyles = (doc, fieldStyles) => {
-        doc.font(fieldStyles.font||appliedStyles.font)
+        doc.font("Helvetica")
           .fontSize(parseInt(fieldStyles.size) || appliedStyles.fontSize)
           .fillColor(fieldStyles.color || appliedStyles.fontColor);
       };
@@ -606,21 +607,27 @@ console.log(appointment)
       doc.text(` ${doctors.specialist}`, doctorDetailsX, currentY, { align: 'right' });
       currentY += doc.heightOfString(doctors.specialist) + 5;
     
-      applyStyles(doc, getStyles('doctorDetails', 'Degree'));
-      doc.text(` ${ "MBBS"}`, doctorDetailsX, currentY, { align: 'right' });
-      currentY += doc.heightOfString(doctors.pg_qualification || doctors.ug_qualification || "MBBS") + 5;
-    
-      // Draw a horizontal line below the doctor and clinic details
-      currentY += 10; // Add some padding before the line
+const pgQualification = Array.isArray(doctors.pg_qualification) 
+? doctors.pg_qualification.join(', ') 
+: doctors.pg_qualification || ''; 
+
+const ugQualification = doctors.ug_qualification || '';
+
+const qualifications = [ugQualification, pgQualification].filter(Boolean).join(', ');
+
+applyStyles(doc, getStyles('doctorDetails', 'Degree'));
+
+doc.text(` ${qualifications}`, doctorDetailsX, currentY, { align: 'right' });
+currentY += doc.heightOfString(qualifications || "MBBS") + 5;
+
+      currentY += 10; 
       doc.moveTo(appliedStyles.margin, currentY)
         .lineTo(doc.page.width - appliedStyles.margin, currentY)
         .lineWidth(0.5)
         .stroke();
     
-      // Adjust position after the line for next section
       currentY += 20;
     
-      // Patient details section
       applyStyles(doc, getStyles('patientDetails', 'Patient Name'));
       doc.text(`Patient Name: ${patient.name}`, appliedStyles.margin, currentY, { continued: true });
       doc.text(`                `, { continued: true });
@@ -1147,8 +1154,278 @@ const getFollowUpList = async (req, res) => {
 };
 
 
+const createPdf = async (doc, content,clinic,doctors,template,appointment,patient, styles = {}) => {
+  const buffers = [];
+  doc.on('data', buffers.push.bind(buffers));
+  doc.on('end', async () => {
+    const pdfData = Buffer.concat(buffers);
+    content.callback(pdfData);
+  });
 
+  const defaultStyles = {
+    margin: 20,
+    fontSize: 10,
+    fontColor: 'black',
+    font:"Helvetica"
+  };
+  const appliedStyles = { ...defaultStyles, ...styles };
 
+  doc.margin = appliedStyles.margin;
+
+  const getStyles = (section, name) => {
+    const field = template.dynamicFields.find(
+      (field) => field.section === section && field.name === name
+    );
+    return field ? field.styles : {};
+  };
+
+  const applyStyles = (doc, fieldStyles) => {
+    doc.font("Helvetica")
+      .fontSize(parseInt(fieldStyles.size) || appliedStyles.fontSize)
+      .fillColor(fieldStyles.color || appliedStyles.fontColor);
+  };
+
+  if (template.logo) {
+    try {
+      const imageUrl = template.logo;
+      const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+      const imageBuffer = Buffer.from(response.data, 'binary');
+
+      const availableWidth = doc.page.width * 0.15;
+      const img = doc.openImage(imageBuffer);
+      const scalingFactor = availableWidth / img.width;
+      const finalWidth = img.width * scalingFactor;
+      const finalHeight = img.height * scalingFactor;
+
+      doc.image(imageBuffer, appliedStyles.margin, appliedStyles.margin, {
+        width: finalWidth,
+        height: finalHeight,
+        align: 'left',
+        valign: 'top',
+      });
+    } catch (error) {
+      console.error('Error loading logo image:', error);
+    }
+  }
+
+  let currentY = appliedStyles.margin + (template.logo ? 50 : 0); // Adjust initial Y based on logo height if present
+
+  // Clinic details
+  const clinicDetailsX = appliedStyles.margin + 100;
+  applyStyles(doc, getStyles('clinicDetails', 'Clinic Name'));
+  doc.text(` ${clinic.clinic_name}`, clinicDetailsX, currentY);
+  currentY += doc.heightOfString(clinic.clinic_name) + 5; // Adjust Y position dynamically
+
+  applyStyles(doc, getStyles('clinicDetails', 'Contact number'));
+  doc.text(` ${clinic.mobile_number}`, clinicDetailsX, currentY);
+  currentY += doc.heightOfString(clinic.mobile_number) + 5;
+
+  applyStyles(doc, getStyles('clinicDetails', 'Address'));
+  doc.text(`${clinic.address || "11th cross street, Chennai"}`, clinicDetailsX, currentY);
+  currentY += doc.heightOfString(clinic.address) + 5;
+
+  const verticalLineX = (clinicDetailsX + (doc.page.width - appliedStyles.margin - 100)) / 2;
+doc.moveTo(verticalLineX, appliedStyles.margin + (template.logo ? 50 : 0))
+.lineTo(verticalLineX, currentY + 40) 
+.lineWidth(0.5)
+.stroke();
+  // Doctor details right-aligned
+  const doctorDetailsX = doc.page.width - appliedStyles.margin - 200;
+  currentY = appliedStyles.margin + (template.logo ? 50 : 0); // Reset Y position for doctor details
+  applyStyles(doc, getStyles('doctorDetails', 'Doctor Name'));
+  doc.text(` ${doctors.name}`, doctorDetailsX, currentY, { align: 'right' });
+  currentY += doc.heightOfString(doctors.name) + 5;
+
+  applyStyles(doc, getStyles('doctorDetails', 'Speciality'));
+  doc.text(` ${doctors.specialist}`, doctorDetailsX, currentY, { align: 'right' });
+  currentY += doc.heightOfString(doctors.specialist) + 5;
+
+  const pgQualification = Array.isArray(doctors.pg_qualification) 
+  ? doctors.pg_qualification.join(', ') 
+  : doctors.pg_qualification || ''; 
+  
+  const ugQualification = doctors.ug_qualification || '';
+  
+  const qualifications = [ugQualification, pgQualification].filter(Boolean).join(', ');
+  
+  applyStyles(doc, getStyles('doctorDetails', 'Degree'));
+  
+  doc.text(` ${qualifications}`, doctorDetailsX, currentY, { align: 'right' });
+  currentY += doc.heightOfString(qualifications || "MBBS") + 5;
+  
+  currentY += 10; // Add some padding before the line
+  doc.moveTo(appliedStyles.margin, currentY)
+    .lineTo(doc.page.width - appliedStyles.margin, currentY)
+    .lineWidth(0.5)
+    .stroke();
+
+  // Adjust position after the line for next section
+  currentY += 20;
+
+  // Patient details section
+  applyStyles(doc, getStyles('patientDetails', 'Patient Name'));
+  doc.text(`Patient Name: ${patient.name}`, appliedStyles.margin, currentY, { continued: true });
+  doc.text(`                `, { continued: true });
+  applyStyles(doc, getStyles('patientDetails', 'Age'));
+  doc.text(`Age: ${patient.age}`, { continued: true });
+  doc.text(`                  `, { continued: true });
+  applyStyles(doc, getStyles('patientDetails', 'Gender'));
+  doc.text(`Gender: ${patient.gender}`, { continued: true });
+  doc.text(`                 `, { continued: true });
+  applyStyles(doc, getStyles('patientDetails', 'Gender'));
+  doc.text(`Reason: ${appointment.reason|| ""}`);
+  currentY += doc.heightOfString(`Patient Name: ${patient.name}`) + 5;
+
+  // Draw second horizontal line
+  doc.moveTo(appliedStyles.margin, currentY)
+    .lineTo(doc.page.width - appliedStyles.margin, currentY)
+    .lineWidth(0.5)
+    .stroke();
+
+  currentY += 20; // Adjust for next content
+
+  const dateX = doc.page.width - appliedStyles.margin - 150;
+  applyStyles(doc, getStyles('prescriptionDetails', 'Date'));
+  doc.text(`Date: ${appointment.prescription.date}`, dateX, currentY, { align: 'right' });
+  currentY += 20;
+  doc.moveDown();
+  applyStyles(doc, getStyles('prescriptionDetails', 'Provisional Diagnosis'));
+  doc.text('Prescription Details', appliedStyles.margin, currentY, { underline: true });
+  currentY += doc.heightOfString('Prescription Details') + 5;
+  doc.moveDown();
+  applyStyles(doc, getStyles('prescriptionDetails', 'Provisional Diagnosis'));
+  doc.text(`Provisional Diagnosis: `, { indent: 20 });
+  currentY += doc.heightOfString('Provisional Diagnosis: ') + 5;
+  doc.text(`${appointment.prescription.provisional_diagnosis}`, { indent: 80 });
+  currentY += doc.heightOfString(appointment.prescription.provisional_diagnosis) + 5;
+  doc.moveDown();
+  applyStyles(doc, getStyles('prescriptionDetails', 'Advice'));
+
+  doc.text(`Advice:`, { indent: 20 });
+  currentY += doc.heightOfString('Advice: ') + 5;
+  doc.text(`${appointment.prescription.advice}`, { indent: 80 });
+  currentY += doc.heightOfString(appointment.prescription.advice) + 5;
+  doc.moveDown();
+  applyStyles(doc, getStyles('prescriptionDetails', 'Clinical Notes'));
+
+  doc.text(`Clinical Notes: `, { indent: 20 });
+  currentY += doc.heightOfString('Clinical Notes: ') + 5;
+  doc.text(`${appointment.prescription.clinical_notes}`, { indent: 80 });
+  currentY += doc.heightOfString(appointment.prescription.clinical_notes) + 5;
+  doc.moveDown();
+  applyStyles(doc, getStyles('prescriptionDetails', 'Observation'));
+
+  doc.text(`Observation:`, { indent: 20 });
+  currentY += doc.heightOfString('Observation: ') + 5;
+  doc.text(`${appointment.prescription.observation}`, { indent: 80 });
+  currentY += doc.heightOfString(appointment.prescription.observation) + 5;
+  doc.moveDown();
+  applyStyles(doc, getStyles('prescriptionDetails', 'Investigation with Reports'));
+
+  doc.text(`Investigation with Reports:`, { indent: 20 });
+  currentY += doc.heightOfString('Investigation with Reports: ') + 5;
+  doc.text(`${appointment.prescription.investigation_with_reports}`, { indent: 80 });
+  currentY += doc.heightOfString(appointment.prescription.investigation_with_reports) + 5;
+  doc.moveDown();
+  doc.moveDown();
+  applyStyles(doc, getStyles('medicines', 'Medicines Details'));
+  doc.text('Medicines Details', { underline: true });
+  currentY += doc.heightOfString('Medicines Details') + 5;
+  doc.moveDown();
+  appointment.medicines.forEach(medicine => {
+    applyStyles(doc, getStyles('medicines', 'Medicine Name'));
+    doc.text(`-:  Medicine Name: ${medicine.name}`, { indent: 10 });
+    currentY += doc.heightOfString(`-:  Medicine Name: ${medicine.name}`) + 5;
+
+    doc.moveDown();
+    applyStyles(doc, getStyles('medicines', 'Dosage'));
+    doc.text(`Dosage: ${medicine.dosage}`, { indent: 20 });
+    currentY += doc.heightOfString(`Dosage: ${medicine.dosage}`) + 5;
+    doc.moveDown();
+    applyStyles(doc, getStyles('medicines', 'Timings'));
+    doc.text(`Timings: `, { indent: 20 });
+    currentY += doc.heightOfString(`Timings:`) + 5;
+    doc.moveDown();
+    applyStyles(doc, getStyles('medicines', 'Timings'));
+
+    doc.text(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'},`, { indent: 20 });
+    currentY += doc.heightOfString(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'},`) + 5;
+    doc.moveDown();
+    applyStyles(doc, getStyles('medicines', 'Timings'));
+
+    doc.text(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`, { indent: 20 });
+    currentY += doc.heightOfString(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`) + 5;
+    doc.moveDown();
+    applyStyles(doc, getStyles('medicines', 'Timings'));
+
+    doc.text(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`, { indent: 20 });
+    currentY += doc.heightOfString(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`) + 5;
+    doc.moveDown();
+    applyStyles(doc, getStyles('medicines', 'Before Food'));
+    doc.text(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`, { indent: 20 });
+    currentY += doc.heightOfString(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`) + 5;
+    doc.moveDown();
+    applyStyles(doc, getStyles('medicines', 'After Food'));
+    doc.text(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`, { indent: 20 });
+    currentY += doc.heightOfString(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`) + 5;
+    doc.moveDown();
+    applyStyles(doc, getStyles('medicines', 'After Food'));
+    doc.text(`Count: ${medicine.count }`, { indent: 20 });
+    currentY += doc.heightOfString(`Count: ${medicine.count}`) + 5;
+    doc.moveDown();
+    doc.moveDown();
+  });
+
+  doc.end();
+};
+
+const downloadpdf = async (req, res) => {
+  try {
+    const { tenantDBConnection } = req;
+    const { patientId, appointmentId } = req.params;
+    const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
+
+    const patient = await PatientModel.findById(patientId);
+    if (!patient) {
+      return res.status(404).json({ success: false, error: 'Patient not found', errorcode: 1021 });
+    }
+
+    const appointment = patient.appointment_history.id(appointmentId);
+    if (!appointment) {
+      return res.status(404).json({ success: false, error: 'Appointment not found', errorcode: 1028 });
+    }
+
+    const clinic = await Clinic.findOne({ _id: req.user._id }).exec();
+    if (!clinic) {
+      return res.status(404).json({ success: false, error: 'Clinic not found', errorcode: 1030 });
+    }
+
+    const doctors = await doctor.findById(appointment.doctor).exec();
+    if (!doctors) {
+      return res.status(404).json({ success: false, error: 'Doctor not found', errorcode: 1031 });
+    }
+
+    const template = await Template.findOne({ clinic_id: req.user._id });
+    if (!template) {
+      return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
+    }
+
+    const doc = new PDFDocument();
+    
+    // Set headers to trigger a download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="Prescription.pdf"');
+
+    // Create the PDF and stream it to the response
+    createPdf(doc, { callback: (pdfData) => res.end(pdfData) }, clinic, doctors, template, appointment, patient);
+
+    doc.pipe(res); // Pipe the PDF document to the response
+
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error', errorcode: 1050 });
+  }
+};
 
 
 
@@ -1171,5 +1448,6 @@ module.exports = {
   getFollowUpList,
   getAllPatientslist,
   getAllrelationlist,
-  resendOtp
+  resendOtp,
+  downloadpdf
 };
