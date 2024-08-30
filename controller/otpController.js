@@ -158,14 +158,16 @@ const generateToken = async (req, res) => {
       _id: doctorId,
       'clinics.clinicId': clinicId
     });
-
+    
+    console.log("doctors", doctors);
+    
     if (!doctors) {
       return res.status(404).json({ success: false, message: 'Doctor with the specified clinicId not found' });
     }
 
-    const clinicDetails = doctors.clinics.find(clinic => clinic.clinicId.toString() === clinicId);
+    const clinicDetails = doctors.clinics.filter(clinic => clinic.clinicId.toString() === clinicId);
 
-    if (!clinicDetails) {
+    if (!clinicDetails.length) {
       return res.status(404).json({ success: false, message: 'Clinic details not found' });
     }
 
@@ -173,18 +175,19 @@ const generateToken = async (req, res) => {
       _id: doctors._id,
       name: doctors.name,
       mobile_number: doctors.mobile_number,
-      clinics: [clinicDetails],
-      type:"doctor"
+      clinics: clinicDetails,
+      type: "doctor"
     };
 
     const token = signInToken(doctordata);
 
-    res.status(200).json({ success: true,message:"token generated succesfully", doctordata, token });
+    res.status(200).json({ success: true, message: "Token generated successfully", doctordata, token });
   } catch (error) {
     console.error('Error fetching clinic details:', error);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
+
 
 
 const resendOtp = async (req, res) => {
