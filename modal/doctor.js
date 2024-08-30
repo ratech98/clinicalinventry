@@ -69,9 +69,9 @@ const doctorSchema = new Schema({
     type: Boolean,
     default: false
   },
-  ug_qualification: [{
+  ug_qualification: {
     type: String
-  }],
+  },
   pg_qualification:[ {
     type: String
   }],
