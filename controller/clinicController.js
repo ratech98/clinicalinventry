@@ -110,48 +110,55 @@ const getAllClinics = async (req, res) => {
 
 
 
-const getClinicById= async (req, res) => {
+const getClinicById = async (req, res) => {
   try {
-
-    const id=req.user._id
-    const clinic = await Clinic.findById(id)
-      .populate({
-        path: 'subscription_details.subscription_id',
-        populate: {
-          path: 'title',
-        }
-      });
+    const id = req.user._id;
+    const clinic = await Clinic.findById(id).populate({
+      path: 'subscription_details.subscription_id',
+      populate: { path: 'title' },
+    });
 
     if (!clinic) {
       return res.status(404).json({ error: errormesaages[1001], errorcode: 1001 });
     }
 
-    const doctorsUnsubscribed = await doctor.countDocuments({
-      'clinics.clinicId': id,
-      'clinics.subscription': false
-    });
-    const receptionistsSubscribed = await Receptionist.countDocuments({
-      clinic: id,
-      subscription: false
-    });
+    let balancedue = false;
+    const subscription = clinic.subscription_details[0];
+console.log("subscription",subscription)
+    if (!subscription.subscription_id || new Date(subscription.subscription_enddate) >= new Date()) {
+      balancedue = false;
+      console.log("if")
+    } else {
+      const doctorsUnsubscribed = await doctor.countDocuments({
+        'clinics.clinicId': id,
+        'clinics.subscription': false,
+      });
+      const receptionistsSubscribed = await Receptionist.countDocuments({
+        clinic: id,
+        subscription: false,
+      });
 
-    // Determine the balancedue status
-    const balancedue = (doctorsUnsubscribed === 0 && receptionistsSubscribed === 0) ? false : true;
+      balancedue = doctorsUnsubscribed > 0 || receptionistsSubscribed > 0;
+      console.log("else")
+    }
+
     const doctorsCount = await doctor.countDocuments({ 'clinics.clinicId': id });
     const receptionistsCount = await Receptionist.countDocuments({ clinic: id });
+
     res.json({
       success: true,
       message: "Clinic fetched successfully",
       clinic,
       balancedue,
       doctorsCount,
-      receptionistsCount
+      receptionistsCount,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 
@@ -169,16 +176,26 @@ const getClinicId = async (req, res) => {
       return res.status(404).json({ error: errormesaages[1001], errorcode: 1001 });
     }
 
-    const doctorsUnsubscribed = await doctor.countDocuments({
-      'clinics.clinicId': req.params.id,
-      'clinics.subscription': false
-    });
-    const receptionistsSubscribed = await Receptionist.countDocuments({
-      clinic: req.params.id,
-      subscription: false
-    });
+   
+    let balancedue = false;
+    const subscription = clinic.subscription_details[0];
+console.log("subscription",subscription)
+    if (!subscription.subscription_id || new Date(subscription.subscription_enddate) >= new Date()) {
+      balancedue = false;
+      console.log("if")
+    } else {
+      const doctorsUnsubscribed = await doctor.countDocuments({
+        'clinics.clinicId': id,
+        'clinics.subscription': false,
+      });
+      const receptionistsSubscribed = await Receptionist.countDocuments({
+        clinic: id,
+        subscription: false,
+      });
 
-    const balancedue = (doctorsUnsubscribed === 0 && receptionistsSubscribed === 0) ? false : true;
+      balancedue = doctorsUnsubscribed > 0 || receptionistsSubscribed > 0;
+      console.log("else")
+    }
     const doctorsCount = await doctor.countDocuments({ 'clinics.clinicId': req.params.id });
     const receptionistsCount = await Receptionist.countDocuments({ clinic: req.params.id });
     res.json({

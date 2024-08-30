@@ -198,6 +198,7 @@ const importMedicinesData = async (req, res) => {
 
           if (existingMedicine) {
             duplicateMedicines.push(medicine.medicine_name);
+            console.log("existingmedicine",existingMedicine)
             return;
           }
 
