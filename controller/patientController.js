@@ -70,11 +70,11 @@ const getAllPatients = async (req, res) => {
       return res.status(200).json({ success: true, patients: [] });
     }
 
-    const doctors = await mainDBConnection.model('doctor').find()
+    const doctors = await mainDBConnection.model('doctor').find({"clinics.clinicId":req.user._id})
       .limit(limit)
       .skip(startIndex);
-
-    const todayUTC = new Date().toISOString().split('T')[0]; // Outputs 'YYYY-MM-DD'
+console.log("doctors",doctors)
+    const todayUTC = new Date().toISOString().split('T')[0]; 
 
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
       const availabilityDoc = await Availability.findOne({
@@ -104,7 +104,7 @@ const getAllPatients = async (req, res) => {
     });
 
     const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
-
+// console.log(doctorAvailability)
     // Count available and unavailable doctors
     const availableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'available').length;
     const unavailableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'unavailable').length;
