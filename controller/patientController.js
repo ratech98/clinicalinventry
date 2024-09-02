@@ -509,6 +509,7 @@ console.log(appointment)
     if (!clinic) {
       return res.status(404).json({ success: false, error: 'Clinic not found', errorcode: 1030 });
     }
+    console.log(clinic)
 
     const doctors = await doctor.findById(appointment.doctor).exec();
     if (!doctors) {
@@ -575,13 +576,12 @@ console.log(appointment)
         }
       }
     
-      let currentY = appliedStyles.margin + (template.logo ? 50 : 0); // Adjust initial Y based on logo height if present
+      let currentY = appliedStyles.margin + (template.logo ? 50 : 0);
     
-      // Clinic details
       const clinicDetailsX = appliedStyles.margin + 100;
       applyStyles(doc, getStyles('clinicDetails', 'Clinic Name'));
       doc.text(` ${clinic.clinic_name}`, clinicDetailsX, currentY);
-      currentY += doc.heightOfString(clinic.clinic_name) + 5; // Adjust Y position dynamically
+      currentY += doc.heightOfString(clinic.clinic_name) + 5; 
     
       applyStyles(doc, getStyles('clinicDetails', 'Contact number'));
       doc.text(` ${clinic.mobile_number}`, clinicDetailsX, currentY);
