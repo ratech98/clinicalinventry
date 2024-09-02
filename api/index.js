@@ -16,6 +16,7 @@ const notificationrouter=require('../routes/notificationRouter')
 const subscriptionRouter= require('../routes/subscriptionRouter')
 const smstemplateRouter=require('../routes/smstemplateRouter')
 const bondtypeRouter=require('../routes/bondtypeRouter')
+const termsandconditionsrouter=require('../routes/termsandcondition')
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -42,6 +43,7 @@ app.use('/', patientRouter);
 app.use('/', receptionistRouter);
 app.use('/',prescriptiontemplateRouter)
 app.use('/',adminRouter)
+app.use('/',termsandconditionsrouter)
 app.use('/',staffRoleRouter)
 
 app.get("/", (req, res) => {
