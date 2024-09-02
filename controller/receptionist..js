@@ -429,28 +429,35 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     const { search, page = 1, limit = 10 } = req.query;
 
     const todayUTC = moment().format('DD-MM-YYYY');    
-    const todayDay = new Date(todayUTC).getDay(); // Get the day of the week (0-6)
+    const todayDay = new Date(todayUTC).getDay(); 
 
-    const doctorQuery = { 'clinics.clinicId': id,"clinics.verified":true ,'clinics.subscription':true};
-    if (search) {
+    const doctorQuery = {
+      clinics: {
+        $elemMatch: {
+          clinicId: id,
+          verified: true,
+          subscription: true
+        }
+      }
+    };    if (search) {
       doctorQuery.$or = [
         { specialist: { $regex: search, $options: 'i' } },
         { name: { $regex: search, $options: 'i' } }
       ];
     }
-    
     const totalDoctors = await doctor.countDocuments(doctorQuery);
     const totalPages = Math.ceil(totalDoctors / limit);
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
-
+console.log(doctorQuery)
     const doctors = await doctor.find(doctorQuery).select('specialist name mobile_number')
       .limit(limit)
       .skip(startIndex);
-
+      console.log(doctors)
     if (!doctors.length) {
       return res.status(200).json({success:true, doctorAvailability: []});
     }
+ 
 
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
       const availabilityDoc = await Availability.findOne({
