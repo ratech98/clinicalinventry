@@ -31,7 +31,7 @@ const addClinic = async (req, res) => {
 
 const getAllClinics = async (req, res) => {
   try {
-    const { adminVerified } = req.query;
+    const { adminVerified, pendingDue } = req.query;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
@@ -45,7 +45,7 @@ const getAllClinics = async (req, res) => {
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    const clinics = await Clinic.find(filter)
+    let clinics = await Clinic.find(filter)
       .populate({
         path: 'subscription_details.subscription_id',
         populate: {
@@ -55,40 +55,56 @@ const getAllClinics = async (req, res) => {
       .skip(startIndex)
       .limit(limit);
 
-    await Promise.all(clinics.map(async (clinic) => {
-      const currentDate = moment();
-      let remainingDays = 0;
-      let remainingHours = 0;
+    clinics = await Promise.all(
+      clinics.map(async (clinic) => {
+        const currentDate = moment();
+        let remainingDays = 0;
+        let remainingHours = 0;
 
-      clinic.subscription_details.forEach(subscriptionDetail => {
-        const startDate = moment(subscriptionDetail.subscription_startdate, 'DD-MM-YYYY HH:mm:ss');
-        const endDate = moment(subscriptionDetail.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
+        clinic.subscription_details.forEach((subscriptionDetail) => {
+          const startDate = moment(subscriptionDetail.subscription_startdate, 'DD-MM-YYYY HH:mm:ss');
+          const endDate = moment(subscriptionDetail.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
 
-        if (endDate.isAfter(currentDate)) {
-          if (startDate.isAfter(currentDate)) {
-            remainingDays += endDate.diff(startDate, 'days');
-            remainingHours += endDate.diff(startDate, 'hours') % 24;
+          if (endDate.isAfter(currentDate)) {
+            if (startDate.isAfter(currentDate)) {
+              remainingDays += endDate.diff(startDate, 'days');
+              remainingHours += endDate.diff(startDate, 'hours') % 24;
+            } else {
+              remainingDays += endDate.diff(currentDate, 'days');
+              remainingHours += endDate.diff(currentDate, 'hours') % 24;
+            }
           } else {
-            remainingDays += endDate.diff(currentDate, 'days');
-            remainingHours += endDate.diff(currentDate, 'hours') % 24;
+            remainingDays += endDate.diff(currentDate, 'days'); // Calculate negative days
+            remainingHours += endDate.diff(currentDate, 'hours') % 24; // Calculate negative hours
           }
-        } else {
-          remainingDays += endDate.diff(currentDate, 'days'); // Calculate negative days
-          remainingHours += endDate.diff(currentDate, 'hours') % 24; // Calculate negative hours
-        }
-      });
+        });
 
-      clinic._doc.remainingDays = remainingDays;
-      clinic._doc.remainingHours = remainingHours;
+        clinic._doc.remainingDays = remainingDays;
+        clinic._doc.remainingHours = remainingHours;
 
-      const doctorsCount = await doctor.countDocuments({ 'clinics.clinicId': clinic._id });
-      const receptionistsCount = await Receptionist.countDocuments({ clinic: clinic._id });
-      const totalStaffCount = doctorsCount + receptionistsCount;
+        const doctorsCount = await doctor.countDocuments({ 'clinics.clinicId': clinic._id });
+        const receptionistsCount = await Receptionist.countDocuments({ clinic: clinic._id });
+        const totalStaffCount = doctorsCount + receptionistsCount;
 
-      clinic._doc.doctorsCount = doctorsCount;
-      clinic._doc.receptionistsCount = receptionistsCount;
-      clinic._doc.totalStaffCount = totalStaffCount;
-    }));
+        clinic._doc.doctorsCount = doctorsCount;
+        clinic._doc.receptionistsCount = receptionistsCount;
+        clinic._doc.totalStaffCount = totalStaffCount;
+
+        return clinic;
+      })
+    );
+
+    if (pendingDue !== undefined) {
+      const ispendingDueTrue = pendingDue === 'true';
+
+      clinics = clinics.filter((clinic) =>
+        ispendingDueTrue ? clinic._doc.remainingDays <= 0 : clinic._doc.remainingDays > 0
+      );
+      const filteredClinicsCount = clinics.length;
+      totalClinics=filteredClinicsCount
+    }
+
+   
 
     res.json({
       success: true,
@@ -96,17 +112,18 @@ const getAllClinics = async (req, res) => {
       totalCount: totalClinics,
       page,
       limit,
-      totalPages,
+      totalPages: Math.ceil(totalClinics / limit),
       startIndex: startIndex + 1,
       endIndex: endIndex > totalClinics ? totalClinics : endIndex,
       currentPage: page,
-      clinics
+      clinics,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 

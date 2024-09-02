@@ -176,17 +176,43 @@ const verifyDoctorClinic = async (req, res) => {
   }
 };
 const deleteDoctor = async (req, res) => {
+  const { doctorId, clinicId } = req.params;
+
   try {
-    const doctors = await doctor.findByIdAndDelete(req.params.id);
-    if (!doctors) {
-      return res.status(400).json({success:false, error:  errormesaages[1002], errorcode: 1002 });
+    const doctors = await doctor.findById(doctorId);
+
+    if (!doctor) {
+      return res.status(400).json({
+        success: false,
+        error: "Doctor not found",
+        errorcode: 1002
+      });
     }
+
+    if (clinicId) {
+      const clinicsCount = doctors.clinics.length;
+
+      if (clinicsCount === 1 && doctors.clinics[0].clinicId.toString() === clinicId) {
+        await doctor.findByIdAndDelete(doctorId);
+        return res.json({ success: true, message: "Doctor deleted successfully" });
+      }
+
+      doctors.clinics = doctors.clinics.filter(clinic => clinic.clinicId.toString() !== clinicId);
+
+      await doctors.save();
+
+      return res.json({ success: true, message: "Clinic details removed successfully from the doctor" });
+    }
+
+    await doctor.findByIdAndDelete(doctorId);
     res.json({ success: true, message: "Doctor deleted successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
 
 const addClinicToDoctor = async (req, res) => {
   const { doctorId, clinicId } = req.body;

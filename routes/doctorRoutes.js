@@ -21,7 +21,7 @@ router.get('/doctors',isAuth, getAllDoctors);
 router.get('/doctors/clinic/:id', getClinicDetailsByDoctorId);
 router.get('/doctors/:id',isAuth, getDoctorById);
 router.put('/doctors/:id',upload, updateDoctor);
-router.delete('/doctors/:id',isAuth, deleteDoctor);
+router.delete('/doctors/:doctorId/:clinicId',isAuth, deleteDoctor);
 router.put('/doctors/status',isAuth, updateDoctorAvailability);
 router.put('/doctors/verify/clinic',isAuth, verifyDoctorClinic);
 router.post('/update_clinic_to_doctor',isAuth,addClinicToDoctor)

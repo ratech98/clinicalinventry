@@ -79,9 +79,10 @@ clinicSchema.pre('findOneAndUpdate', async function (next) {
       const docToUpdate = await this.model.findOne(this.getQuery());
       console.log('Document to update:', docToUpdate);
 
-      if (!docToUpdate.dbUri && docToUpdate.clinic_name) {
+      if (!docToUpdate.dbUri && docToUpdate.email) {
+        const username = docToUpdate.email.split('@')[0];
         const currentdate = moment().format('DD-MM-YYYY');
-        const dbName = `Di_${docToUpdate.clinic_name.toLowerCase().replace(/\s/g, '_')}_db${currentdate}`;
+        const dbName = `Di_${username.toLowerCase().replace(/\s/g, '_')}_db`;
         console.log('Generated dbName:', dbName);
 
         const uri = `mongodb+srv://testuser1:saravana03@cluster0.mqxbump.mongodb.net/${dbName}?retryWrites=true&w=majority`;
