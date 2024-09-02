@@ -40,21 +40,15 @@ const getAllClinics = async (req, res) => {
       filter.adminVerified = adminVerified;
     }
 
-    const totalClinics = await Clinic.countDocuments(filter);
-    const totalPages = Math.ceil(totalClinics / limit);
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-
     let clinics = await Clinic.find(filter)
       .populate({
         path: 'subscription_details.subscription_id',
         populate: {
           path: 'title'
         }
-      })
-      .skip(startIndex)
-      .limit(limit);
+      });
 
+    // Calculate remaining days and hours for each clinic
     clinics = await Promise.all(
       clinics.map(async (clinic) => {
         const currentDate = moment();
@@ -74,8 +68,8 @@ const getAllClinics = async (req, res) => {
               remainingHours += endDate.diff(currentDate, 'hours') % 24;
             }
           } else {
-            remainingDays += endDate.diff(currentDate, 'days'); // Calculate negative days
-            remainingHours += endDate.diff(currentDate, 'hours') % 24; // Calculate negative hours
+            remainingDays += endDate.diff(currentDate, 'days');
+            remainingHours += endDate.diff(currentDate, 'hours') % 24;
           }
         });
 
@@ -94,17 +88,20 @@ const getAllClinics = async (req, res) => {
       })
     );
 
+    // Apply pendingDue filter after calculating the remaining days and hours
     if (pendingDue !== undefined) {
-      const ispendingDueTrue = pendingDue === 'true';
-
+      const isPendingDueTrue = pendingDue === 'true';
       clinics = clinics.filter((clinic) =>
-        ispendingDueTrue ? clinic._doc.remainingDays <= 0 : clinic._doc.remainingDays > 0
+        isPendingDueTrue ? clinic._doc.remainingDays <= 0 : clinic._doc.remainingDays > 0
       );
-      const filteredClinicsCount = clinics.length;
-      totalClinics=filteredClinicsCount
     }
 
-   
+    // Now apply pagination on the filtered clinics
+    const totalClinics = clinics.length;
+    const totalPages = Math.ceil(totalClinics / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginatedClinics = clinics.slice(startIndex, endIndex);
 
     res.json({
       success: true,
@@ -112,17 +109,18 @@ const getAllClinics = async (req, res) => {
       totalCount: totalClinics,
       page,
       limit,
-      totalPages: Math.ceil(totalClinics / limit),
+      totalPages,
       startIndex: startIndex + 1,
       endIndex: endIndex > totalClinics ? totalClinics : endIndex,
       currentPage: page,
-      clinics,
+      clinics: paginatedClinics,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 
