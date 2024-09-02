@@ -1,4 +1,4 @@
-const { terms_and_conditions, about_us, helpandsupport } = require("../modal/termsandconditions");
+const { terms_and_conditions, about_us, helpandsupport, privacypolicy } = require("../modal/termsandconditions");
 const { errormesaages } = require("../errormessages");
 
 
@@ -174,6 +174,65 @@ const createaboutus = async (req, res) => {
     }
   };
 
+
+  const createaprivacypolicy = async (req, res) => {
+    try {
+      await privacypolicy.deleteMany({});
+  
+      const privacy_policy = new privacypolicy({
+        content: req.body.content,
+      });
+  
+      await privacy_policy.save();
+  
+      res.status(200).json({
+        success: true,
+        message: "privacy_policy added successfully",
+        about_us: privacy_policy,
+      });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  };
+  
+  
+  const getAllprivacy_policy = async (req, res) => {
+    try {
+      const privacy_policy = await privacypolicy.find();
+      res.json({ success: true, message: "privacy_policy fetched successfully", privacy_policy });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  const updateprivacy_policy = async (req, res) => {
+    try {
+      const privacy_policy = await privacypolicy.findById(req.params.id);
+      if (!privacy_policy) {
+        return res
+          .status(400)
+          .json({ error: errormesaages[1055], errorcode: 1055 });
+      }
+  
+     
+  
+    
+  
+      privacy_policy.content = req.body.content 
+      
+  
+      const updatedprivacy_policy = await privacy_policy.save();
+  
+      res.json({
+        success: true,
+        message: "aboutus updated successfully",
+        privacy_policys: updatedprivacy_policy,
+      });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  };
+
 module.exports = {
   createterms_and_conditions,
   getAllterms_and_conditionss,
@@ -185,6 +244,9 @@ module.exports = {
   getAllabout_us,
   createhelpandsupport,
   getAllhelpandsupport,
+  createaprivacypolicy,
+  getAllprivacy_policy,
+  updateprivacy_policy
 
 
 };

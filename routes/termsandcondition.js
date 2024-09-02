@@ -1,5 +1,5 @@
 const express = require('express');
-const { createterms_and_conditions, getAllterms_and_conditionss, updateterms_and_conditions, createaboutus, getAllabout_us, createhelpandsupport, getAllhelpandsupport } = require('../controller/termandconditionController');
+const { createterms_and_conditions, getAllterms_and_conditionss, updateterms_and_conditions, createaboutus, getAllabout_us, createhelpandsupport, getAllhelpandsupport, createaprivacypolicy, getAllprivacy_policy } = require('../controller/termandconditionController');
 
 const router = express.Router();
 
@@ -16,6 +16,12 @@ router.get('/getabout_us',getAllabout_us)
 router.post('/addhelpandsupport',createhelpandsupport)
 
 router.get('/gethelpandsupport',getAllhelpandsupport)
+
+router.post('/addprivacypolicy',createaprivacypolicy)
+
+router.get('/getprivacypolicy',getAllprivacy_policy)
+
+
 
 
 module.exports=router

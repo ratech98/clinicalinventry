@@ -28,6 +28,18 @@ const aboutusSchema = new Schema({
   
   const about_us = mongoose.model('about_us', aboutusSchema);
 
+  const privacySchema = new Schema({
+    content: {
+      type: String,
+      required: true,
+     
+    },
+   
+  
+  },{timestamps:true}
+  );
+  
+  const privacypolicy = mongoose.model('privacypolicy', privacySchema);
 
 const helpandsupportschema = new Schema({
     name: {
@@ -59,4 +71,4 @@ const helpandsupportschema = new Schema({
   
   const helpandsupport = mongoose.model('helpandsupport', helpandsupportschema);
 
-module.exports = {terms_and_conditions,about_us,helpandsupport}
+module.exports = {terms_and_conditions,about_us,helpandsupport,privacypolicy}
