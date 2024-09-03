@@ -1040,7 +1040,7 @@ const upload_diagnose_report =async (req, res) => {
   try {
     const { tenantDBConnection } = req;
     const { patientId } = req.params;
-    const { report_name } = req.body;
+    const { report_name,date } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -1052,8 +1052,7 @@ const upload_diagnose_report =async (req, res) => {
     if (!patient) {
       return res.status(404).json({ error:  errormesaages[1021], errorcode: 1021 });
     }
-    const currentDate = moment().format('DD-MM-YYYY'); 
-    const originalFilename = `${patient.name}_${report_name}_${currentDate}`;
+    const originalFilename = `${patient.name}_${report_name}_${date}`;
     const sanitizedFilename = originalFilename.replace(/[^a-zA-Z0-9.]/g, '_');
     const imagePath = `receptionst/${Date.now()}_${sanitizedFilename}`;
     await gcsStorage.bucket(bucketName).file(imagePath).save(req.file.buffer);
