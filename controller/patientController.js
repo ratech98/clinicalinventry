@@ -70,43 +70,43 @@ const getAllPatients = async (req, res) => {
       return res.status(200).json({ success: true, patients: [] });
     }
 
-    const doctors = await mainDBConnection.model('doctor').find({"clinics.clinicId":req.user._id})
-      .limit(limit)
-      .skip(startIndex);
-console.log("doctors",doctors)
-    const todayUTC = new Date().toISOString().split('T')[0]; 
+    const doctors = await mainDBConnection.model('doctor').find({ "clinics.clinicId": req.user._id })
+    .limit(limit)
+    .skip(startIndex);
 
-    const doctorAvailabilityPromises = doctors.map(async (doctor) => {
-      const availabilityDoc = await Availability.findOne({
-        doctorId: doctor._id,
-        clinicId: req.user._id
-      });
+  const todayUTC = new Date().toISOString().split('T')[0]; 
 
-      let availabilityStatus = 'unavailable';
-      if (availabilityDoc) {
+  const doctorAvailabilityPromises = doctors.map(async (doctor) => {
+    const availabilityDoc = await Availability.findOne({
+      doctorId: doctor._id,
+      clinicId: req.user._id
+    });
+
+    let availabilityStatus = 'unavailable';
+    if (availabilityDoc) {
+      const unavailableDates = availabilityDoc.unavailable.map(u => u.date.toISOString().split('T')[0]);
+
+      if (unavailableDates.includes(todayUTC)) {
+        availabilityStatus = 'unavailable';
+      } else {
         const todayAvailability = availabilityDoc.availabilities.find(avail => avail.day === new Date().toLocaleString('en-us', { weekday: 'long' }));
-        const unavailableSlots = availabilityDoc.unavailable.find(u => u.date.toISOString().split('T')[0] === todayUTC);
-
         if (todayAvailability) {
-          const availableSlots = todayAvailability.slots.filter(slot => {
-            return !unavailableSlots || !unavailableSlots.slots.some(unavailableSlot => unavailableSlot.timeSlot === slot.timeSlot);
-          }).some(slot => slot.available);
-
+          const availableSlots = todayAvailability.slots.some(slot => slot.available);
           availabilityStatus = availableSlots ? 'available' : 'unavailable';
         }
       }
+    }
 
-      return {
-        doctor,
-        availability: availabilityStatus
-      };
-    });
+    return {
+      doctor,
+      availability: availabilityStatus
+    };
+  });
 
-    const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
-// console.log(doctorAvailability)
-    // Count available and unavailable doctors
-    const availableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'available').length;
-    const unavailableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'unavailable').length;
+  const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
+
+  const availableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'available').length;
+  const unavailableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'unavailable').length;
 
     res.json({
       success: true,

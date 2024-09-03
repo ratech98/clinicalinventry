@@ -244,48 +244,49 @@ function formatDate(date) {
   return `${year}-${month}-${day}`;
 }
 
+
+
 // const addDoctorAvailability = async (req, res) => {
 //   const { doctorId, clinicId, days, slots } = req.body;
 
 //   try {
 //     const doctors = await doctor.findById(doctorId);
 //     if (!doctors) {
-//       return res.status(404).json({success:false, error: errormesaages[1002], errorcode: 1002 });
+//       return res.status(404).json({ success: false, error: 'Doctor not found', errorcode: 1002 });
 //     }
 
 //     const clinic = await Clinic.findById(clinicId);
 //     if (!clinic) {
-//       return res.status(404).json({ success:false, error: errormesaages[1001], errorcode: 1001 });
+//       return res.status(404).json({ success: false, error: 'Clinic not found', errorcode: 1001 });
 //     }
 
-//     const nextOccurrences = calculateNextOccurrences(days);
-
-//     const availabilities = nextOccurrences.map(date => ({
-//       date: formatDate(date), // Format date as YYYY-MM-DD
-//       day: getDayOfWeek(date),
+//     const availabilities = days.map(day => ({
+//       day,
 //       slots: slots.map(slot => ({ timeSlot: slot, available: true }))
 //     }));
 
-//     for (const availability of availabilities) {
-//       const existingAvailability = await Availability.findOne({
-//         doctorId,
-//         'availabilities.date': availability.date,
-//         'availabilities.slots.timeSlot': { $in: slots }
-//       });
-//       if (existingAvailability) {
-//         return res.status(400).json({ success: false, error: `Doctor already has availability on ${availability.date} for one of the provided slots` });
-//       }
+//     const existingAvailability = await Availability.findOne({
+//       doctorId,
+//       'availabilities.day': { $in: days },
+//       'availabilities.slots.timeSlot': { $in: slots }
+//     });
+
+//     if (existingAvailability) {
+//       return res.status(400).json({ success: false, error: 'Doctor already has availability on one of the provided days for one of the slots' });
 //     }
 
-//     // Create new availability document
 //     const newAvailability = new Availability({
 //       doctorId,
 //       clinicId,
 //       availabilities
 //     });
 
-//     // Save availability
 //     await newAvailability.save();
+//     await doctor.updateOne(
+//       { _id: doctorId, 'clinics.clinicId': clinicId },
+//       { $set: { 'clinics.$.scheduled': true } }
+//     );
+
 
 //     res.status(201).json({ success: true, message: 'Availability added successfully', availability: newAvailability });
 //   } catch (error) {
@@ -294,56 +295,65 @@ function formatDate(date) {
 //   }
 // };
 
-
 const addDoctorAvailability = async (req, res) => {
-  const { doctorId, clinicId, days, slots } = req.body;
+  const { doctorId, clinicId, availabilities } = req.body;
 
   try {
-    const doctors = await doctor.findById(doctorId);
-    if (!doctors) {
+    const doctorExists = await doctor.findById(doctorId);
+    if (!doctorExists) {
       return res.status(404).json({ success: false, error: 'Doctor not found', errorcode: 1002 });
     }
 
-    const clinic = await Clinic.findById(clinicId);
-    if (!clinic) {
+    const clinicExists = await Clinic.findById(clinicId);
+    if (!clinicExists) {
       return res.status(404).json({ success: false, error: 'Clinic not found', errorcode: 1001 });
     }
 
-    const availabilities = days.map(day => ({
-      day,
-      slots: slots.map(slot => ({ timeSlot: slot, available: true }))
-    }));
-
-    const existingAvailability = await Availability.findOne({
-      doctorId,
-      'availabilities.day': { $in: days },
-      'availabilities.slots.timeSlot': { $in: slots }
-    });
+    const existingAvailability = await Availability.findOne({ doctorId, clinicId });
 
     if (existingAvailability) {
-      return res.status(400).json({ success: false, error: 'Doctor already has availability on one of the provided days for one of the slots' });
+      availabilities.forEach(({ day, slots }) => {
+        const dayAvailability = existingAvailability.availabilities.find(avail => avail.day === day);
+
+        if (dayAvailability) {
+          slots.forEach(slot => {
+            if (!dayAvailability.slots.find(s => s.timeSlot === slot)) {
+              dayAvailability.slots.push({ timeSlot: slot, available: true });
+            }
+          });
+        } else {
+          existingAvailability.availabilities.push({
+            day,
+            slots: slots.map(slot => ({ timeSlot: slot, available: true }))
+          });
+        }
+      });
+
+      await existingAvailability.save();
+    } else {
+      const newAvailability = new Availability({
+        doctorId,
+        clinicId,
+        availabilities: availabilities.map(({ day, slots }) => ({
+          day,
+          slots: slots.map(slot => ({ timeSlot: slot, available: true }))
+        }))
+      });
+
+      await newAvailability.save();
     }
 
-    const newAvailability = new Availability({
-      doctorId,
-      clinicId,
-      availabilities
-    });
-
-    await newAvailability.save();
     await doctor.updateOne(
       { _id: doctorId, 'clinics.clinicId': clinicId },
       { $set: { 'clinics.$.scheduled': true } }
     );
 
-
-    res.status(201).json({ success: true, message: 'Availability added successfully', availability: newAvailability });
+    res.status(201).json({ success: true, message: 'Availability added or updated successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
 
 
 function calculateNextOccurrences(days) {
@@ -724,6 +734,7 @@ const get_availability = async (req, res) => {
         let slotsMatch = true;
         let dayFilter = {};
 
+        // Check for date filter
         if (date) {
           const targetDate = new Date(date);
           dayFilter = {
@@ -733,14 +744,20 @@ const get_availability = async (req, res) => {
           dayMatch = dayFilter.day === avail.day;
 
           const unavailableSlots = item.unavailable.find(u => u.date.toDateString() === dayFilter.date.toDateString());
+          
+          // If any unavailable slots are found for the specific date, exclude the entire day's slots
           if (unavailableSlots) {
-            avail.slots = avail.slots.filter(slot => 
-              !unavailableSlots.slots.some(unavailableSlot => unavailableSlot.timeSlot === slot.timeSlot)
-            )
+            return false; // Exclude the entire day's availability
           }
         } else if (day) {
           dayFilter = { day: new RegExp(day, 'i') };
           dayMatch = dayFilter.day.test(avail.day);
+
+          // Check if any slots are unavailable for the given day
+          const unavailableSlotsForDay = item.unavailable.find(u => u.day === avail.day);
+          if (unavailableSlotsForDay) {
+            return false; // Exclude the entire day's availability
+          }
         }
 
         if (dayMatch) {
@@ -752,7 +769,7 @@ const get_availability = async (req, res) => {
       });
 
       const availabilityData = {
-        _id:item._id,
+        _id: item._id,
         doctorId: item.doctorId,
         clinicId: item.clinicId,
         availabilities: filteredAvailabilities.map(avail => ({
@@ -768,6 +785,7 @@ const get_availability = async (req, res) => {
       }
     });
 
+    // Filter out empty availabilities
     clinicAvailabilities = clinicAvailabilities.filter(item => item.availabilities.length > 0);
     otherclinicAvailabilities = otherclinicAvailabilities.filter(item => item.availabilities.length > 0);
 
@@ -782,74 +800,6 @@ const get_availability = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
-
-
-
-// const get_availability = async (req, res) => {
-//   try {
-//     const { doctorId, clinicId, date, day } = req.query;
-//     let query = {};
-
-//     if (doctorId) {
-//       query.doctorId = doctorId;
-//     }
-//     if (clinicId) {
-//       query.clinicId = clinicId;
-//     }
-
-//     let dayFilter = {};
-//     if (date) {
-//       const targetDate = new Date(date);
-//       dayFilter = {
-//         day: targetDate.toLocaleString('en-us', { weekday: 'long' })
-//       };
-//     } else if (day) {
-//       dayFilter = {
-//         day: new RegExp(day, 'i')
-//       };
-//     }
-
-//     const availabilities = await Availability.find(query);
-
-//     const clinicAvailabilities = availabilities.map(item => {
-//       const filteredAvailabilities = item.availabilities.filter(avail => {
-//         let dayMatch = true;
-//         let slotsMatch = true;
-
-//         if (date) {
-//           dayMatch = dayFilter.day === avail.day;
-//         } else if (day) {
-//           dayMatch = dayFilter.day.test(avail.day);
-//         }
-
-//         if (dayMatch) {
-//           const availableSlots = avail.slots.filter(slot => slot.available === true);
-//           slotsMatch = availableSlots.length > 0;
-//         }
-
-//         return dayMatch && slotsMatch;
-//       });
-
-//       return {
-//         doctorId: item.doctorId,
-//         clinicId: item.clinicId,
-//         availabilities: filteredAvailabilities.map(avail => ({
-//           day: avail.day,
-//           slots: avail.slots.filter(slot => slot.available)
-//         }))
-//       };
-//     }).filter(item => item.availabilities.length > 0);
-
-//     res.json({ success: true, message: "Availabilities fetched successfully", availabilities: clinicAvailabilities });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ success: false, error: "Internal Server Error" });
-//   }
-// };
-
-
-
-
 
 
 

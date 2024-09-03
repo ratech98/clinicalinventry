@@ -365,52 +365,44 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    const doctors = await doctor.find(doctorQuery)
-      .limit(limit)
-      .skip(startIndex);
+    const doctors = await mainDBConnection.model('doctor').find({ "clinics.clinicId": req.user._id })
+    .limit(limit)
+    .skip(startIndex);
 
-    if (!doctors.length) {
-      return res.status(200).json({ success: true, doctorAvailability: [] });
-    }
 
-    const doctorAvailabilityPromises = doctors.map(async (doctor) => {
-      doctor.clinics = doctor.clinics.filter(clinic => clinic.clinicId.toString() === id);
+  const doctorAvailabilityPromises = doctors.map(async (doctor) => {
+    const availabilityDoc = await Availability.findOne({
+      doctorId: doctor._id,
+      clinicId: req.user._id
+    });
 
-      const availabilityDoc = await Availability.findOne({
-        doctorId: doctor._id,
-        clinicId: id
-      });
+    let availabilityStatus = 'unavailable';
+    if (availabilityDoc) {
+      const unavailableDates = availabilityDoc.unavailable.map(u => u.date.toISOString().split('T')[0]);
 
-      let availabilityStatus = 'unavailable';
-      if (availabilityDoc) {
+      // Check if today is in the unavailable dates list
+      if (unavailableDates.includes(todayUTC)) {
+        availabilityStatus = 'unavailable';
+      } else {
         const todayAvailability = availabilityDoc.availabilities.find(avail => avail.day === new Date().toLocaleString('en-us', { weekday: 'long' }));
-        const unavailableSlots = availabilityDoc.unavailable.find(u => u.date.toISOString().split('T')[0] === todayUTC);
-
         if (todayAvailability) {
-          const availableSlots = todayAvailability.slots.filter(slot => {
-            // Check if slot is in the unavailable slots
-            return !unavailableSlots || !unavailableSlots.slots.some(unavailableSlot => unavailableSlot.timeSlot === slot.timeSlot);
-          }).some(slot => slot.available);
-
+          const availableSlots = todayAvailability.slots.some(slot => slot.available);
           availabilityStatus = availableSlots ? 'available' : 'unavailable';
         }
       }
-
-      return {
-        doctor,
-        availability: availabilityStatus
-      };
-    });
-
-    const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
-
-    let filteredDoctorAvailability = doctorAvailability;
-    if (onleave) {
-      filteredDoctorAvailability = doctorAvailability.filter(doc => doc.availability === 'unavailable');
     }
 
-    const availableDoctorsCount = filteredDoctorAvailability.filter(doc => doc.availability === 'available').length;
-    const unavailableDoctorsCount = filteredDoctorAvailability.filter(doc => doc.availability === 'unavailable').length;
+    return {
+      doctor,
+      availability: availabilityStatus
+    };
+  });
+
+  const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
+
+  const availableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'available').length;
+  const unavailableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'unavailable').length;
+
 
     res.status(200).json({
       success: true,

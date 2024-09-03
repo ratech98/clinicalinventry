@@ -14,7 +14,7 @@ const availabilitySchema = new mongoose.Schema({
   }],
   unavailable: [{
     date: { type: Date, required: true },
-    slots: [slotSchema]
+   
   }]
 }, { timestamps: true });
 
