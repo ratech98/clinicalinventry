@@ -467,9 +467,99 @@ const blockOrUnblockClinic = async (req, res) => {
 
 
 
+// const update_Subscription = async (req, res) => {
+//   try {
+//     const { subscription_id, transaction_id, subscription_startdate, subscription_enddate,amount } = req.body;
+//     const clinicId = req.params.id;
+
+//     const clinic = await Clinic.findById(clinicId);
+//     if (!clinic) {
+//       return res.status(404).send({ success: false, error: errormesaages[1001], errorcode: 1001 });
+//     }
+
+ 
+// if (transaction_id === "free_trail") {
+
+//       const subscriptionDuration = await freetrail.findById(subscription_id);
+//       if (!subscriptionDuration) {
+//         return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1042});
+//       }
+//       console.log("Free trial subscription detected");
+
+//       const doctorsUnsubscribed = await doctor.countDocuments({ 'clinics.clinicId': clinicId, subscription: false });
+//     const receptionistsUnsubscribed = await Receptionist.countDocuments({ clinic: clinicId, subscription: false });
+
+//       clinic.subscription = true;
+
+//       clinic.subscription_details.push({
+//         subscription_id: subscription_id,
+//         billinghistory: [{ transaction_id, amount:amount, doctor:doctorsUnsubscribed, receptionist:receptionistsUnsubscribed }],
+//         subscription_startdate: subscription_startdate,
+//         subscription_enddate: subscription_enddate
+//       });
+//       const receptionists = await Receptionist.updateMany(
+//         { clinic: clinicId },
+//         { subscription:true },
+//         { new: true }
+//       );
+  
+//       const doctors = await doctor.updateMany(
+//         { "clinics.clinicId": clinicId },
+//         { $set: { "clinics.$.subscription": true } },
+//         { new: true }
+//       );
+//     } else {
+//       const subscriptionDuration = await SubscriptionDuration.findById(subscription_id);
+//       if (!subscriptionDuration) {
+//         return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1043 });
+//       }
+//       let currentDate = moment();
+//       if (clinic.subscription_details.length > 0) {
+//         const lastSubscription = clinic.subscription_details[clinic.subscription_details.length - 1];
+//         const lastEndDate = moment(lastSubscription.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
+//         if (lastEndDate.isAfter(currentDate)) {
+//           currentDate = lastEndDate.add(1, 'seconds');
+//         }
+//       }
+
+//       let endDate;
+//       if (subscriptionDuration.duration === 'month') {
+//         endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'months');
+//       } else if (subscriptionDuration.duration === 'year') {
+//         endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'years');
+//       } else if (subscriptionDuration.duration === 'day') {
+//         endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'days');
+//       } else {
+//         return res.status(400).send({ success: false, error: errormesaages[1045], errorcode: 1045 });
+//       }
+  
+
+//       const formattedStartDate = currentDate.format('DD-MM-YYYY HH:mm:ss');
+//       const formattedEndDate = endDate.format('DD-MM-YYYY HH:mm:ss');
+//       const receptionistsUnsubscribed = await Receptionist.countDocuments({ clinic: clinicId, subscription: false });
+//       const doctorsUnsubscribed = await doctor.countDocuments({ 'clinics.clinicId': clinicId, subscription: false });
+
+//       clinic.subscription_details.push({
+//         subscription_id,
+//         billinghistory: [{ transaction_id, amount, doctor:doctorsUnsubscribed, receptionist:receptionistsUnsubscribed }],
+//         subscription_startdate: formattedStartDate,
+//         subscription_enddate: formattedEndDate
+//       });
+//     }
+
+//     await clinic.save();
+
+//     createNotification("admin", clinic._id, `${clinic.clinic_name} paid for subscription, verify payment`);
+
+//     res.status(200).send({ success: true, message: 'Subscription details updated successfully', clinic });
+//   } catch (error) {
+//     console.error('Error updating subscription details:', error);
+//     res.status(500).send({ success: false, error: error.message });
+//   }
+// };
 const update_Subscription = async (req, res) => {
   try {
-    const { subscription_id, transaction_id, subscription_startdate, subscription_enddate,amount } = req.body;
+    const { subscription_id, transaction_id, subscription_startdate, subscription_enddate, amount } = req.body;
     const clinicId = req.params.id;
 
     const clinic = await Clinic.findById(clinicId);
@@ -477,51 +567,45 @@ const update_Subscription = async (req, res) => {
       return res.status(404).send({ success: false, error: errormesaages[1001], errorcode: 1001 });
     }
 
- 
-if (transaction_id === "free_trail") {
+    if (clinic.subscription_details.length > 0) {
+      const lastSubscription = clinic.subscription_details[clinic.subscription_details.length - 1];
+      const lastEndDate = moment(lastSubscription.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
+      const currentDate = moment();
 
+      if (currentDate.isBefore(lastEndDate)) {
+        return res.status(400).send({ success: false, message: 'Current subscription is still active. Cannot add a new subscription until it expires.' });
+      }
+    }
+
+    if (transaction_id === "free_trail") {
       const subscriptionDuration = await freetrail.findById(subscription_id);
       if (!subscriptionDuration) {
-        return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1042});
+        return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1042 });
       }
       console.log("Free trial subscription detected");
 
       const doctorsUnsubscribed = await doctor.countDocuments({ 'clinics.clinicId': clinicId, subscription: false });
-    const receptionistsUnsubscribed = await Receptionist.countDocuments({ clinic: clinicId, subscription: false });
+      const receptionistsUnsubscribed = await Receptionist.countDocuments({ clinic: clinicId, subscription: false });
 
       clinic.subscription = true;
 
       clinic.subscription_details.push({
         subscription_id: subscription_id,
-        billinghistory: [{ transaction_id, amount:amount, doctor:doctorsUnsubscribed, receptionist:receptionistsUnsubscribed }],
+        billinghistory: [{ transaction_id, amount: amount, doctor: doctorsUnsubscribed, receptionist: receptionistsUnsubscribed }],
         subscription_startdate: subscription_startdate,
         subscription_enddate: subscription_enddate
       });
-      const receptionists = await Receptionist.updateMany(
-        { clinic: clinicId },
-        { subscription:true },
-        { new: true }
-      );
-  
-      const doctors = await doctor.updateMany(
-        { "clinics.clinicId": clinicId },
-        { $set: { "clinics.$.subscription": true } },
-        { new: true }
-      );
+
+      await Receptionist.updateMany({ clinic: clinicId }, { subscription: true }, { new: true });
+      await doctor.updateMany({ "clinics.clinicId": clinicId }, { $set: { "clinics.$.subscription": true } }, { new: true });
+
     } else {
       const subscriptionDuration = await SubscriptionDuration.findById(subscription_id);
       if (!subscriptionDuration) {
         return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1043 });
       }
-      let currentDate = moment();
-      if (clinic.subscription_details.length > 0) {
-        const lastSubscription = clinic.subscription_details[clinic.subscription_details.length - 1];
-        const lastEndDate = moment(lastSubscription.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
-        if (lastEndDate.isAfter(currentDate)) {
-          currentDate = lastEndDate.add(1, 'seconds');
-        }
-      }
 
+      let currentDate = moment();
       let endDate;
       if (subscriptionDuration.duration === 'month') {
         endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'months');
@@ -532,7 +616,6 @@ if (transaction_id === "free_trail") {
       } else {
         return res.status(400).send({ success: false, error: errormesaages[1045], errorcode: 1045 });
       }
-  
 
       const formattedStartDate = currentDate.format('DD-MM-YYYY HH:mm:ss');
       const formattedEndDate = endDate.format('DD-MM-YYYY HH:mm:ss');
@@ -541,7 +624,7 @@ if (transaction_id === "free_trail") {
 
       clinic.subscription_details.push({
         subscription_id,
-        billinghistory: [{ transaction_id, amount, doctor:doctorsUnsubscribed, receptionist:receptionistsUnsubscribed }],
+        billinghistory: [{ transaction_id, amount, doctor: doctorsUnsubscribed, receptionist: receptionistsUnsubscribed }],
         subscription_startdate: formattedStartDate,
         subscription_enddate: formattedEndDate
       });
@@ -557,7 +640,6 @@ if (transaction_id === "free_trail") {
     res.status(500).send({ success: false, error: error.message });
   }
 };
-
 
 
 
