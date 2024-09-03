@@ -89,7 +89,6 @@ console.log("doctors",doctors)
 
         if (todayAvailability) {
           const availableSlots = todayAvailability.slots.filter(slot => {
-            // Check if slot is in the unavailable slots
             return !unavailableSlots || !unavailableSlots.slots.some(unavailableSlot => unavailableSlot.timeSlot === slot.timeSlot);
           }).some(slot => slot.available);
 
@@ -652,9 +651,9 @@ currentY += doc.heightOfString(qualifications || "MBBS") + 5;
       applyStyles(doc, getStyles('patientDetails', 'Gender'));
       doc.text(`Gender: ${patient.gender}`, { continued: true });
       doc.text(`                 `, { continued: true });
-      applyStyles(doc, getStyles('patientDetails', 'Gender'));
-      doc.text(`Reason: ${appointment.reason|| ""}`);
-      currentY += doc.heightOfString(`Patient Name: ${patient.name}`) + 5;
+      // applyStyles(doc, getStyles('patientDetails', 'Gender'));
+      // doc.text(`Reason: ${appointment.reason|| ""}`);
+      // currentY += doc.heightOfString(`Patient Name: ${patient.name}`) + 5;
     
       // Draw second horizontal line
       doc.moveTo(appliedStyles.margin, currentY)
@@ -1299,9 +1298,9 @@ currentY += doc.heightOfString(qualifications || "MBBS") + 5;
   applyStyles(doc, getStyles('patientDetails', 'Gender'));
   doc.text(`Gender: ${patient.gender}`, { continued: true });
   doc.text(`                 `, { continued: true });
-  applyStyles(doc, getStyles('patientDetails', 'Gender'));
-  doc.text(`Reason: ${appointment.reason|| ""}`);
-  currentY += doc.heightOfString(`Patient Name: ${patient.name}`) + 5;
+  // applyStyles(doc, getStyles('patientDetails', 'Gender'));
+  // doc.text(`Reason: ${appointment.reason|| ""}`);
+  // currentY += doc.heightOfString(`Patient Name: ${patient.name}`) + 5;
 
   // Draw second horizontal line
   doc.moveTo(appliedStyles.margin, currentY)
@@ -1473,4 +1472,4 @@ module.exports = {
   getAllrelationlist,
   resendOtp,
   downloadpdf
-};
+}

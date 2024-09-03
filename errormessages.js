@@ -53,7 +53,8 @@
     1052:"receptionist not verfied by admin",
     1053:'Receptionist with this emailId and clinic ID already exists',
     1054:'Doctor with this emailId and clinic ID already exists',
-  1055:"terms and conditions not found"
+  1055:"terms and conditions not found",
+  1056:"otp not verified, kindly contact admin and verify"
 
     
 

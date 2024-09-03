@@ -81,6 +81,9 @@ console.log(clinic)
         return res.status(400).json({  success: false,  message: errormesaages[1042], errorcode: 1042 });
   
       }
+      if(!clinic.otpVerified){
+        return res.status(400).json({  success: false,  message: errormesaages[1056], errorcode: 1056 });
+      }
 
       clinic.otp = otp;
       await clinic.save();

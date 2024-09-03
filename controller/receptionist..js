@@ -177,6 +177,9 @@ const sendReceptionistOtpForLogin = async (req, res) => {
     if (!receptionist) {
       return res.status(404).json({ success: false, message: errormesaages[1004], errorcode: 1004 });
     }
+    if(!receptionist.otpVerified){
+      return res.status(400).json({  success: false,  message: errormesaages[1056], errorcode: 1056 });
+    }
 
 
     if (receptionist.block) {

@@ -449,6 +449,10 @@ const sendDoctorOtpForLogin = async (req, res) => {
     if (!doctorData) {
       return res.status(404).json({ success: false,message: errormesaages[1002], errorcode: 1002 });
     }
+
+    if(!doctorData.otpVerified){
+      return res.status(400).json({  success: false,  message: errormesaages[1056], errorcode: 1056 });
+    }
     const templateFile = 'OTP.ejs';
     const subject = 'Di application OTP Verification';
     console.log("otp", otp);
