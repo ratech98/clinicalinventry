@@ -21,7 +21,7 @@ const addSMSType = async (req, res) => {
     res.status(200).json({ success: true, message: "SMS Type added successfully", SMSType: newSMSType });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -54,7 +54,7 @@ const getAllSMSTypes = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -70,7 +70,7 @@ const getSMSTypeById = async (req, res) => {
     res.json({ success: true, message: "SMS Type fetched successfully", SMSTypes });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -86,7 +86,7 @@ const updateSMSType = async (req, res) => {
     res.status(200).json({ success: true, message: "SMS Type updated successfully", SMSTypes });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -102,7 +102,7 @@ const deleteSMSType = async (req, res) => {
     res.json({ success: true, message: "SMS Type deleted successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -124,7 +124,7 @@ const addSMSTemplate = async (req, res) => {
     res.status(200).json({ success: true, message: "SMSTemplate added successfully", smstemplate });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 const getAllSMSTemplates = async (req, res) => {
@@ -163,7 +163,7 @@ const getAllSMSTemplates = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -180,7 +180,7 @@ const getSMSTemplateById = async (req, res) => {
     res.json({ success: true, message: "SMSTemplate fetched successfully", smstemplate });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -196,7 +196,7 @@ const updateSMSTemplate = async (req, res) => {
     res.status(200).json({ success: true, message: "SMSTemplate updated successfully", smstemplate });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -213,7 +213,7 @@ const deleteSMSTemplate = async (req, res) => {
     res.json({ success: true, message: "SMSTemplate deleted successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 

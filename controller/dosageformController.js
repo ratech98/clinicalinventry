@@ -19,7 +19,7 @@ const addDosageForm = async (req, res) => {
     res.status(200).json({ success: true, message: "Dosage form added successfully", dosageForm });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -53,7 +53,7 @@ const getAllDosageForms = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -70,7 +70,7 @@ const getDosageFormById = async (req, res) => {
     res.json({ success: true, message: "Dosage form fetched successfully", dosageForm });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -86,7 +86,7 @@ const updateDosageForm = async (req, res) => {
     res.status(200).json({ success: true, message: "Dosage form updated successfully", dosageForm });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -102,7 +102,7 @@ const deleteDosageForm = async (req, res) => {
     res.json({ success: true, message: "Dosage form deleted successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 

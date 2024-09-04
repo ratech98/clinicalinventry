@@ -31,7 +31,7 @@ const getNotifications=async (req, res) => {
       res.status(200).json({success:true,message:"notifications fetched successfully",notifications:notifications});
     } catch (error) {
       console.error('Error fetching notifications:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: error.message });
     }
   }
 
@@ -53,7 +53,7 @@ const readnotification= async (req, res) => {
       res.status(200).json(notification);
     } catch (error) {
       console.error('Error updating notification:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: error.message });
     }
   }
   const deleteNotifications = async (req, res) => {

@@ -22,7 +22,7 @@ const addReceptionist = async (req, res) => {
     res.status(200).json({ success: true, message: "Receptionist added successfully", receptionist });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -32,7 +32,7 @@ const getAllReceptionists = async (req, res) => {
     res.json({ success: true, message: "Receptionists fetched successfully", receptionists });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -42,7 +42,7 @@ const getReceptionists = async (req, res) => {
     res.json({ success: true, message: "Receptionists fetched successfully", receptionists });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -70,7 +70,7 @@ const getReceptionistById = async (req, res) => {
     res.json({ success: true, message: "Receptionist fetched successfully", receptionist });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -99,7 +99,7 @@ const updateReceptionist = async (req, res) => {
     res.status(200).json({ success: true, message: "Receptionist updated successfully", receptionist });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -112,7 +112,7 @@ const deleteReceptionist = async (req, res) => {
     res.json({ success: true, message: "Receptionist deleted successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -125,7 +125,7 @@ const updateReceptionistStatus = async (req, res) => {
     res.status(200).json({ success: true, message: "Receptionist status updated successfully", receptionist });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -148,7 +148,7 @@ const updateReceptionistVerify = async (req, res) => {
     res.status(200).json({ success: true, message: "Receptionist status updated successfully", receptionist });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 

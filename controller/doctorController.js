@@ -21,7 +21,7 @@ const addDoctor = async (req, res) => {
     res.status(200).json({ success: true, message: "Doctor added successfully", doctors });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -31,7 +31,7 @@ const getAllDoctors = async (req, res) => {
     res.json({ success: true, message: "Doctors fetched successfully", doctors });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -61,7 +61,7 @@ const getDoctorById = async (req, res) => {
     res.json({ success: true, message: "Doctor fetched successfully", doctors });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -106,7 +106,7 @@ const updateDoctor = async (req, res) => {
     res.status(200).json({ success: true, message: "Doctor updated successfully", doctors });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -208,7 +208,7 @@ const deleteDoctor = async (req, res) => {
     res.json({ success: true, message: "Doctor deleted successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -711,7 +711,7 @@ const blockOrUnblockDoctor = async (req, res) => {
 //     res.json({ success: true, message: "Availabilities fetched successfully", availabilities: clinicAvailabilities });
 //   } catch (error) {
 //     console.error(error);
-//     res.status(500).json({ success: false, error: "Internal Server Error" });
+//     res.status(500).json({ success: false, error: error.message });
 //   }
 // };
 const get_availability = async (req, res) => {
@@ -797,7 +797,7 @@ const get_availability = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, error: "Internal Server Error" });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
@@ -852,7 +852,7 @@ const addUnavailableSlots = async (req, res) => {
     res.status(200).json({ success: true, message: 'Unavailable slots added successfully', availability });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, error: "Internal Server Error" });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 const resendOtp = async (req, res) => {

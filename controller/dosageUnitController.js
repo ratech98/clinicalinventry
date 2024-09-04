@@ -20,7 +20,7 @@ const addDosageUnit = async (req, res) => {
     res.status(200).json({ success: true, message: "Dosage unit added successfully", dosageUnit });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -53,7 +53,7 @@ const getAllDosageUnits = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -69,7 +69,7 @@ const getDosageUnitById = async (req, res) => {
     res.json({ success: true, message: "Dosage unit fetched successfully", dosageUnit });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -85,7 +85,7 @@ const updateDosageUnit = async (req, res) => {
     res.status(200).json({ success: true, message: "Dosage unit updated successfully", dosageUnit });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -101,7 +101,7 @@ const deleteDosageUnit = async (req, res) => {
     res.json({ success: true, message: "Dosage unit deleted successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 

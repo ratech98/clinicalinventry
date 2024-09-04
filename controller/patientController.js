@@ -32,7 +32,7 @@ const addPatient = async (req, res) => {
     res.status(201).json({ success: true, message: "Patient added successfully", patient });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -124,7 +124,7 @@ const getAllPatients = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -180,7 +180,7 @@ query.bond={ $regex: "myself", $options: 'i' }
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 const getAllrelationlist = async (req, res) => {
@@ -210,7 +210,7 @@ const getAllrelationlist = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -299,7 +299,7 @@ const getPatients = async (req, res) => {
     res.json({ success: true, message: "Patients fetched successfully", patients });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -331,7 +331,7 @@ const getPatientById = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -351,7 +351,7 @@ const updatePatient = async (req, res) => {
     res.status(200).json({ success: true, message: "Patient updated successfully", patient });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -367,7 +367,7 @@ const deletePatient = async (req, res) => {
     res.json({ success: true, message: "Patient deleted successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -845,7 +845,7 @@ await createPdf(prescriptionDoc, {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -876,7 +876,7 @@ const getPrescription = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -964,7 +964,7 @@ console.log(clinicId,doctorId,dayOfWeek)
     res.status(200).json({ success: true, message: "Appointment added successfully", patient });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -1002,7 +1002,7 @@ const addFollowUpAppointment = async (req, res) => {
     res.status(200).json({ success: true, message: "Follow-up appointment updated successfully", patient });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 

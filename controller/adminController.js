@@ -156,7 +156,7 @@ const getAdminId = async (req, res) => {
     res.json({ success: true, message: "admin details fetched successfully", admin });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 

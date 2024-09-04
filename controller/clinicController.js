@@ -25,7 +25,7 @@ const addClinic = async (req, res) => {
     res.status(200).json({ success: true, message: "Clinic added successfully", clinic });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -117,7 +117,7 @@ const getAllClinics = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error:  error.message });
   }
 };
 
@@ -176,7 +176,7 @@ const getClinicById = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error:  error.message});
   }
 };
 
@@ -234,7 +234,7 @@ const getClinicId = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -282,7 +282,7 @@ const updateClinic = async (req, res) => {
     res.status(200).json({ success: true, message: "Clinic updated successfully", clinic });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -296,7 +296,7 @@ const deleteClinic = async (req, res) => {
     res.json({ success: true, message: "Clinic deleted successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -342,11 +342,12 @@ const verify_clinic_certificate=async (req, res) => {
 
 const getDoctorsAndAvailabilityByClinic = async (req, res) => {
   try {
-    const { id,clinicId } = req.params;
-    const { specialist, recently_joined, onleave, page = 1, limit = 10, verify,subscription } = req.query;
+    const { id } = req.params; // Clinic ID
+    const { specialist, recently_joined, onleave, page = 1, limit = 10, verify, subscription } = req.query;
 
-    const todayUTC = new Date().toISOString().split('T')[0]; // Outputs 'YYYY-MM-DD'
+    const todayUTC = new Date().toISOString().split('T')[0]; 
 
+    // Construct the query to find doctors related to the clinic
     const doctorQuery = { 'clinics.clinicId': id };
     if (specialist) {
       doctorQuery.specialist = specialist;
@@ -360,49 +361,56 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     if (subscription) {
       doctorQuery["clinics.subscription"] = true;
     }
+
+    // Get the total number of doctors for pagination
     const totalDoctors = await doctor.countDocuments(doctorQuery);
     const totalPages = Math.ceil(totalDoctors / limit);
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    const doctors = await doctor.find({ "clinics.clinicId": id })
-    .limit(limit)
-    .skip(startIndex);
+    // Find the doctors based on the query
+    const doctors = await doctor.find(doctorQuery)
+      .limit(limit)
+      .skip(startIndex);
 
+    // Map through the doctors to get their availability status and filter clinic details
+    const doctorAvailabilityPromises = doctors.map(async (doctor) => {
+      // Filter clinics to get only the relevant clinic details
+      const clinicDetails = doctor.clinics.find(clinic => clinic.clinicId.toString() === id);
 
-  const doctorAvailabilityPromises = doctors.map(async (doctor) => {
-    const availabilityDoc = await Availability.findOne({
-      doctorId: doctor._id,
-      clinicId: id
-    });
+      const availabilityDoc = await Availability.findOne({
+        doctorId: doctor._id,
+        clinicId: id
+      });
 
-    let availabilityStatus = 'unavailable';
-    if (availabilityDoc) {
-      const unavailableDates = availabilityDoc.unavailable.map(u => u.date.toISOString().split('T')[0]);
+      let availabilityStatus = 'unavailable';
+      if (availabilityDoc) {
+        const unavailableDates = availabilityDoc.unavailable.map(u => u.date.toISOString().split('T')[0]);
 
-      // Check if today is in the unavailable dates list
-      if (unavailableDates.includes(todayUTC)) {
-        availabilityStatus = 'unavailable';
-      } else {
-        const todayAvailability = availabilityDoc.availabilities.find(avail => avail.day === new Date().toLocaleString('en-us', { weekday: 'long' }));
-        if (todayAvailability) {
-          const availableSlots = todayAvailability.slots.some(slot => slot.available);
-          availabilityStatus = availableSlots ? 'available' : 'unavailable';
+        if (unavailableDates.includes(todayUTC)) {
+          availabilityStatus = 'unavailable';
+        } else {
+          const todayAvailability = availabilityDoc.availabilities.find(avail => avail.day === new Date().toLocaleString('en-us', { weekday: 'long' }));
+          if (todayAvailability) {
+            const availableSlots = todayAvailability.slots.some(slot => slot.available);
+            availabilityStatus = availableSlots ? 'available' : 'unavailable';
+          }
         }
       }
-    }
 
-    return {
-      doctor,
-      availability: availabilityStatus
-    };
-  });
+      return {
+        doctor: {
+          ...doctor.toObject(), // Convert Mongoose document to plain object
+          clinics: clinicDetails ? [clinicDetails] : [] // Include only relevant clinic details
+        },
+        availability: availabilityStatus
+      };
+    });
 
-  const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
+    const doctorAvailability = await Promise.all(doctorAvailabilityPromises);
 
-  const availableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'available').length;
-  const unavailableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'unavailable').length;
-
+    const availableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'available').length;
+    const unavailableDoctorsCount = doctorAvailability.filter(doc => doc.availability === 'unavailable').length;
 
     res.status(200).json({
       success: true,
@@ -424,6 +432,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 
 

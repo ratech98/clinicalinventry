@@ -38,7 +38,7 @@ const addMedicine = async (req, res) => {
     res.status(201).json({ success: true, message: "Medicine added successfully", medicine });
   } catch (error) {
     console.error("Error adding medicine:", error.message || error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -88,7 +88,7 @@ const getAllMedicines = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -109,7 +109,7 @@ const getMedicineById = async (req, res) => {
     res.json({ success: true, message: "Medicine fetched successfully", medicine });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -127,7 +127,7 @@ const updateMedicine = async (req, res) => {
     res.status(200).json({ success: true, message: "Medicine updated successfully", medicine });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -144,7 +144,7 @@ const deleteMedicine = async (req, res) => {
     res.json({ success: true, message: "Medicine deleted successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -221,7 +221,7 @@ const importMedicinesData = async (req, res) => {
     res.status(200).json({ success: true, message });
   } catch (error) {
     console.error('Error importing medicines:', error);
-    res.status(500).json({ success: false, error: "Internal Server Error" });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
