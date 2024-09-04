@@ -527,12 +527,12 @@ console.log(appointment)
         const pdfData = Buffer.concat(buffers);
         content.callback(pdfData);
       });
-    
+    console.log("appointment",appointment)
       const defaultStyles = {
         margin: 20,
         fontSize: 10,
         fontColor: 'black',
-        font:"Helvetica"
+        font: "Helvetica"
       };
       const appliedStyles = { ...defaultStyles, ...styles };
     
@@ -544,75 +544,89 @@ console.log(appointment)
         );
         return field ? field.styles : {};
       };
+    
       const dynamicAddressField = template.dynamicFields.find(
         (field) => field.section === 'clinicDetails' && field.name === 'Address'
       );
       const clinicAddress = dynamicAddressField && dynamicAddressField.value ? dynamicAddressField.value : "";
-      console.log("clinicadress",clinicAddress)
+      console.log("clinicAddress", clinicAddress);
+    
       const applyStyles = (doc, fieldStyles) => {
         doc.font("Helvetica")
           .fontSize(parseInt(fieldStyles.size) || appliedStyles.fontSize)
           .fillColor(fieldStyles.color || appliedStyles.fontColor);
       };
     
+      let logoHeight = 0;
+      let logoTopY = appliedStyles.margin;
       if (template.logo) {
         try {
           const imageUrl = template.logo;
           const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
           const imageBuffer = Buffer.from(response.data, 'binary');
     
-          const availableWidth = doc.page.width * 0.15;
+          const availableWidth = doc.page.width * 0.10; // Reduced width
           const img = doc.openImage(imageBuffer);
           const scalingFactor = availableWidth / img.width;
           const finalWidth = img.width * scalingFactor;
-          const finalHeight = img.height * scalingFactor;
+          logoHeight = img.height * scalingFactor;
     
-          doc.image(imageBuffer, appliedStyles.margin, appliedStyles.margin, {
-            width: finalWidth,
-            height: finalHeight,
-            align: 'left',
-            valign: 'top',
-          });
+          // Define the circular clipping path
+          const circleRadius = finalWidth / 2;
+          const centerX = appliedStyles.margin + circleRadius;
+          const centerY = logoTopY + circleRadius;
+    
+          // Clip to a circle
+          doc.save()
+            .translate(centerX, centerY)
+            .circle(0, 0, circleRadius)
+            .clip()
+            .image(imageBuffer, -circleRadius, -circleRadius, {
+              width: finalWidth,
+              height: logoHeight,
+            })
+            .restore();
+    
         } catch (error) {
           console.error('Error loading logo image:', error);
         }
       }
     
-  let currentY = appliedStyles.margin + (template.logo ? 50 : 0);
-
-  const clinicDetailsX = appliedStyles.margin + 100;
-  
-  const maxWidthBeforeMidLine = (doc.page.width / 2) - clinicDetailsX - 10;
-
-  applyStyles(doc, getStyles('clinicDetails', 'Clinic Name'));
-  doc.text(clinic.clinic_name, clinicDetailsX, currentY, {
-    width: maxWidthBeforeMidLine, 
-    ellipsis: true  
-  });
-  currentY += doc.heightOfString(clinic.clinic_name, { width: maxWidthBeforeMidLine }) + 5;
-
-  applyStyles(doc, getStyles('clinicDetails', 'Contact number'));
-  doc.text(clinic.mobile_number, clinicDetailsX, currentY, {
-    width: maxWidthBeforeMidLine,  
-    ellipsis: true
-  });
-  currentY += doc.heightOfString(clinic.mobile_number, { width: maxWidthBeforeMidLine }) + 5;
-
-  applyStyles(doc, getStyles('clinicDetails', 'Address'));
-  doc.text(clinicAddress, clinicDetailsX, currentY, {
-    width: maxWidthBeforeMidLine, 
-    ellipsis: true
-  });
-  currentY += doc.heightOfString(clinicAddress, { width: maxWidthBeforeMidLine }) + 5;
-
-      const verticalLineX = (clinicDetailsX + (doc.page.width - appliedStyles.margin - 100)) / 2;
-  doc.moveTo(verticalLineX, appliedStyles.margin + (template.logo ? 50 : 0))
-    .lineTo(verticalLineX, currentY + 40) 
-    .lineWidth(0.5)
-    .stroke();
-      // Doctor details right-aligned
+      const clinicDetailsX = appliedStyles.margin + 100;
       const doctorDetailsX = doc.page.width - appliedStyles.margin - 200;
-      currentY = appliedStyles.margin + (template.logo ? 50 : 0); // Reset Y position for doctor details
+      const maxWidthBeforeMidLine = (doc.page.width / 2) - clinicDetailsX - 10;
+    
+      let currentY = logoTopY;
+    
+      applyStyles(doc, getStyles('clinicDetails', 'Clinic Name'));
+      doc.text(clinic.clinic_name, clinicDetailsX, currentY, {
+        width: maxWidthBeforeMidLine,
+        ellipsis: true
+      });
+      currentY += doc.heightOfString(clinic.clinic_name, { width: maxWidthBeforeMidLine }) + 5;
+    
+      applyStyles(doc, getStyles('clinicDetails', 'Contact number'));
+      doc.text(clinic.mobile_number, clinicDetailsX, currentY, {
+        width: maxWidthBeforeMidLine,
+        ellipsis: true
+      });
+      currentY += doc.heightOfString(clinic.mobile_number, { width: maxWidthBeforeMidLine }) + 5;
+    
+      applyStyles(doc, getStyles('clinicDetails', 'Address'));
+      doc.text(clinicAddress, clinicDetailsX, currentY, {
+        width: maxWidthBeforeMidLine,
+        ellipsis: true
+      });
+      currentY += doc.heightOfString(clinicAddress, { width: maxWidthBeforeMidLine }) + 5;
+    
+      const verticalLineX = (clinicDetailsX + (doc.page.width - appliedStyles.margin - 100)) / 2;
+      const verticalLineEndY = currentY + 20; 
+      doc.moveTo(verticalLineX, logoTopY)
+        .lineTo(verticalLineX, verticalLineEndY)
+        .lineWidth(0.5)
+        .stroke();
+    
+      currentY = logoTopY; // Align with the top of the logo
       applyStyles(doc, getStyles('doctorDetails', 'Doctor Name'));
       doc.text(` ${doctors.name}`, doctorDetailsX, currentY, { align: 'right' });
       currentY += doc.heightOfString(doctors.name) + 5;
@@ -621,20 +635,19 @@ console.log(appointment)
       doc.text(` ${doctors.specialist}`, doctorDetailsX, currentY, { align: 'right' });
       currentY += doc.heightOfString(doctors.specialist) + 5;
     
-const pgQualification = Array.isArray(doctors.pg_qualification) 
-? doctors.pg_qualification.join(', ') 
-: doctors.pg_qualification || ''; 
-
-const ugQualification = doctors.ug_qualification || '';
-
-const qualifications = [ugQualification, pgQualification].filter(Boolean).join(', ');
-console.log("clinicadress outer",clinicAddress)
-applyStyles(doc, getStyles('doctorDetails', 'Degree'));
-
-doc.text(` ${qualifications}`, doctorDetailsX, currentY, { align: 'right' });
-currentY += doc.heightOfString(qualifications || "MBBS") + 5;
-
-      currentY += 10; 
+      const pgQualification = Array.isArray(doctors.pg_qualification) 
+        ? doctors.pg_qualification.join(', ') 
+        : doctors.pg_qualification || '';
+    
+      const ugQualification = doctors.ug_qualification || '';
+      const qualifications = [ugQualification, pgQualification].filter(Boolean).join(', ');
+    
+      applyStyles(doc, getStyles('doctorDetails', 'Degree'));
+      doc.text(` ${qualifications}`, doctorDetailsX, currentY, { align: 'right' });
+      currentY += doc.heightOfString(qualifications || "MBBS") + 5;
+    
+      // First Horizontal Line
+      currentY += 10;
       doc.moveTo(appliedStyles.margin, currentY)
         .lineTo(doc.page.width - appliedStyles.margin, currentY)
         .lineWidth(0.5)
@@ -642,117 +655,121 @@ currentY += doc.heightOfString(qualifications || "MBBS") + 5;
     
       currentY += 20;
     
+      // Patient Details
       applyStyles(doc, getStyles('patientDetails', 'Patient Name'));
       doc.text(`Patient Name: ${patient.name}`, appliedStyles.margin, currentY, { continued: true });
-      doc.text(`                `, { continued: true });
+      doc.text(`                                          `, { continued: true });
       applyStyles(doc, getStyles('patientDetails', 'Age'));
       doc.text(`Age: ${patient.age}`, { continued: true });
       doc.text(`                  `, { continued: true });
       applyStyles(doc, getStyles('patientDetails', 'Gender'));
       doc.text(`Gender: ${patient.gender}`, { continued: true });
       doc.text(`                 `, { continued: true });
-      // applyStyles(doc, getStyles('patientDetails', 'Gender'));
-      // doc.text(`Reason: ${appointment.reason|| ""}`);
-      // currentY += doc.heightOfString(`Patient Name: ${patient.name}`) + 5;
     
-      // Draw second horizontal line
+    
+      currentY += 20;
       doc.moveTo(appliedStyles.margin, currentY)
         .lineTo(doc.page.width - appliedStyles.margin, currentY)
         .lineWidth(0.5)
         .stroke();
+        currentY += 20;
+
+        if (prescription && prescription.date) {
+          const formattedDate = prescription.date // Format the date from appointment.prescription
+          applyStyles(doc, getStyles('prescriptionDetails', 'Date'));
+        
+          // Print the date right-aligned
+          doc.text(`Date: ${formattedDate}`, appliedStyles.margin, currentY, {
+            align: 'right',
+            width: doc.page.width - 2 * appliedStyles.margin, // Set the width to align properly
+          });
+        
+          // Move to the next line
+          currentY += doc.heightOfString(`Date: ${formattedDate}`) + 10; // Add gap after date
+        }
+        
+        if (prescription) {
+          applyStyles(doc, getStyles('prescriptionDetails', 'Prescription Details'));
+          doc.text('Prescription Details', appliedStyles.margin, currentY,{ underline: true });
+          currentY += 35; // Add space between heading and details
+        
+          // Convert to plain object and filter out internal properties and specific fields
+          const prescriptionFields = prescription
+          const keys = Object.keys(prescriptionFields)
+            .filter(key => !key.startsWith('$') && key !== '_id' && key !== 'date'); // Filter out internal properties, _id, and date
+        
+          // Iterate over the filtered keys
+          keys.forEach((key) => {
+            const fieldValue = prescriptionFields[key]; // Use plain object to get field value
+            const fieldLabel = key.replace(/_/g, ' '); // Format field label
+        
+            const fieldStyle = getStyles('prescriptionDetails', key);
+            applyStyles(doc, fieldStyle);
+        
+            // Handle field value for null or undefined
+            const displayValue = fieldValue !== null && fieldValue !== undefined ? fieldValue : 'N/A';
+            
+            // Print field label and value
+            doc.text(`${fieldLabel}:`, appliedStyles.margin, currentY);
+            currentY += doc.heightOfString(`${fieldLabel}:`) + 5; // Move down for field value
+            doc.text(displayValue, appliedStyles.margin + 80, currentY); // Adjust margin for value
+        
+            // Update currentY for next field
+            currentY += doc.heightOfString(displayValue) + 5;
+          });
+        } else {
+          // Handle case when no prescription data is available
+          applyStyles(doc, getStyles('prescriptionDetails', 'No Prescription Data'));
+          doc.text('No prescription data available.', appliedStyles.margin, currentY);
+          currentY += doc.heightOfString('No prescription data available.') + 5;
+        }
+        // console.log(appointment.medicines)
+        
+      // Medicines section
+      applyStyles(doc, getStyles('medicines', 'Medicine Name'));
+      doc.text('Medicines Details', appliedStyles.margin, currentY, { underline: true });
+      currentY += doc.heightOfString('Medicines Details') + 10; // Add gap between header and first medicine
     
-      currentY += 20; // Adjust for next content
-    
-      const dateX = doc.page.width - appliedStyles.margin - 150;
-      applyStyles(doc, getStyles('prescriptionDetails', 'Date'));
-      doc.text(`Date: ${prescription.date}`, dateX, currentY, { align: 'right' });
-      currentY += 20;
-      doc.moveDown();
-      applyStyles(doc, getStyles('prescriptionDetails', 'Provisional Diagnosis'));
-      doc.text('Prescription Details', appliedStyles.margin, currentY, { underline: true });
-      currentY += doc.heightOfString('Prescription Details') + 5;
-      doc.moveDown();
-      applyStyles(doc, getStyles('prescriptionDetails', 'Provisional Diagnosis'));
-      doc.text(`Provisional Diagnosis: `, { indent: 20 });
-      currentY += doc.heightOfString('Provisional Diagnosis: ') + 5;
-      doc.text(`${prescription.provisional_diagnosis}`, { indent: 80 });
-      currentY += doc.heightOfString(prescription.provisional_diagnosis) + 5;
-      doc.moveDown();
-      applyStyles(doc, getStyles('prescriptionDetails', 'Advice'));
-
-      doc.text(`Advice:`, { indent: 20 });
-      currentY += doc.heightOfString('Advice: ') + 5;
-      doc.text(`${prescription.advice}`, { indent: 80 });
-      currentY += doc.heightOfString(prescription.advice) + 5;
-      doc.moveDown();
-      applyStyles(doc, getStyles('prescriptionDetails', 'Clinical Notes'));
-
-      doc.text(`Clinical Notes: `, { indent: 20 });
-      currentY += doc.heightOfString('Clinical Notes: ') + 5;
-      doc.text(`${prescription.clinical_notes}`, { indent: 80 });
-      currentY += doc.heightOfString(prescription.clinical_notes) + 5;
-      doc.moveDown();
-      applyStyles(doc, getStyles('prescriptionDetails', 'Observation'));
-
-      doc.text(`Observation:`, { indent: 20 });
-      currentY += doc.heightOfString('Observation: ') + 5;
-      doc.text(`${prescription.observation}`, { indent: 80 });
-      currentY += doc.heightOfString(prescription.observation) + 5;
-      doc.moveDown();
-      applyStyles(doc, getStyles('prescriptionDetails', 'Investigation with Reports'));
-
-      doc.text(`Investigation with Reports:`, { indent: 20 });
-      currentY += doc.heightOfString('Investigation with Reports: ') + 5;
-      doc.text(`${prescription.investigation_with_reports}`, { indent: 80 });
-      currentY += doc.heightOfString(prescription.investigation_with_reports) + 5;
-      doc.moveDown();
-      doc.moveDown();
-      applyStyles(doc, getStyles('medicines', 'Medicines Details'));
-      doc.text('Medicines Details', { underline: true });
-      currentY += doc.heightOfString('Medicines Details') + 5;
-      doc.moveDown();
       medicines.forEach(medicine => {
         applyStyles(doc, getStyles('medicines', 'Medicine Name'));
-        doc.text(`-:  Medicine Name: ${medicine.name}`, { indent: 10 });
-        currentY += doc.heightOfString(`-:  Medicine Name: ${medicine.name}`) + 5;
+        doc.text(`- Medicine Name: ${medicine.name}`, appliedStyles.margin, currentY, { indent: 10 });
+        currentY += doc.heightOfString(`- Medicine Name: ${medicine.name}`) + 10; // Add gap
     
-        doc.moveDown();
         applyStyles(doc, getStyles('medicines', 'Dosage'));
-        doc.text(`Dosage: ${medicine.dosage}`, { indent: 20 });
-        currentY += doc.heightOfString(`Dosage: ${medicine.dosage}`) + 5;
-        doc.moveDown();
+        doc.text(`Dosage: ${medicine.dosage}`, appliedStyles.margin + 10, currentY);
+        currentY += doc.heightOfString(`Dosage: ${medicine.dosage}`) + 10; // Add gap
+    
         applyStyles(doc, getStyles('medicines', 'Timings'));
-        doc.text(`Timings: `, { indent: 20 });
-        currentY += doc.heightOfString(`Timings:`) + 5;
-        doc.moveDown();
+        doc.text(`Timings:`, appliedStyles.margin + 10, currentY);
+        currentY += doc.heightOfString(`Timings:`) + 10; // Add gap
+    
         applyStyles(doc, getStyles('medicines', 'Timings'));
-
-        doc.text(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'},`, { indent: 20 });
-        currentY += doc.heightOfString(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'},`) + 5;
-        doc.moveDown();
+        doc.text(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
+        currentY += doc.heightOfString(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'}`) + 10; // Add gap
+    
         applyStyles(doc, getStyles('medicines', 'Timings'));
-
-        doc.text(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`, { indent: 20 });
-        currentY += doc.heightOfString(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`) + 5;
-        doc.moveDown();
+        doc.text(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
+        currentY += doc.heightOfString(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`) + 10; // Add gap
+    
         applyStyles(doc, getStyles('medicines', 'Timings'));
-
-        doc.text(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`, { indent: 20 });
-        currentY += doc.heightOfString(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`) + 5;
-        doc.moveDown();
+        doc.text(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
+        currentY += doc.heightOfString(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`) + 10; // Add gap
+    
         applyStyles(doc, getStyles('medicines', 'Before Food'));
-        doc.text(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`, { indent: 20 });
-        currentY += doc.heightOfString(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`) + 5;
-        doc.moveDown();
+        doc.text(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
+        currentY += doc.heightOfString(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`) + 10; // Add gap
+    
         applyStyles(doc, getStyles('medicines', 'After Food'));
-        doc.text(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`, { indent: 20 });
-        currentY += doc.heightOfString(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`) + 5;
-        doc.moveDown();
-        doc.moveDown();
+        doc.text(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
+        currentY += doc.heightOfString(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`) + 10; // Add gap
+    
+        doc.moveDown(); // Add some space before the next medicine
       });
     
+    
+    
       doc.end();
-    };
+    }
     
 
     const sendPrescriptionPdf = (pdfData) => {
@@ -881,7 +898,7 @@ const addAppointmentWithToken = async (req, res) => {
     const appointmentDate = moment(appointment_date, 'DD-MM-YYYY');
     const currentDate = moment();
 
-    if (appointmentDate.isBefore(currentDate, 'day') || appointmentDate.diff(currentDate, 'days') > 7) {
+    if (appointmentDate.isBefore(currentDate, 'day') || appointmentDate.diff(currentDate, 'days') > 30) {
       return res.status(400).json({ success: false, error: errormesaages[1039], errorcode: 1039 });
     }
 
@@ -1173,7 +1190,7 @@ const createPdf = async (doc, content, clinic, doctors, template, appointment, p
     const pdfData = Buffer.concat(buffers);
     content.callback(pdfData);
   });
-
+console.log("appointment",appointment)
   const defaultStyles = {
     margin: 20,
     fontSize: 10,
@@ -1318,6 +1335,103 @@ const createPdf = async (doc, content, clinic, doctors, template, appointment, p
     .lineTo(doc.page.width - appliedStyles.margin, currentY)
     .lineWidth(0.5)
     .stroke();
+    currentY += 20;
+    
+    if (appointment.prescription && appointment.prescription.prescription.date) {
+      const formattedDate = appointment.prescription.prescription.date // Format the date from appointment.prescription
+      applyStyles(doc, getStyles('prescriptionDetails', 'Date'));
+    
+      // Print the date right-aligned
+      doc.text(`Date: ${formattedDate}`, appliedStyles.margin, currentY, {
+        align: 'right',
+        width: doc.page.width - 2 * appliedStyles.margin, // Set the width to align properly
+      });
+    
+      // Move to the next line
+      currentY += doc.heightOfString(`Date: ${formattedDate}`) + 10; // Add gap after date
+    }
+    
+
+  
+    if (appointment.prescription) {
+      applyStyles(doc, getStyles('prescriptionDetails', 'Prescription Details'));
+      doc.text('Prescription Details', appliedStyles.margin, currentY,{ underline: true });
+      currentY += 35; // Add space between heading and details
+    
+      // Convert to plain object and filter out internal properties and specific fields
+      const prescriptionFields = appointment.prescription.toObject();
+      const keys = Object.keys(prescriptionFields)
+        .filter(key => !key.startsWith('$') && key !== '_id' && key !== 'date'); // Filter out internal properties, _id, and date
+    
+      // Iterate over the filtered keys
+      keys.forEach((key) => {
+        const fieldValue = prescriptionFields[key]; // Use plain object to get field value
+        const fieldLabel = key.replace(/_/g, ' '); // Format field label
+    
+        const fieldStyle = getStyles('prescriptionDetails', key);
+        applyStyles(doc, fieldStyle);
+    
+        // Handle field value for null or undefined
+        const displayValue = fieldValue !== null && fieldValue !== undefined ? fieldValue : 'N/A';
+        
+        // Print field label and value
+        doc.text(`${fieldLabel}:`, appliedStyles.margin, currentY);
+        currentY += doc.heightOfString(`${fieldLabel}:`) + 5; // Move down for field value
+        doc.text(displayValue, appliedStyles.margin + 80, currentY); // Adjust margin for value
+    
+        // Update currentY for next field
+        currentY += doc.heightOfString(displayValue) + 5;
+      });
+    } else {
+      // Handle case when no prescription data is available
+      applyStyles(doc, getStyles('prescriptionDetails', 'No Prescription Data'));
+      doc.text('No prescription data available.', appliedStyles.margin, currentY);
+      currentY += doc.heightOfString('No prescription data available.') + 5;
+    }
+    console.log(appointment.medicines)
+    
+  // Medicines section
+  applyStyles(doc, getStyles('medicines', 'Medicine Name'));
+  doc.text('Medicines Details', appliedStyles.margin, currentY, { underline: true });
+  currentY += doc.heightOfString('Medicines Details') + 10; // Add gap between header and first medicine
+
+  appointment.medicines.forEach(medicine => {
+    applyStyles(doc, getStyles('medicines', 'Medicine Name'));
+    doc.text(`- Medicine Name: ${medicine.name}`, appliedStyles.margin, currentY, { indent: 10 });
+    currentY += doc.heightOfString(`- Medicine Name: ${medicine.name}`) + 10; // Add gap
+
+    applyStyles(doc, getStyles('medicines', 'Dosage'));
+    doc.text(`Dosage: ${medicine.dosage}`, appliedStyles.margin + 10, currentY);
+    currentY += doc.heightOfString(`Dosage: ${medicine.dosage}`) + 10; // Add gap
+
+    applyStyles(doc, getStyles('medicines', 'Timings'));
+    doc.text(`Timings:`, appliedStyles.margin + 10, currentY);
+    currentY += doc.heightOfString(`Timings:`) + 10; // Add gap
+
+    applyStyles(doc, getStyles('medicines', 'Timings'));
+    doc.text(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
+    currentY += doc.heightOfString(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'}`) + 10; // Add gap
+
+    applyStyles(doc, getStyles('medicines', 'Timings'));
+    doc.text(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
+    currentY += doc.heightOfString(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`) + 10; // Add gap
+
+    applyStyles(doc, getStyles('medicines', 'Timings'));
+    doc.text(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
+    currentY += doc.heightOfString(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`) + 10; // Add gap
+
+    applyStyles(doc, getStyles('medicines', 'Before Food'));
+    doc.text(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
+    currentY += doc.heightOfString(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`) + 10; // Add gap
+
+    applyStyles(doc, getStyles('medicines', 'After Food'));
+    doc.text(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
+    currentY += doc.heightOfString(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`) + 10; // Add gap
+
+    doc.moveDown(); // Add some space before the next medicine
+  });
+
+
 
   doc.end();
 };
