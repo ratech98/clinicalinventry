@@ -373,7 +373,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
   const doctorAvailabilityPromises = doctors.map(async (doctor) => {
     const availabilityDoc = await Availability.findOne({
       doctorId: doctor._id,
-      clinicId: req.user._id
+      clinicId: id
     });
 
     let availabilityStatus = 'unavailable';
