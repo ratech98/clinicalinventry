@@ -19,7 +19,7 @@ const addMedicine = async (req, res) => {
 
     const existingMedicine = await MedicineModel.findOne({ 
       medicine_name, 
-      dosage_form, 
+      dosage_form:{ $regex: new RegExp("^" + dosage_form, "i") }, 
       dosage_strength, 
       dosage_unit 
     }, null, queryOptions);
