@@ -365,7 +365,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    const doctors = await mainDBConnection.model('doctor').find({ "clinics.clinicId": req.user._id })
+    const doctors = await doctor.find({ "clinics.clinicId": req.user._id })
     .limit(limit)
     .skip(startIndex);
 
@@ -417,7 +417,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
       startIndex: startIndex + 1,
       endIndex: endIndex > totalDoctors ? totalDoctors : endIndex,
       currentPage: parseInt(page),
-      doctorAvailability: filteredDoctorAvailability,
+      doctorAvailability: doctorAvailability,
     });
   } catch (error) {
     console.error(error);

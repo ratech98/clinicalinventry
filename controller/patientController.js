@@ -1242,7 +1242,7 @@ const createPdf = async (doc, content, clinic, doctors, template, appointment, p
   const doctorDetailsX = doc.page.width - appliedStyles.margin - 200;
   const maxWidthBeforeMidLine = (doc.page.width / 2) - clinicDetailsX - 10;
 
-  let currentY = logoTopY 
+  let currentY = logoTopY;
 
   applyStyles(doc, getStyles('clinicDetails', 'Clinic Name'));
   doc.text(clinic.clinic_name, clinicDetailsX, currentY, {
@@ -1265,14 +1265,13 @@ const createPdf = async (doc, content, clinic, doctors, template, appointment, p
   });
   currentY += doc.heightOfString(clinicAddress, { width: maxWidthBeforeMidLine }) + 5;
 
-  // Vertical Line
   const verticalLineX = (clinicDetailsX + (doc.page.width - appliedStyles.margin - 100)) / 2;
+  const verticalLineEndY = currentY + 20; 
   doc.moveTo(verticalLineX, logoTopY)
-    .lineTo(verticalLineX, currentY + 40)
+    .lineTo(verticalLineX, verticalLineEndY)
     .lineWidth(0.5)
     .stroke();
 
-  // Doctor Details
   currentY = logoTopY; // Align with the top of the logo
   applyStyles(doc, getStyles('doctorDetails', 'Doctor Name'));
   doc.text(` ${doctors.name}`, doctorDetailsX, currentY, { align: 'right' });
@@ -1293,6 +1292,7 @@ const createPdf = async (doc, content, clinic, doctors, template, appointment, p
   doc.text(` ${qualifications}`, doctorDetailsX, currentY, { align: 'right' });
   currentY += doc.heightOfString(qualifications || "MBBS") + 5;
 
+  // First Horizontal Line
   currentY += 10;
   doc.moveTo(appliedStyles.margin, currentY)
     .lineTo(doc.page.width - appliedStyles.margin, currentY)
@@ -1304,7 +1304,7 @@ const createPdf = async (doc, content, clinic, doctors, template, appointment, p
   // Patient Details
   applyStyles(doc, getStyles('patientDetails', 'Patient Name'));
   doc.text(`Patient Name: ${patient.name}`, appliedStyles.margin, currentY, { continued: true });
-  doc.text(`                `, { continued: true });
+  doc.text(`                                          `, { continued: true });
   applyStyles(doc, getStyles('patientDetails', 'Age'));
   doc.text(`Age: ${patient.age}`, { continued: true });
   doc.text(`                  `, { continued: true });
@@ -1312,35 +1312,16 @@ const createPdf = async (doc, content, clinic, doctors, template, appointment, p
   doc.text(`Gender: ${patient.gender}`, { continued: true });
   doc.text(`                 `, { continued: true });
 
+
+  currentY += 20;
   doc.moveTo(appliedStyles.margin, currentY)
     .lineTo(doc.page.width - appliedStyles.margin, currentY)
     .lineWidth(0.5)
     .stroke();
 
-  currentY += 20;
-
-  // Medicines Details
-  currentY += 10;
-  applyStyles(doc, getStyles('medicines', 'Title'));
-  doc.text('Medicines:', appliedStyles.margin, currentY, { underline: true });
-  currentY += doc.heightOfString('Medicines:') + 5;
-
-  // medicines.forEach(medicine => {
-  //   applyStyles(doc, getStyles('medicines', 'Medicine Name'));
-  //   doc.text(`Medicine: ${medicine.name}`, appliedStyles.margin, currentY);
-  //   currentY += doc.heightOfString(`Medicine: ${medicine.name}`) + 5;
-    
-  //   applyStyles(doc, getStyles('medicines', 'Dosage'));
-  //   doc.text(`Dosage: ${medicine.dosage}`, appliedStyles.margin, currentY);
-  //   currentY += doc.heightOfString(`Dosage: ${medicine.dosage}`) + 5;
-    
-  //   applyStyles(doc, getStyles('medicines', 'Instructions'));
-  //   doc.text(`Instructions: ${medicine.instructions}`, appliedStyles.margin, currentY);
-  //   currentY += doc.heightOfString(`Instructions: ${medicine.instructions}`) + 10;
-  // });
-
   doc.end();
 };
+
 
 
 
