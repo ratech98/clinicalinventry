@@ -1166,7 +1166,7 @@ const getFollowUpList = async (req, res) => {
   }
 };
 
-const createPdf = async (doc, content,clinic,doctors,template,appointment,patient, styles = {}) => {
+const createPdf = async (doc, content, clinic, doctors, template, appointment, patient, medicines, styles = {}) => {
   const buffers = [];
   doc.on('data', buffers.push.bind(buffers));
   doc.on('end', async () => {
@@ -1178,7 +1178,7 @@ const createPdf = async (doc, content,clinic,doctors,template,appointment,patien
     margin: 20,
     fontSize: 10,
     fontColor: 'black',
-    font:"Helvetica"
+    font: "Helvetica"
   };
   const appliedStyles = { ...defaultStyles, ...styles };
 
@@ -1190,75 +1190,90 @@ const createPdf = async (doc, content,clinic,doctors,template,appointment,patien
     );
     return field ? field.styles : {};
   };
+
   const dynamicAddressField = template.dynamicFields.find(
     (field) => field.section === 'clinicDetails' && field.name === 'Address'
   );
   const clinicAddress = dynamicAddressField && dynamicAddressField.value ? dynamicAddressField.value : "";
-  console.log("clinicadress",clinicAddress)
+  console.log("clinicAddress", clinicAddress);
+
   const applyStyles = (doc, fieldStyles) => {
     doc.font("Helvetica")
       .fontSize(parseInt(fieldStyles.size) || appliedStyles.fontSize)
       .fillColor(fieldStyles.color || appliedStyles.fontColor);
   };
 
+  let logoHeight = 0;
+  let logoTopY = appliedStyles.margin;
   if (template.logo) {
     try {
       const imageUrl = template.logo;
       const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
       const imageBuffer = Buffer.from(response.data, 'binary');
 
-      const availableWidth = doc.page.width * 0.15;
+      const availableWidth = doc.page.width * 0.10; // Reduced width
       const img = doc.openImage(imageBuffer);
       const scalingFactor = availableWidth / img.width;
       const finalWidth = img.width * scalingFactor;
-      const finalHeight = img.height * scalingFactor;
+      logoHeight = img.height * scalingFactor;
 
-      doc.image(imageBuffer, appliedStyles.margin, appliedStyles.margin, {
-        width: finalWidth,
-        height: finalHeight,
-        align: 'left',
-        valign: 'top',
-      });
+      // Define the circular clipping path
+      const circleRadius = finalWidth / 2;
+      const centerX = appliedStyles.margin + circleRadius;
+      const centerY = logoTopY + circleRadius;
+
+      // Clip to a circle
+      doc.save()
+        .translate(centerX, centerY)
+        .circle(0, 0, circleRadius)
+        .clip()
+        .image(imageBuffer, -circleRadius, -circleRadius, {
+          width: finalWidth,
+          height: logoHeight,
+        })
+        .restore();
+
     } catch (error) {
       console.error('Error loading logo image:', error);
     }
   }
 
-let currentY = appliedStyles.margin + (template.logo ? 50 : 0);
-
-const clinicDetailsX = appliedStyles.margin + 100;
-
-const maxWidthBeforeMidLine = (doc.page.width / 2) - clinicDetailsX - 10;
-
-applyStyles(doc, getStyles('clinicDetails', 'Clinic Name'));
-doc.text(clinic.clinic_name, clinicDetailsX, currentY, {
-width: maxWidthBeforeMidLine, 
-ellipsis: true  
-});
-currentY += doc.heightOfString(clinic.clinic_name, { width: maxWidthBeforeMidLine }) + 5;
-
-applyStyles(doc, getStyles('clinicDetails', 'Contact number'));
-doc.text(clinic.mobile_number, clinicDetailsX, currentY, {
-width: maxWidthBeforeMidLine,  
-ellipsis: true
-});
-currentY += doc.heightOfString(clinic.mobile_number, { width: maxWidthBeforeMidLine }) + 5;
-
-applyStyles(doc, getStyles('clinicDetails', 'Address'));
-doc.text(clinicAddress, clinicDetailsX, currentY, {
-width: maxWidthBeforeMidLine, 
-ellipsis: true
-});
-currentY += doc.heightOfString(clinicAddress, { width: maxWidthBeforeMidLine }) + 5;
-
-  const verticalLineX = (clinicDetailsX + (doc.page.width - appliedStyles.margin - 100)) / 2;
-doc.moveTo(verticalLineX, appliedStyles.margin + (template.logo ? 50 : 0))
-.lineTo(verticalLineX, currentY + 40) 
-.lineWidth(0.5)
-.stroke();
-  // Doctor details right-aligned
+  const clinicDetailsX = appliedStyles.margin + 100;
   const doctorDetailsX = doc.page.width - appliedStyles.margin - 200;
-  currentY = appliedStyles.margin + (template.logo ? 50 : 0); // Reset Y position for doctor details
+  const maxWidthBeforeMidLine = (doc.page.width / 2) - clinicDetailsX - 10;
+
+  let currentY = logoTopY 
+
+  applyStyles(doc, getStyles('clinicDetails', 'Clinic Name'));
+  doc.text(clinic.clinic_name, clinicDetailsX, currentY, {
+    width: maxWidthBeforeMidLine,
+    ellipsis: true
+  });
+  currentY += doc.heightOfString(clinic.clinic_name, { width: maxWidthBeforeMidLine }) + 5;
+
+  applyStyles(doc, getStyles('clinicDetails', 'Contact number'));
+  doc.text(clinic.mobile_number, clinicDetailsX, currentY, {
+    width: maxWidthBeforeMidLine,
+    ellipsis: true
+  });
+  currentY += doc.heightOfString(clinic.mobile_number, { width: maxWidthBeforeMidLine }) + 5;
+
+  applyStyles(doc, getStyles('clinicDetails', 'Address'));
+  doc.text(clinicAddress, clinicDetailsX, currentY, {
+    width: maxWidthBeforeMidLine,
+    ellipsis: true
+  });
+  currentY += doc.heightOfString(clinicAddress, { width: maxWidthBeforeMidLine }) + 5;
+
+  // Vertical Line
+  const verticalLineX = (clinicDetailsX + (doc.page.width - appliedStyles.margin - 100)) / 2;
+  doc.moveTo(verticalLineX, logoTopY)
+    .lineTo(verticalLineX, currentY + 40)
+    .lineWidth(0.5)
+    .stroke();
+
+  // Doctor Details
+  currentY = logoTopY; // Align with the top of the logo
   applyStyles(doc, getStyles('doctorDetails', 'Doctor Name'));
   doc.text(` ${doctors.name}`, doctorDetailsX, currentY, { align: 'right' });
   currentY += doc.heightOfString(doctors.name) + 5;
@@ -1267,20 +1282,18 @@ doc.moveTo(verticalLineX, appliedStyles.margin + (template.logo ? 50 : 0))
   doc.text(` ${doctors.specialist}`, doctorDetailsX, currentY, { align: 'right' });
   currentY += doc.heightOfString(doctors.specialist) + 5;
 
-const pgQualification = Array.isArray(doctors.pg_qualification) 
-? doctors.pg_qualification.join(', ') 
-: doctors.pg_qualification || ''; 
+  const pgQualification = Array.isArray(doctors.pg_qualification) 
+    ? doctors.pg_qualification.join(', ') 
+    : doctors.pg_qualification || '';
 
-const ugQualification = doctors.ug_qualification || '';
+  const ugQualification = doctors.ug_qualification || '';
+  const qualifications = [ugQualification, pgQualification].filter(Boolean).join(', ');
 
-const qualifications = [ugQualification, pgQualification].filter(Boolean).join(', ');
-console.log("clinicadress outer",clinicAddress)
-applyStyles(doc, getStyles('doctorDetails', 'Degree'));
+  applyStyles(doc, getStyles('doctorDetails', 'Degree'));
+  doc.text(` ${qualifications}`, doctorDetailsX, currentY, { align: 'right' });
+  currentY += doc.heightOfString(qualifications || "MBBS") + 5;
 
-doc.text(` ${qualifications}`, doctorDetailsX, currentY, { align: 'right' });
-currentY += doc.heightOfString(qualifications || "MBBS") + 5;
-
-  currentY += 10; 
+  currentY += 10;
   doc.moveTo(appliedStyles.margin, currentY)
     .lineTo(doc.page.width - appliedStyles.margin, currentY)
     .lineWidth(0.5)
@@ -1288,6 +1301,7 @@ currentY += doc.heightOfString(qualifications || "MBBS") + 5;
 
   currentY += 20;
 
+  // Patient Details
   applyStyles(doc, getStyles('patientDetails', 'Patient Name'));
   doc.text(`Patient Name: ${patient.name}`, appliedStyles.margin, currentY, { continued: true });
   doc.text(`                `, { continued: true });
@@ -1297,108 +1311,38 @@ currentY += doc.heightOfString(qualifications || "MBBS") + 5;
   applyStyles(doc, getStyles('patientDetails', 'Gender'));
   doc.text(`Gender: ${patient.gender}`, { continued: true });
   doc.text(`                 `, { continued: true });
-  // applyStyles(doc, getStyles('patientDetails', 'Gender'));
-  // doc.text(`Reason: ${appointment.reason|| ""}`);
-  // currentY += doc.heightOfString(`Patient Name: ${patient.name}`) + 5;
 
-  // Draw second horizontal line
   doc.moveTo(appliedStyles.margin, currentY)
     .lineTo(doc.page.width - appliedStyles.margin, currentY)
     .lineWidth(0.5)
     .stroke();
 
-  currentY += 20; // Adjust for next content
-
-  const dateX = doc.page.width - appliedStyles.margin - 150;
-  applyStyles(doc, getStyles('prescriptionDetails', 'Date'));
-  doc.text(`Date: ${appointment.prescription.date}`, dateX, currentY, { align: 'right' });
   currentY += 20;
-  doc.moveDown();
-  applyStyles(doc, getStyles('prescriptionDetails', 'Provisional Diagnosis'));
-  doc.text('Prescription Details', appliedStyles.margin, currentY, { underline: true });
-  currentY += doc.heightOfString('Prescription Details') + 5;
-  doc.moveDown();
-  applyStyles(doc, getStyles('prescriptionDetails', 'Provisional Diagnosis'));
-  doc.text(`Provisional Diagnosis: `, { indent: 20 });
-  currentY += doc.heightOfString('Provisional Diagnosis: ') + 5;
-  doc.text(`${appointment.prescription.provisional_diagnosis}`, { indent: 80 });
-  currentY += doc.heightOfString(appointment.prescription.provisional_diagnosis) + 5;
-  doc.moveDown();
-  applyStyles(doc, getStyles('prescriptionDetails', 'Advice'));
 
-  doc.text(`Advice:`, { indent: 20 });
-  currentY += doc.heightOfString('Advice: ') + 5;
-  doc.text(`${appointment.prescription.advice}`, { indent: 80 });
-  currentY += doc.heightOfString(appointment.prescription.advice) + 5;
-  doc.moveDown();
-  applyStyles(doc, getStyles('prescriptionDetails', 'Clinical Notes'));
+  // Medicines Details
+  currentY += 10;
+  applyStyles(doc, getStyles('medicines', 'Title'));
+  doc.text('Medicines:', appliedStyles.margin, currentY, { underline: true });
+  currentY += doc.heightOfString('Medicines:') + 5;
 
-  doc.text(`Clinical Notes: `, { indent: 20 });
-  currentY += doc.heightOfString('Clinical Notes: ') + 5;
-  doc.text(`${appointment.prescription.clinical_notes}`, { indent: 80 });
-  currentY += doc.heightOfString(appointment.prescription.clinical_notes) + 5;
-  doc.moveDown();
-  applyStyles(doc, getStyles('prescriptionDetails', 'Observation'));
-
-  doc.text(`Observation:`, { indent: 20 });
-  currentY += doc.heightOfString('Observation: ') + 5;
-  doc.text(`${appointment.prescription.observation}`, { indent: 80 });
-  currentY += doc.heightOfString(appointment.prescription.observation) + 5;
-  doc.moveDown();
-  applyStyles(doc, getStyles('prescriptionDetails', 'Investigation with Reports'));
-
-  doc.text(`Investigation with Reports:`, { indent: 20 });
-  currentY += doc.heightOfString('Investigation with Reports: ') + 5;
-  doc.text(`${appointment.prescription.investigation_with_reports}`, { indent: 80 });
-  currentY += doc.heightOfString(appointment.prescription.investigation_with_reports) + 5;
-  doc.moveDown();
-  doc.moveDown();
-  applyStyles(doc, getStyles('medicines', 'Medicines Details'));
-  doc.text('Medicines Details', { underline: true });
-  currentY += doc.heightOfString('Medicines Details') + 5;
-  doc.moveDown();
-  appointment.medicines.forEach(medicine => {
-    applyStyles(doc, getStyles('medicines', 'Medicine Name'));
-    doc.text(`-:  Medicine Name: ${medicine.name}`, { indent: 10 });
-    currentY += doc.heightOfString(`-:  Medicine Name: ${medicine.name}`) + 5;
-
-    doc.moveDown();
-    applyStyles(doc, getStyles('medicines', 'Dosage'));
-    doc.text(`Dosage: ${medicine.dosage}`, { indent: 20 });
-    currentY += doc.heightOfString(`Dosage: ${medicine.dosage}`) + 5;
-    doc.moveDown();
-    applyStyles(doc, getStyles('medicines', 'Timings'));
-    doc.text(`Timings: `, { indent: 20 });
-    currentY += doc.heightOfString(`Timings:`) + 5;
-    doc.moveDown();
-    applyStyles(doc, getStyles('medicines', 'Timings'));
-
-    doc.text(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'},`, { indent: 20 });
-    currentY += doc.heightOfString(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'},`) + 5;
-    doc.moveDown();
-    applyStyles(doc, getStyles('medicines', 'Timings'));
-
-    doc.text(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`, { indent: 20 });
-    currentY += doc.heightOfString(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`) + 5;
-    doc.moveDown();
-    applyStyles(doc, getStyles('medicines', 'Timings'));
-
-    doc.text(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`, { indent: 20 });
-    currentY += doc.heightOfString(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`) + 5;
-    doc.moveDown();
-    applyStyles(doc, getStyles('medicines', 'Before Food'));
-    doc.text(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`, { indent: 20 });
-    currentY += doc.heightOfString(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`) + 5;
-    doc.moveDown();
-    applyStyles(doc, getStyles('medicines', 'After Food'));
-    doc.text(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`, { indent: 20 });
-    currentY += doc.heightOfString(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`) + 5;
-    doc.moveDown();
-    doc.moveDown();
-  });
+  // medicines.forEach(medicine => {
+  //   applyStyles(doc, getStyles('medicines', 'Medicine Name'));
+  //   doc.text(`Medicine: ${medicine.name}`, appliedStyles.margin, currentY);
+  //   currentY += doc.heightOfString(`Medicine: ${medicine.name}`) + 5;
+    
+  //   applyStyles(doc, getStyles('medicines', 'Dosage'));
+  //   doc.text(`Dosage: ${medicine.dosage}`, appliedStyles.margin, currentY);
+  //   currentY += doc.heightOfString(`Dosage: ${medicine.dosage}`) + 5;
+    
+  //   applyStyles(doc, getStyles('medicines', 'Instructions'));
+  //   doc.text(`Instructions: ${medicine.instructions}`, appliedStyles.margin, currentY);
+  //   currentY += doc.heightOfString(`Instructions: ${medicine.instructions}`) + 10;
+  // });
 
   doc.end();
 };
+
+
 
 const downloadpdf = async (req, res) => {
   try {

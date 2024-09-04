@@ -15,12 +15,7 @@ const medicineSchema = new Schema({
 });
 
 const prescriptionSchema = new Schema({
-  provisional_diagnosis: { type: String },
-  advice: { type: String },
-  clinical_notes: { type: String },
-  date: { type: String },
-  observation: { type: String },
-  investigation_with_reports: { type: String }
+ 
 });
 
 const appointmentSchema = new Schema({
