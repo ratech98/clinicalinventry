@@ -342,7 +342,7 @@ const verify_clinic_certificate=async (req, res) => {
 
 const getDoctorsAndAvailabilityByClinic = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id,clinicId } = req.params;
     const { specialist, recently_joined, onleave, page = 1, limit = 10, verify,subscription } = req.query;
 
     const todayUTC = new Date().toISOString().split('T')[0]; // Outputs 'YYYY-MM-DD'
@@ -365,7 +365,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    const doctors = await doctor.find({ "clinics.clinicId": req.user._id })
+    const doctors = await doctor.find({ "clinics.clinicId": id })
     .limit(limit)
     .skip(startIndex);
 
