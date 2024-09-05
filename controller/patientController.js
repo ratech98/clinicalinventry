@@ -726,46 +726,73 @@ console.log(appointment)
         // console.log(appointment.medicines)
         
       // Medicines section
-      applyStyles(doc, getStyles('medicines', 'Medicine Name'));
-      doc.text('Medicines Details', appliedStyles.margin, currentY, { underline: true });
-      currentY += doc.heightOfString('Medicines Details') + 10; // Add gap between header and first medicine
-    
-      medicines.forEach(medicine => {
-        applyStyles(doc, getStyles('medicines', 'Medicine Name'));
-        doc.text(`- Medicine Name: ${medicine.name}`, appliedStyles.margin, currentY, { indent: 10 });
-        currentY += doc.heightOfString(`- Medicine Name: ${medicine.name}`) + 10; // Add gap
-    
-        applyStyles(doc, getStyles('medicines', 'Dosage'));
-        doc.text(`Dosage: ${medicine.dosage}`, appliedStyles.margin + 10, currentY);
-        currentY += doc.heightOfString(`Dosage: ${medicine.dosage}`) + 10; // Add gap
-    
-        applyStyles(doc, getStyles('medicines', 'Timings'));
-        doc.text(`Timings:`, appliedStyles.margin + 10, currentY);
-        currentY += doc.heightOfString(`Timings:`) + 10; // Add gap
-    
-        applyStyles(doc, getStyles('medicines', 'Timings'));
-        doc.text(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
-        currentY += doc.heightOfString(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'}`) + 10; // Add gap
-    
-        applyStyles(doc, getStyles('medicines', 'Timings'));
-        doc.text(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
-        currentY += doc.heightOfString(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`) + 10; // Add gap
-    
-        applyStyles(doc, getStyles('medicines', 'Timings'));
-        doc.text(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
-        currentY += doc.heightOfString(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`) + 10; // Add gap
-    
-        applyStyles(doc, getStyles('medicines', 'Before Food'));
-        doc.text(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
-        currentY += doc.heightOfString(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`) + 10; // Add gap
-    
-        applyStyles(doc, getStyles('medicines', 'After Food'));
-        doc.text(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
-        currentY += doc.heightOfString(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`) + 10; // Add gap
-    
-        doc.moveDown(); // Add some space before the next medicine
-      });
-    
+      if (medicines && medicines.length > 0) {
+        currentY += 20;
+        applyStyles(doc, getStyles('medicines', 'Medicine Details'));
+        doc.text('Medicines Details', appliedStyles.margin, currentY, { underline: true });
+        currentY += doc.heightOfString('Medicines Details') + 10; // Add gap between header and table
+      
+        // Define the table headers
+        applyStyles(doc, getStyles('medicines', 'Headers'));
+        const margin = appliedStyles.margin;
+        const columnWidth = 100; // Adjust width for each column
+        const columnSpacing = 10; // Space between columns
+      
+        // Print column headers
+        doc.text('S.No', margin, currentY);
+        doc.text('Medicine Name', margin + columnWidth*0.5, currentY);
+        doc.text('Dosage', margin + columnWidth * 2, currentY);
+        doc.text('Timings', margin + columnWidth * 2.5, currentY);
+        doc.text('When to Consume', margin + columnWidth * 4, currentY);
+      
+        currentY += doc.heightOfString('Headers') + 5; // Adjust for subheaders
+      
+        // Loop through medicines to populate table rows
+        medicines.forEach((medicine, index) => {
+          let timings = [];
+          let whenConsume = [];
+      
+          if (medicine.timings.morning) {
+            timings.push('Morning');
+          }
+          if (medicine.timings.afternoon) {
+            timings.push('Afternoon');
+          }
+          if (medicine.timings.evening) {
+            timings.push('Evening');
+          }
+      
+          // Populate the When to Consume array based on true values
+          if (medicine.timings.beforeFood) {
+            whenConsume.push('Before Food');
+          }
+          if (medicine.timings.afterFood) {
+            whenConsume.push('After Food');
+          }
+      
+          // Medicine details
+          applyStyles(doc, getStyles('medicines', 'Row'));
+          doc.text(`${index + 1}`, margin, currentY);
+          doc.text(medicine.name, margin + columnWidth*0.5, currentY);
+          doc.text(medicine.dosage, margin + columnWidth * 2, currentY);
+      
+          const timingsText = timings.length > 0 ? timings.join(', ') : 'None';
+          doc.text(timingsText, margin + columnWidth * 2.5, currentY);
+      
+          const whenConsumeText = whenConsume.length > 0 ? whenConsume.join(', ') : 'None';
+          console.log('When to Consume:', whenConsumeText);
+          doc.text(whenConsumeText, margin + columnWidth * 4, currentY);
+      
+          currentY += doc.heightOfString('M') + 10; 
+        });
+      
+        doc.moveDown(); 
+      } else {
+        applyStyles(doc, getStyles('medicines', 'No Medicines Data'));
+        doc.text('No medicines data available.', appliedStyles.margin, currentY);
+        currentY += doc.heightOfString('No medicines data available.') + 5;
+      }
+      
     
     
       doc.end();
@@ -1337,8 +1364,8 @@ console.log("appointment",appointment)
     .stroke();
     currentY += 20;
     
-    if (appointment.prescription && appointment.prescription.prescription.date) {
-      const formattedDate = appointment.prescription.prescription.date // Format the date from appointment.prescription
+    if (appointment.prescription && appointment.prescription.date) {
+      const formattedDate = appointment.prescription.date // Format the date from appointment.prescription
       applyStyles(doc, getStyles('prescriptionDetails', 'Date'));
     
       // Print the date right-aligned
@@ -1356,81 +1383,115 @@ console.log("appointment",appointment)
     if (appointment.prescription) {
       applyStyles(doc, getStyles('prescriptionDetails', 'Prescription Details'));
       doc.text('Prescription Details', appliedStyles.margin, currentY,{ underline: true });
-      currentY += 35; // Add space between heading and details
+      currentY += 35; 
     
-      // Convert to plain object and filter out internal properties and specific fields
       const prescriptionFields = appointment.prescription.toObject();
       const keys = Object.keys(prescriptionFields)
-        .filter(key => !key.startsWith('$') && key !== '_id' && key !== 'date'); // Filter out internal properties, _id, and date
+        .filter(key => !key.startsWith('$') && key !== '_id' && key !== 'date'); 
     
-      // Iterate over the filtered keys
       keys.forEach((key) => {
-        const fieldValue = prescriptionFields[key]; // Use plain object to get field value
-        const fieldLabel = key.replace(/_/g, ' '); // Format field label
+        const fieldValue = prescriptionFields[key]; 
+        const fieldLabel = key.replace(/_/g, ' '); 
     
         const fieldStyle = getStyles('prescriptionDetails', key);
         applyStyles(doc, fieldStyle);
     
-        // Handle field value for null or undefined
         const displayValue = fieldValue !== null && fieldValue !== undefined ? fieldValue : 'N/A';
         
-        // Print field label and value
         doc.text(`${fieldLabel}:`, appliedStyles.margin, currentY);
-        currentY += doc.heightOfString(`${fieldLabel}:`) + 5; // Move down for field value
-        doc.text(displayValue, appliedStyles.margin + 80, currentY); // Adjust margin for value
+        currentY += doc.heightOfString(`${fieldLabel}:`) + 5; 
+        doc.text(displayValue, appliedStyles.margin + 80, currentY); 
     
-        // Update currentY for next field
         currentY += doc.heightOfString(displayValue) + 5;
       });
     } else {
-      // Handle case when no prescription data is available
       applyStyles(doc, getStyles('prescriptionDetails', 'No Prescription Data'));
       doc.text('No prescription data available.', appliedStyles.margin, currentY);
       currentY += doc.heightOfString('No prescription data available.') + 5;
     }
     console.log(appointment.medicines)
     
-  // Medicines section
-  applyStyles(doc, getStyles('medicines', 'Medicine Name'));
-  doc.text('Medicines Details', appliedStyles.margin, currentY, { underline: true });
-  currentY += doc.heightOfString('Medicines Details') + 10; // Add gap between header and first medicine
-
-  appointment.medicines.forEach(medicine => {
-    applyStyles(doc, getStyles('medicines', 'Medicine Name'));
-    doc.text(`- Medicine Name: ${medicine.name}`, appliedStyles.margin, currentY, { indent: 10 });
-    currentY += doc.heightOfString(`- Medicine Name: ${medicine.name}`) + 10; // Add gap
-
-    applyStyles(doc, getStyles('medicines', 'Dosage'));
-    doc.text(`Dosage: ${medicine.dosage}`, appliedStyles.margin + 10, currentY);
-    currentY += doc.heightOfString(`Dosage: ${medicine.dosage}`) + 10; // Add gap
-
-    applyStyles(doc, getStyles('medicines', 'Timings'));
-    doc.text(`Timings:`, appliedStyles.margin + 10, currentY);
-    currentY += doc.heightOfString(`Timings:`) + 10; // Add gap
-
-    applyStyles(doc, getStyles('medicines', 'Timings'));
-    doc.text(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
-    currentY += doc.heightOfString(`Morning: ${medicine.timings.morning ? 'Yes' : 'No'}`) + 10; // Add gap
-
-    applyStyles(doc, getStyles('medicines', 'Timings'));
-    doc.text(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
-    currentY += doc.heightOfString(`Afternoon: ${medicine.timings.afternoon ? 'Yes' : 'No'}`) + 10; // Add gap
-
-    applyStyles(doc, getStyles('medicines', 'Timings'));
-    doc.text(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
-    currentY += doc.heightOfString(`Evening: ${medicine.timings.evening ? 'Yes' : 'No'}`) + 10; // Add gap
-
-    applyStyles(doc, getStyles('medicines', 'Before Food'));
-    doc.text(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
-    currentY += doc.heightOfString(`Before Food: ${medicine.timings.beforeFood ? 'Yes' : 'No'}`) + 10; // Add gap
-
-    applyStyles(doc, getStyles('medicines', 'After Food'));
-    doc.text(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`, appliedStyles.margin + 20, currentY);
-    currentY += doc.heightOfString(`After Food: ${medicine.timings.afterFood ? 'Yes' : 'No'}`) + 10; // Add gap
-
-    doc.moveDown(); // Add some space before the next medicine
-  });
-
+    const drawCellBorders = (doc, startX, startY, columnWidth, rowHeight, numRows, numColumns) => {
+      const endX = startX + columnWidth * numColumns;
+      const endY = startY + rowHeight * numRows;
+  
+      doc.rect(startX, startY, endX - startX, endY - startY).stroke();
+  
+      for (let i = 1; i < numColumns; i++) {
+          const x = startX + columnWidth * i;
+          doc.moveTo(x, startY).lineTo(x, endY).stroke();
+      }
+  
+      for (let j = 0; j <= numRows; j++) { 
+          const y = startY + rowHeight * j;
+          doc.moveTo(startX, y).lineTo(endX, y).stroke();
+      }
+  };
+  
+  if (appointment.medicines && appointment.medicines.length > 0) {
+      currentY += 20;
+      applyStyles(doc, getStyles('medicines', 'Medicine Details'));
+      doc.text('Medicines Details', appliedStyles.margin, currentY, { underline: true });
+      currentY += doc.heightOfString('Medicines Details') + 10;
+  
+      applyStyles(doc, getStyles('medicines', 'Headers'));
+      const margin = appliedStyles.margin;
+      const columnWidth = 100; 
+      const rowHeight = 20; 
+  
+      doc.text('S.No', margin, currentY);
+      doc.text('Medicine Name', margin + columnWidth * 0.5, currentY);
+      doc.text('Dosage', margin + columnWidth * 2, currentY);
+      doc.text('Timings', margin + columnWidth * 2.5, currentY);
+      doc.text('When to Consume', margin + columnWidth * 4, currentY);
+  
+      currentY += rowHeight; 
+  
+      drawCellBorders(doc, margin - 5, currentY - rowHeight, columnWidth, rowHeight, appointment.medicines.length + 1, 5);
+  
+      appointment.medicines.forEach((medicine, index) => {
+          let timings = [];
+          let whenConsume = [];
+  
+          if (medicine.timings.morning) {
+              timings.push('Morning');
+          }
+          if (medicine.timings.afternoon) {
+              timings.push('Afternoon');
+          }
+          if (medicine.timings.evening) {
+              timings.push('Evening');
+          }
+  
+          if (medicine.timings.beforeFood) {
+              whenConsume.push('Before Food');
+          }
+          if (medicine.timings.afterFood) {
+              whenConsume.push('After Food');
+          }
+  
+          applyStyles(doc, getStyles('medicines', 'Row'));
+          doc.text(`${index + 1}`, margin, currentY);
+          doc.text(medicine.name, margin + columnWidth * 0.5, currentY);
+          doc.text(medicine.dosage, margin + columnWidth * 2, currentY);
+  
+          const timingsText = timings.length > 0 ? timings.join(', ') : 'None';
+          doc.text(timingsText, margin + columnWidth * 2.5, currentY);
+  
+          const whenConsumeText = whenConsume.length > 0 ? whenConsume.join(', ') : 'None';
+          doc.text(whenConsumeText, margin + columnWidth * 4, currentY);
+  
+          currentY += rowHeight;
+      });
+  
+      doc.moveDown();
+  } else {
+      applyStyles(doc, getStyles('medicines', 'No Medicines Data'));
+      doc.text('No medicines data available.', appliedStyles.margin, currentY);
+      currentY += doc.heightOfString('No medicines data available.') + 5;
+  }
+  
+    
 
 
   doc.end();
@@ -1472,14 +1533,12 @@ const downloadpdf = async (req, res) => {
 
     const doc = new PDFDocument();
     
-    // Set headers to trigger a download
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="Prescription.pdf"');
 
-    // Create the PDF and stream it to the response
     createPdf(doc, { callback: (pdfData) => res.end(pdfData) }, clinic, doctors, template, appointment, patient);
 
-    doc.pipe(res); // Pipe the PDF document to the response
+    doc.pipe(res);
 
   } catch (error) {
     console.error('Error generating PDF:', error);

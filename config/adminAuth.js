@@ -3,6 +3,7 @@ const { Admin } = require('../modal/admin');
 require('dotenv').config();
 
 const signAdminToken = (admin) => {
+  console.log(admin,process.env.JWT_SECRET)
   return jwt.sign(
     {
       _id: admin._id,
