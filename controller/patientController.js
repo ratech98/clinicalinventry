@@ -646,7 +646,6 @@ console.log(appointment)
       doc.text(` ${qualifications}`, doctorDetailsX, currentY, { align: 'right' });
       currentY += doc.heightOfString(qualifications || "MBBS") + 5;
     
-      // First Horizontal Line
       currentY += 10;
       doc.moveTo(appliedStyles.margin, currentY)
         .lineTo(doc.page.width - appliedStyles.margin, currentY)
@@ -655,7 +654,6 @@ console.log(appointment)
     
       currentY += 20;
     
-      // Patient Details
       applyStyles(doc, getStyles('patientDetails', 'Patient Name'));
       doc.text(`Patient Name: ${patient.name}`, appliedStyles.margin, currentY, { continued: true });
       doc.text(`                                          `, { continued: true });
@@ -691,14 +689,12 @@ console.log(appointment)
         if (prescription) {
           applyStyles(doc, getStyles('prescriptionDetails', 'Prescription Details'));
           doc.text('Prescription Details', appliedStyles.margin, currentY,{ underline: true });
-          currentY += 35; // Add space between heading and details
+          currentY += 35; 
         
-          // Convert to plain object and filter out internal properties and specific fields
           const prescriptionFields = prescription
           const keys = Object.keys(prescriptionFields)
             .filter(key => !key.startsWith('$') && key !== '_id' && key !== 'date'); // Filter out internal properties, _id, and date
         
-          // Iterate over the filtered keys
           keys.forEach((key) => {
             const fieldValue = prescriptionFields[key]; // Use plain object to get field value
             const fieldLabel = key.replace(/_/g, ' '); // Format field label
@@ -706,39 +702,31 @@ console.log(appointment)
             const fieldStyle = getStyles('prescriptionDetails', key);
             applyStyles(doc, fieldStyle);
         
-            // Handle field value for null or undefined
             const displayValue = fieldValue !== null && fieldValue !== undefined ? fieldValue : 'N/A';
             
-            // Print field label and value
             doc.text(`${fieldLabel}:`, appliedStyles.margin, currentY);
             currentY += doc.heightOfString(`${fieldLabel}:`) + 5; // Move down for field value
             doc.text(displayValue, appliedStyles.margin + 80, currentY); // Adjust margin for value
         
-            // Update currentY for next field
             currentY += doc.heightOfString(displayValue) + 5;
           });
         } else {
-          // Handle case when no prescription data is available
           applyStyles(doc, getStyles('prescriptionDetails', 'No Prescription Data'));
           doc.text('No prescription data available.', appliedStyles.margin, currentY);
           currentY += doc.heightOfString('No prescription data available.') + 5;
         }
-        // console.log(appointment.medicines)
         
-      // Medicines section
       if (medicines && medicines.length > 0) {
         currentY += 20;
         applyStyles(doc, getStyles('medicines', 'Medicine Details'));
         doc.text('Medicines Details', appliedStyles.margin, currentY, { underline: true });
         currentY += doc.heightOfString('Medicines Details') + 10; // Add gap between header and table
       
-        // Define the table headers
         applyStyles(doc, getStyles('medicines', 'Headers'));
         const margin = appliedStyles.margin;
         const columnWidth = 100; // Adjust width for each column
         const columnSpacing = 10; // Space between columns
       
-        // Print column headers
         doc.text('S.No', margin, currentY);
         doc.text('Medicine Name', margin + columnWidth*0.5, currentY);
         doc.text('Dosage', margin + columnWidth * 2, currentY);
@@ -747,7 +735,6 @@ console.log(appointment)
       
         currentY += doc.heightOfString('Headers') + 5; // Adjust for subheaders
       
-        // Loop through medicines to populate table rows
         medicines.forEach((medicine, index) => {
           let timings = [];
           let whenConsume = [];
@@ -770,7 +757,6 @@ console.log(appointment)
             whenConsume.push('After Food');
           }
       
-          // Medicine details
           applyStyles(doc, getStyles('medicines', 'Row'));
           doc.text(`${index + 1}`, margin, currentY);
           doc.text(medicine.name, margin + columnWidth*0.5, currentY);
@@ -1383,7 +1369,7 @@ console.log("appointment",appointment)
     if (appointment.prescription) {
       applyStyles(doc, getStyles('prescriptionDetails', 'Prescription Details'));
       doc.text('Prescription Details', appliedStyles.margin, currentY,{ underline: true });
-      currentY += 35; 
+      currentY += 35;
     
       const prescriptionFields = appointment.prescription.toObject();
       const keys = Object.keys(prescriptionFields)
@@ -1391,7 +1377,7 @@ console.log("appointment",appointment)
     
       keys.forEach((key) => {
         const fieldValue = prescriptionFields[key]; 
-        const fieldLabel = key.replace(/_/g, ' '); 
+        const fieldLabel = key.replace(/_/g, ' ');
     
         const fieldStyle = getStyles('prescriptionDetails', key);
         applyStyles(doc, fieldStyle);
@@ -1400,97 +1386,85 @@ console.log("appointment",appointment)
         
         doc.text(`${fieldLabel}:`, appliedStyles.margin, currentY);
         currentY += doc.heightOfString(`${fieldLabel}:`) + 5; 
-        doc.text(displayValue, appliedStyles.margin + 80, currentY); 
+        doc.text(displayValue, appliedStyles.margin + 80, currentY);
     
+        // Update currentY for next field
         currentY += doc.heightOfString(displayValue) + 5;
       });
     } else {
+      // Handle case when no prescription data is available
       applyStyles(doc, getStyles('prescriptionDetails', 'No Prescription Data'));
       doc.text('No prescription data available.', appliedStyles.margin, currentY);
       currentY += doc.heightOfString('No prescription data available.') + 5;
     }
     console.log(appointment.medicines)
     
-    const drawCellBorders = (doc, startX, startY, columnWidth, rowHeight, numRows, numColumns) => {
-      const endX = startX + columnWidth * numColumns;
-      const endY = startY + rowHeight * numRows;
-  
-      doc.rect(startX, startY, endX - startX, endY - startY).stroke();
-  
-      for (let i = 1; i < numColumns; i++) {
-          const x = startX + columnWidth * i;
-          doc.moveTo(x, startY).lineTo(x, endY).stroke();
-      }
-  
-      for (let j = 0; j <= numRows; j++) { 
-          const y = startY + rowHeight * j;
-          doc.moveTo(startX, y).lineTo(endX, y).stroke();
-      }
-  };
-  
-  if (appointment.medicines && appointment.medicines.length > 0) {
+    if (appointment.medicines && appointment.medicines.length > 0) {
       currentY += 20;
       applyStyles(doc, getStyles('medicines', 'Medicine Details'));
       doc.text('Medicines Details', appliedStyles.margin, currentY, { underline: true });
       currentY += doc.heightOfString('Medicines Details') + 10;
-  
+    
+      // Define the table headers
       applyStyles(doc, getStyles('medicines', 'Headers'));
       const margin = appliedStyles.margin;
       const columnWidth = 100; 
-      const rowHeight = 20; 
-  
+      const columnSpacing = 10; 
+    
       doc.text('S.No', margin, currentY);
-      doc.text('Medicine Name', margin + columnWidth * 0.5, currentY);
+      doc.text('Medicine Name', margin + columnWidth*0.5, currentY);
       doc.text('Dosage', margin + columnWidth * 2, currentY);
       doc.text('Timings', margin + columnWidth * 2.5, currentY);
       doc.text('When to Consume', margin + columnWidth * 4, currentY);
-  
-      currentY += rowHeight; 
-  
-      drawCellBorders(doc, margin - 5, currentY - rowHeight, columnWidth, rowHeight, appointment.medicines.length + 1, 5);
-  
+    
+      currentY += doc.heightOfString('Headers') + 5; // Adjust for subheaders
+    
+      // Loop through medicines to populate table rows
       appointment.medicines.forEach((medicine, index) => {
-          let timings = [];
-          let whenConsume = [];
-  
-          if (medicine.timings.morning) {
-              timings.push('Morning');
-          }
-          if (medicine.timings.afternoon) {
-              timings.push('Afternoon');
-          }
-          if (medicine.timings.evening) {
-              timings.push('Evening');
-          }
-  
-          if (medicine.timings.beforeFood) {
-              whenConsume.push('Before Food');
-          }
-          if (medicine.timings.afterFood) {
-              whenConsume.push('After Food');
-          }
-  
-          applyStyles(doc, getStyles('medicines', 'Row'));
-          doc.text(`${index + 1}`, margin, currentY);
-          doc.text(medicine.name, margin + columnWidth * 0.5, currentY);
-          doc.text(medicine.dosage, margin + columnWidth * 2, currentY);
-  
-          const timingsText = timings.length > 0 ? timings.join(', ') : 'None';
-          doc.text(timingsText, margin + columnWidth * 2.5, currentY);
-  
-          const whenConsumeText = whenConsume.length > 0 ? whenConsume.join(', ') : 'None';
-          doc.text(whenConsumeText, margin + columnWidth * 4, currentY);
-  
-          currentY += rowHeight;
+        let timings = [];
+        let whenConsume = [];
+    
+        if (medicine.timings.morning) {
+          timings.push('Morning');
+        }
+        if (medicine.timings.afternoon) {
+          timings.push('Afternoon');
+        }
+        if (medicine.timings.evening) {
+          timings.push('Evening');
+        }
+    
+        // Populate the When to Consume array based on true values
+        if (medicine.timings.beforeFood) {
+          whenConsume.push('Before Food');
+        }
+        if (medicine.timings.afterFood) {
+          whenConsume.push('After Food');
+        }
+    
+        // Medicine details
+        applyStyles(doc, getStyles('medicines', 'Row'));
+        doc.text(`${index + 1}`, margin, currentY);
+        doc.text(medicine.name, margin + columnWidth*0.5, currentY);
+        doc.text(medicine.dosage, margin + columnWidth * 2, currentY);
+    
+        const timingsText = timings.length > 0 ? timings.join(', ') : 'None';
+        doc.text(timingsText, margin + columnWidth * 2.5, currentY);
+    
+        const whenConsumeText = whenConsume.length > 0 ? whenConsume.join(', ') : 'None';
+        console.log('When to Consume:', whenConsumeText);
+        doc.text(whenConsumeText, margin + columnWidth * 4, currentY);
+    
+        currentY += doc.heightOfString('M') + 10; 
       });
-  
-      doc.moveDown();
-  } else {
+    
+      doc.moveDown(); 
+    } else {
       applyStyles(doc, getStyles('medicines', 'No Medicines Data'));
       doc.text('No medicines data available.', appliedStyles.margin, currentY);
       currentY += doc.heightOfString('No medicines data available.') + 5;
-  }
-  
+    }
+    
     
 
 
@@ -1533,12 +1507,14 @@ const downloadpdf = async (req, res) => {
 
     const doc = new PDFDocument();
     
+    // Set headers to trigger a download
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="Prescription.pdf"');
 
+    // Create the PDF and stream it to the response
     createPdf(doc, { callback: (pdfData) => res.end(pdfData) }, clinic, doctors, template, appointment, patient);
 
-    doc.pipe(res);
+    doc.pipe(res); // Pipe the PDF document to the response
 
   } catch (error) {
     console.error('Error generating PDF:', error);
