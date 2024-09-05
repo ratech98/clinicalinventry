@@ -693,11 +693,11 @@ console.log(appointment)
         
           const prescriptionFields = prescription
           const keys = Object.keys(prescriptionFields)
-            .filter(key => !key.startsWith('$') && key !== '_id' && key !== 'date'); // Filter out internal properties, _id, and date
+            .filter(key => !key.startsWith('$') && key !== '_id' && key !== 'date'); 
         
           keys.forEach((key) => {
-            const fieldValue = prescriptionFields[key]; // Use plain object to get field value
-            const fieldLabel = key.replace(/_/g, ' '); // Format field label
+            const fieldValue = prescriptionFields[key]; 
+            const fieldLabel = key.replace(/_/g, ' '); 
         
             const fieldStyle = getStyles('prescriptionDetails', key);
             applyStyles(doc, fieldStyle);
@@ -705,8 +705,8 @@ console.log(appointment)
             const displayValue = fieldValue !== null && fieldValue !== undefined ? fieldValue : 'N/A';
             
             doc.text(`${fieldLabel}:`, appliedStyles.margin, currentY);
-            currentY += doc.heightOfString(`${fieldLabel}:`) + 5; // Move down for field value
-            doc.text(displayValue, appliedStyles.margin + 80, currentY); // Adjust margin for value
+            currentY += doc.heightOfString(`${fieldLabel}:`) + 5; 
+            doc.text(displayValue, appliedStyles.margin + 80, currentY); 
         
             currentY += doc.heightOfString(displayValue) + 5;
           });

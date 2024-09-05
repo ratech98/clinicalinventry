@@ -12,7 +12,7 @@ const connectDB = async () => {
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 30000, 
     });
-    console.log("mongodb connection success!");
+    console.log("mongodb connection success!",process.env.MONGO_URI);
 
     const clinics = await Clinic.find({});
     for (const clinic of clinics) {
