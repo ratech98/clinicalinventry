@@ -407,45 +407,51 @@ function getDayOfWeek(date) {
 
 
 
+
 const updateDoctorAvailabilitty = async (req, res) => {
-  const { doctorId, clinicId, days, slots } = req.body;
+  const { doctorId, clinicId, availabilities } = req.body;
 
   try {
-    const doctorRecord = await doctor.findById(doctorId);
-    if (!doctorRecord) {
+    const doctorExists = await doctor.findById(doctorId);
+    if (!doctorExists) {
       return res.status(404).json({ success: false, error: 'Doctor not found', errorcode: 1002 });
     }
 
-    const clinic = await Clinic.findById(clinicId);
-    if (!clinic) {
+    const clinicExists = await Clinic.findById(clinicId);
+    if (!clinicExists) {
       return res.status(404).json({ success: false, error: 'Clinic not found', errorcode: 1001 });
     }
 
-    const newAvailabilities = days.map(day => ({
-      day,
-      slots: slots.map(slot => ({ timeSlot: slot, available: true }))
-    }));
+    const existingAvailability = await Availability.findOne({ doctorId, clinicId });
 
-    const overlappingAvailability = await Availability.findOne({
-      doctorId,
-      clinicId: { $ne: clinicId },
-      'availabilities.day': { $in: days },
-      'availabilities.slots.timeSlot': { $in: slots }
+    if (!existingAvailability) {
+      return res.status(404).json({ success: false, error: 'Availability record not found', errorcode: 1003 });
+    }
+
+    if (availabilities.length === 0) {
+      return res.status(400).json({ success: false, error: 'No availabilities provided', errorcode: 1004 });
+    }
+
+    availabilities.forEach(({ day, slots }) => {
+      if (slots.length === 0) {
+        return res.status(400).json({ success: false, error: `Empty slots array for day: ${day}`, errorcode: 1005 });
+      }
+
+      const dayAvailability = existingAvailability.availabilities.find(avail => avail.day === day);
+
+      if (dayAvailability) {
+        dayAvailability.slots = slots.map(slot => ({ timeSlot: slot, available: true }));
+      } else {
+        existingAvailability.availabilities.push({
+          day,
+          slots: slots.map(slot => ({ timeSlot: slot, available: true }))
+        });
+      }
     });
 
-    if (overlappingAvailability) {
-      return res.status(400).json({ success: false, error: 'Doctor has overlapping availability in another clinic' });
-    }
-
-    const existingAvailability = await Availability.findOne({ doctorId, clinicId });
-    if (!existingAvailability) {
-      return res.status(404).json({ success: false, error: 'Availability record not found for this doctor and clinic' });
-    }
-
-    existingAvailability.availabilities = newAvailabilities;
     await existingAvailability.save();
 
-    res.status(200).json({ success: true, message: 'Availability updated successfully', availability: existingAvailability });
+    res.status(200).json({ success: true, message: 'Availability updated successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
