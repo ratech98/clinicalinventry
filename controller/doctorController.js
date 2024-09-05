@@ -299,29 +299,39 @@ const addDoctorAvailability = async (req, res) => {
   const { doctorId, clinicId, availabilities } = req.body;
 
   try {
+    // Check if the doctor exists
     const doctorExists = await doctor.findById(doctorId);
     if (!doctorExists) {
       return res.status(404).json({ success: false, error: 'Doctor not found', errorcode: 1002 });
     }
 
+    // Check if the clinic exists
     const clinicExists = await Clinic.findById(clinicId);
     if (!clinicExists) {
       return res.status(404).json({ success: false, error: 'Clinic not found', errorcode: 1001 });
     }
 
+    // Find existing availability for the doctor and clinic
     const existingAvailability = await Availability.findOne({ doctorId, clinicId });
 
     if (existingAvailability) {
+      // Create a set of days provided in the new availabilities
+      const newDaysSet = new Set(availabilities.map(({ day }) => day));
+
+      // Filter out any days from existing availability that are not in the new list
+      existingAvailability.availabilities = existingAvailability.availabilities.filter(
+        ({ day }) => newDaysSet.has(day)
+      );
+
+      // Update or add new days and slots
       availabilities.forEach(({ day, slots }) => {
         const dayAvailability = existingAvailability.availabilities.find(avail => avail.day === day);
 
         if (dayAvailability) {
-          slots.forEach(slot => {
-            if (!dayAvailability.slots.find(s => s.timeSlot === slot)) {
-              dayAvailability.slots.push({ timeSlot: slot, available: true });
-            }
-          });
+          // Replace the slots with the new slots provided
+          dayAvailability.slots = slots.map(slot => ({ timeSlot: slot, available: true }));
         } else {
+          // Add new day and slots if the day doesn't exist yet
           existingAvailability.availabilities.push({
             day,
             slots: slots.map(slot => ({ timeSlot: slot, available: true }))
@@ -331,6 +341,7 @@ const addDoctorAvailability = async (req, res) => {
 
       await existingAvailability.save();
     } else {
+      // Create new availability if it doesn't exist
       const newAvailability = new Availability({
         doctorId,
         clinicId,
@@ -343,6 +354,7 @@ const addDoctorAvailability = async (req, res) => {
       await newAvailability.save();
     }
 
+    // Update the doctor's scheduled status for the clinic
     await doctor.updateOne(
       { _id: doctorId, 'clinics.clinicId': clinicId },
       { $set: { 'clinics.$.scheduled': true } }
@@ -354,6 +366,9 @@ const addDoctorAvailability = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
+
 
 
 function calculateNextOccurrences(days) {
