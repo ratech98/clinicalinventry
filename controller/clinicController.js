@@ -342,12 +342,11 @@ const verify_clinic_certificate=async (req, res) => {
 
 const getDoctorsAndAvailabilityByClinic = async (req, res) => {
   try {
-    const { id } = req.params; // Clinic ID
+    const { id } = req.params; 
     const { specialist, recently_joined, onleave, page = 1, limit = 10, verify, subscription } = req.query;
 
     const todayUTC = new Date().toISOString().split('T')[0]; 
 
-    // Construct the query to find doctors related to the clinic
     const doctorQuery = { 'clinics.clinicId': id };
     if (specialist) {
       doctorQuery.specialist = specialist;
@@ -362,20 +361,16 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
       doctorQuery["clinics.subscription"] = true;
     }
 
-    // Get the total number of doctors for pagination
     const totalDoctors = await doctor.countDocuments(doctorQuery);
     const totalPages = Math.ceil(totalDoctors / limit);
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    // Find the doctors based on the query
     const doctors = await doctor.find(doctorQuery)
       .limit(limit)
       .skip(startIndex);
 
-    // Map through the doctors to get their availability status and filter clinic details
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
-      // Filter clinics to get only the relevant clinic details
       const clinicDetails = doctor.clinics.find(clinic => clinic.clinicId.toString() === id);
 
       const availabilityDoc = await Availability.findOne({
@@ -400,8 +395,8 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
 
       return {
         doctor: {
-          ...doctor.toObject(), // Convert Mongoose document to plain object
-          clinics: clinicDetails ? [clinicDetails] : [] // Include only relevant clinic details
+          ...doctor.toObject(),
+          clinics: clinicDetails ? [clinicDetails] : [] 
         },
         availability: availabilityStatus
       };

@@ -22,6 +22,34 @@ const getTemplatesByClinicId = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+const getTemplatesByClinicIdAndSection = async (req, res) => {
+  const clinicId = req.user._id;
+  const section = "prescriptionDetails";
+
+  try {
+    const templates = await Template.find({
+      clinic_id: clinicId,
+      'dynamicFields.section': section
+    });
+
+    if (!templates || templates.length === 0) {
+      return res.status(404).json({ success: false, message: `No templates found for this clinic ID with section ${section}` });
+    }
+
+    const filteredTemplates = templates.map(template => {
+      const matchingFields = template.dynamicFields.filter(field => field.section === section);
+      return {
+        ...template.toObject(),  
+        dynamicFields: matchingFields 
+      };
+    });
+
+    res.json({ success: true, message: "Prescription template fetched successfully", templates: filteredTemplates });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
 
 const add_field_to_template = async (req, res) => {
     const { clinicId, fieldName, section } = req.body;
@@ -204,5 +232,6 @@ module.exports = {
     update_field_in_template,
     delete_field_from_template,
     update_logo,
-    sendPDFResponse
+    sendPDFResponse,
+    getTemplatesByClinicIdAndSection
 };
