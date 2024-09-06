@@ -1470,95 +1470,175 @@ console.log("appointment",appointment)
   doc.end();
 };
 
-      const downloadpdf = async (req, res) => {
-          try {
-            const { tenantDBConnection } = req;
-            const { patientId, appointmentId } = req.params;
-            const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
+      // const downloadpdf = async (req, res) => {
+      //     try {
+      //       const { tenantDBConnection } = req;
+      //       const { patientId, appointmentId } = req.params;
+      //       const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
         
-            const patient = await PatientModel.findById(patientId);
-            if (!patient) {
-              return res.status(404).json({ success: false, error: 'Patient not found', errorcode: 1021 });
-            }
+      //       const patient = await PatientModel.findById(patientId);
+      //       if (!patient) {
+      //         return res.status(404).json({ success: false, error: 'Patient not found', errorcode: 1021 });
+      //       }
         
-            const appointment = patient.appointment_history.id(appointmentId);
-            if (!appointment) {
-              return res.status(404).json({ success: false, error: 'Appointment not found', errorcode: 1028 });
-            }
+      //       const appointment = patient.appointment_history.id(appointmentId);
+      //       if (!appointment) {
+      //         return res.status(404).json({ success: false, error: 'Appointment not found', errorcode: 1028 });
+      //       }
         
-            const clinic = await Clinic.findOne({ _id: req.user._id }).exec();
-            if (!clinic) {
-              return res.status(404).json({ success: false, error: 'Clinic not found', errorcode: 1030 });
-            }
+      //       const clinic = await Clinic.findOne({ _id: req.user._id }).exec();
+      //       if (!clinic) {
+      //         return res.status(404).json({ success: false, error: 'Clinic not found', errorcode: 1030 });
+      //       }
         
-            const doctors = await doctor.findById(appointment.doctor).exec();
-            if (!doctors) {
-              return res.status(404).json({ success: false, error: 'Doctor not found', errorcode: 1031 });
-            }
+      //       const doctors = await doctor.findById(appointment.doctor).exec();
+      //       if (!doctors) {
+      //         return res.status(404).json({ success: false, error: 'Doctor not found', errorcode: 1031 });
+      //       }
         
-            const template = await Template.findOne({ clinic_id: req.user._id });
-            if (!template) {
-              return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
-            }
+      //       const template = await Template.findOne({ clinic_id: req.user._id });
+      //       if (!template) {
+      //         return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
+      //       }
         
-            const content = {}; // Add content based on your requirements
-            const fileName = `Prescription.pdf`; 
-            const gcsFilePath = `prescriptions/${fileName}`;
-            const bucket = gcsStorage.bucket(bucketName);
+      //       const content = {}; // Add content based on your requirements
+      //       const fileName = `Prescription.pdf`; 
+      //       const gcsFilePath = `prescriptions/${fileName}`;
+      //       const bucket = gcsStorage.bucket(bucketName);
         
-            const doc = new PDFDocument();
-            const passThroughStream = new require('stream').PassThrough();
+      //       const doc = new PDFDocument();
+      //       const passThroughStream = new require('stream').PassThrough();
         
-            doc.pipe(passThroughStream);
+      //       doc.pipe(passThroughStream);
         
-            // Debugging: Log when PDF generation starts
-            console.log('Generating PDF...');
+      //       // Debugging: Log when PDF generation starts
+      //       console.log('Generating PDF...');
             
-            createPdf(doc, content, clinic, doctors, template, appointment, patient);
+      //       createPdf(doc, content, clinic, doctors, template, appointment, patient);
         
-            doc.end();
+      //       doc.end();
         
-            // Debugging: Log when PDF generation ends
-            console.log('PDF generation completed.');
+      //       // Debugging: Log when PDF generation ends
+      //       console.log('PDF generation completed.');
         
-            const file = bucket.file(gcsFilePath);
-            const gcsWriteStream = file.createWriteStream();
+      //       const file = bucket.file(gcsFilePath);
+      //       const gcsWriteStream = file.createWriteStream();
         
-            passThroughStream.pipe(gcsWriteStream);
+      //       passThroughStream.pipe(gcsWriteStream);
         
-            gcsWriteStream.on('finish', () => {
-              console.log('PDF uploaded to GCS.');
+      //       gcsWriteStream.on('finish', () => {
+      //         console.log('PDF uploaded to GCS.');
         
-              res.setHeader('Content-Type', 'application/pdf');
-              res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      //         res.setHeader('Content-Type', 'application/pdf');
+      //         res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
         
-              const gcsReadStream = file.createReadStream();
-              gcsReadStream.pipe(res);
+      //         const gcsReadStream = file.createReadStream();
+      //         gcsReadStream.pipe(res);
         
-              gcsReadStream.on('end', async () => {
-                await file.delete();
-                console.log('PDF deleted from GCS.');
-              });
+      //         gcsReadStream.on('end', async () => {
+      //           await file.delete();
+      //           console.log('PDF deleted from GCS.');
+      //         });
         
-              gcsReadStream.on('error', (err) => {
-                console.error('Error sending file:', err);
-                res.status(500).json({ success: false, error: 'Error sending file', errorcode: 1051 });
-              });
-            });
+      //         gcsReadStream.on('error', (err) => {
+      //           console.error('Error sending file:', err);
+      //           res.status(500).json({ success: false, error: 'Error sending file', errorcode: 1051 });
+      //         });
+      //       });
         
-            gcsWriteStream.on('error', (err) => {
-              console.error('Error uploading file to GCS:', err);
-              res.status(500).json({ success: false, error: 'Error uploading file', errorcode: 1052 });
-            });
+      //       gcsWriteStream.on('error', (err) => {
+      //         console.error('Error uploading file to GCS:', err);
+      //         res.status(500).json({ success: false, error: 'Error uploading file', errorcode: 1052 });
+      //       });
         
-          } catch (error) {
-            console.error('Error generating PDF:', error);
-            return res.status(500).json({ success: false, error: 'Internal server error', errorcode: 1050 });
+      //     } catch (error) {
+      //       console.error('Error generating PDF:', error);
+      //       return res.status(500).json({ success: false, error: 'Internal server error', errorcode: 1050 });
+      //     }
+      //   };
+        
+      const downloadpdf = async (req, res) => {
+        try {
+          const { tenantDBConnection } = req;
+          const { patientId, appointmentId } = req.params;
+          const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
+      
+          const patient = await PatientModel.findById(patientId);
+          if (!patient) {
+            return res.status(404).json({ success: false, error: 'Patient not found', errorcode: 1021 });
           }
-        };
-        
-
-
+      
+          const appointment = patient.appointment_history.id(appointmentId);
+          if (!appointment) {
+            return res.status(404).json({ success: false, error: 'Appointment not found', errorcode: 1028 });
+          }
+      
+          const clinic = await Clinic.findOne({ _id: req.user._id }).exec();
+          if (!clinic) {
+            return res.status(404).json({ success: false, error: 'Clinic not found', errorcode: 1030 });
+          }
+      
+          const doctors = await doctor.findById(appointment.doctor).exec();
+          if (!doctors) {
+            return res.status(404).json({ success: false, error: 'Doctor not found', errorcode: 1031 });
+          }
+      
+          const template = await Template.findOne({ clinic_id: req.user._id });
+          if (!template) {
+            return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
+          }
+      
+          const content = {}; // Add content based on your requirements
+          const fileName = `Prescription.pdf`; 
+          const gcsFilePath = `prescriptions/${fileName}`;
+          const bucket = gcsStorage.bucket(bucketName);
+      
+          const doc = new PDFDocument();
+          const passThroughStream = new require('stream').PassThrough();
+          const gcsWriteStream = bucket.file(gcsFilePath).createWriteStream();
+      
+          doc.pipe(passThroughStream);
+      
+          console.log('Generating PDF...');
+          
+          // Await PDF generation to complete
+          await createPdf(doc, content, clinic, doctors, template, appointment, patient);
+      
+          // doc.end();
+      
+          passThroughStream.pipe(gcsWriteStream);
+      
+          gcsWriteStream.on('finish', () => {
+            console.log('PDF uploaded to GCS.');
+      
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      
+            const gcsReadStream = bucket.file(gcsFilePath).createReadStream();
+            gcsReadStream.pipe(res);
+      
+            gcsReadStream.on('end', async () => {
+              await bucket.file(gcsFilePath).delete();
+              console.log('PDF deleted from GCS.');
+            });
+      
+            gcsReadStream.on('error', (err) => {
+              console.error('Error sending file:', err);
+              res.status(500).json({ success: false, error: 'Error sending file', errorcode: 1051 });
+            });
+          });
+      
+          gcsWriteStream.on('error', (err) => {
+            console.error('Error uploading file to GCS:', err);
+            res.status(500).json({ success: false, error: 'Error uploading file', errorcode: 1052 });
+          });
+      
+        } catch (error) {
+          console.error('Error generating PDF:', error);
+          return res.status(500).json({ success: false, error: 'Internal server error', errorcode: 1050 });
+        }
+      };
+      
 
 
 
