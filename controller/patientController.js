@@ -1470,10 +1470,8 @@ console.log("appointment",appointment)
   doc.end();
 };
 
-const fs = require('fs');
-const path = require('path');
+const { Storage } = require('@google-cloud/storage');
 
-const storage = new Storage();
 
 const downloadpdf = async (req, res) => {
   try {
@@ -1506,52 +1504,45 @@ const downloadpdf = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
     }
 
-    const content = {}; 
-    const tempFilePath = path.join('/tmp', 'Prescription.pdf');
+    const content = {};
+    const fileName = `Prescription.pdf`; // Generate a unique file name
+    const gcsFilePath = `prescriptions/${fileName}`;
+    const bucket = gcsStorage.bucket(bucketName);
 
     const doc = new PDFDocument();
-    const writeStream = fs.createWriteStream(tempFilePath);
+    const passThroughStream = new require('stream').PassThrough();
 
-    doc.pipe(writeStream);
+    doc.pipe(passThroughStream);
 
     createPdf(doc, content, clinic, doctors, template, appointment, patient);
 
     doc.end();
 
-    writeStream.on('finish', async () => {
-      try {
-        await storage.bucket(bucketName).upload(tempFilePath, {
-          destination: 'Prescription.pdf',
-        });
+    const file = bucket.file(gcsFilePath);
+    const gcsWriteStream = file.createWriteStream();
 
-        const [url] = await storage
-          .bucket(bucketName)
-          .file('Prescription.pdf')
-          .getSignedUrl({
-            action: 'read',
-            expires: Date.now() + 1000 * 60 * 10, 
-          });
+    passThroughStream.pipe(gcsWriteStream);
 
-        res.json({ success: true, url });
+    gcsWriteStream.on('finish', () => {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
 
-        await storage.bucket(bucketName).file('Prescription.pdf').delete();
+      const gcsReadStream = file.createReadStream();
+      gcsReadStream.pipe(res);
 
-        console.log('File deleted from Google Cloud Storage.');
+      gcsReadStream.on('end', async () => {
+        await file.delete();
+      });
 
-        fs.unlink(tempFilePath, (err) => {
-          if (err) {
-            console.error('Error deleting temporary file:', err);
-          }
-        });
-      } catch (err) {
-        console.error('Error handling file operations:', err);
-        res.status(500).json({ success: false, error: 'Error handling file', errorcode: 1051 });
-      }
+      gcsReadStream.on('error', (err) => {
+        console.error('Error sending file:', err);
+        res.status(500).json({ success: false, error: 'Error sending file', errorcode: 1051 });
+      });
     });
 
-    writeStream.on('error', (err) => {
-      console.error('Error writing PDF file:', err);
-      res.status(500).json({ success: false, error: 'Error creating PDF file', errorcode: 1052 });
+    gcsWriteStream.on('error', (err) => {
+      console.error('Error uploading file to GCS:', err);
+      res.status(500).json({ success: false, error: 'Error uploading file', errorcode: 1052 });
     });
 
   } catch (error) {
@@ -1559,6 +1550,8 @@ const downloadpdf = async (req, res) => {
     return res.status(500).json({ success: false, error: 'Internal server error', errorcode: 1050 });
   }
 };
+
+
 
 
 
