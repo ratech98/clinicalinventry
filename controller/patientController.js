@@ -1504,13 +1504,10 @@ const downloadpdf = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
     }
     const content = {};
-    const tempDir = path.join(__dirname, 'temp');
+    const tempDir = path.join(__dirname, 'file');
     const tempFilePath = path.join(tempDir, 'Prescription.pdf');
 
-    // // Ensure the temp directory exists
-    // if (!fs.existsSync(tempDir)) {
-    //   fs.mkdirSync(tempDir);
-    // }
+   
 
     const doc = new PDFDocument();
     const writeStream = fs.createWriteStream(tempFilePath);
