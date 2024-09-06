@@ -85,7 +85,7 @@ clinicSchema.pre('findOneAndUpdate', async function (next) {
         const dbName = `Di_${username.toLowerCase().replace(/\s/g, '_')}_db`;
         console.log('Generated dbName:', dbName);
 
-        const uri = `mongodb+srv://testuser1:saravana03@cluster0.mqxbump.mongodb.net/${dbName}?retryWrites=true&w=majority`;
+        const uri = `mongodb+srv://drprakashmptortho:drprakash03@cluster0.dhbjg.mongodb.net/${dbName}?retryWrites=true&w=majority&appName=Cluster0`;
 
         const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
         await client.connect();

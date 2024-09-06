@@ -1523,7 +1523,6 @@ const downloadpdf = async (req, res) => {
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename="Prescription.pdf"');
 
-      // Read the file and send it to the client
       const readStream = fs.createReadStream(tempFilePath);
       readStream.pipe(res);
 
