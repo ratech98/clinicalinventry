@@ -1508,7 +1508,6 @@ const downloadpdf = async (req, res) => {
     const tempDir = path.join(__dirname, 'temp');
     const tempFilePath = path.join(tempDir, 'Prescription.pdf');
 
-    // Ensure the temp directory exists
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir);
     }

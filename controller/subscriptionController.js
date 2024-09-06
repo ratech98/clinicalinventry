@@ -257,7 +257,7 @@ const addfreetrail = async (req, res) => {
     const { days } = req.body;
 
 
-    const newFeature = await SubscriptionDuration.create({days});
+    const newFeature = await freetrail.create({days});
 
     res
       .status(200)
