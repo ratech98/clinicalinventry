@@ -1504,7 +1504,7 @@ const downloadpdf = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
     }
     const content = {};
-    const tempDir = path.join(__dirname, 'file');
+    const tempDir = path.join(__dirname, '..', 'upload');
     const tempFilePath = path.join(tempDir, 'Prescription.pdf');
 
    
