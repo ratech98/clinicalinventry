@@ -139,7 +139,7 @@ const getAllPatientslist = async (req, res) => {
     if (mobile_number) {
       query.mobile_number = { $regex: mobile_number, $options: 'i' };
     }
-query.bond={ $regex: "myself", $options: 'i' }
+// query.bond={ $regex: "myself", $options: 'i' }
 
     const totalPatients = await PatientModel.countDocuments(query);
     const totalPages = Math.ceil(totalPatients / limit);
@@ -1198,11 +1198,11 @@ const getFollowUpList = async (req, res) => {
 
 const createPdf = async (doc, content, clinic, doctors, template, appointment, patient, medicines, styles = {}) => {
   const buffers = [];
-  doc.on('data', buffers.push.bind(buffers));
-  doc.on('end', async () => {
-    const pdfData = Buffer.concat(buffers);
-    content.callback(pdfData);
-  });
+  // doc.on('data', buffers.push.bind(buffers));
+  // doc.on('end', async () => {
+  //   const pdfData = Buffer.concat(buffers);
+  //   content.callback(pdfData);
+  // });
 console.log("appointment",appointment)
   const defaultStyles = {
     margin: 20,
@@ -1473,7 +1473,6 @@ console.log("appointment",appointment)
 const fs = require('fs');
 const path = require('path');
 
-
 const downloadpdf = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
@@ -1504,10 +1503,11 @@ const downloadpdf = async (req, res) => {
     if (!template) {
       return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
     }
-
+    const content = {};
     const tempDir = path.join(__dirname, 'temp');
     const tempFilePath = path.join(tempDir, 'Prescription.pdf');
 
+    // Ensure the temp directory exists
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir);
     }
@@ -1517,40 +1517,41 @@ const downloadpdf = async (req, res) => {
 
     doc.pipe(writeStream);
 
-    createPdf(doc, { callback: () => {
-      doc.end();
-    }}, clinic, doctors, template, appointment, patient);
+    createPdf(doc,content, clinic, doctors, template, appointment, patient);
 
+    writeStream.on('finish', () => {
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename="Prescription.pdf"');
 
+      // Read the file and send it to the client
       const readStream = fs.createReadStream(tempFilePath);
       readStream.pipe(res);
 
-      // readStream.on('end', () => {
-      //   fs.unlink(tempFilePath, (err) => {
-      //     if (err) {
-      //       console.error('Error deleting temporary file:', err);
-      //     }
-      //   });
-      // });
+      readStream.on('end', () => {
+        fs.unlink(tempFilePath, (err) => {
+          if (err) {
+            console.error('Error deleting temporary file:', err);
+          }
+        });
+      });
 
-      // readStream.on('error', (err) => {
-      //   console.error('Error sending file:', err);
-      //   res.status(500).json({ success: false, error: 'Error sending file', errorcode: 1051 });
-      // });
-    // });
+      readStream.on('error', (err) => {
+        console.error('Error sending file:', err);
+        res.status(500).json({ success: false, error: 'Error sending file', errorcode: 1051 });
+      });
+    });
 
-    // writeStream.on('error', (err) => {
-    //   console.error('Error writing PDF file:', err);
-    //   res.status(500).json({ success: false, error: 'Error creating PDF file', errorcode: 1052 });
-    // });
+    writeStream.on('error', (err) => {
+      console.error('Error writing PDF file:', err);
+      res.status(500).json({ success: false, error: 'Error creating PDF file', errorcode: 1052 });
+    });
 
   } catch (error) {
     console.error('Error generating PDF:', error);
     return res.status(500).json({ success: false, error: 'Internal server error', errorcode: 1050 });
   }
 };
+
 
 
 
