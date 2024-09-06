@@ -1470,7 +1470,6 @@ console.log("appointment",appointment)
   doc.end();
 };
 
-const { Storage } = require('@google-cloud/storage');
 
 
 const downloadpdf = async (req, res) => {
@@ -1505,7 +1504,7 @@ const downloadpdf = async (req, res) => {
     }
 
     const content = {};
-    const fileName = `Prescription.pdf`; // Generate a unique file name
+    const fileName = `Prescription.pdf`; 
     const gcsFilePath = `prescriptions/${fileName}`;
     const bucket = gcsStorage.bucket(bucketName);
 
