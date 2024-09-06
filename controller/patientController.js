@@ -1506,48 +1506,38 @@ const downloadpdf = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
     }
 
-    const content = {}; // Define the content for your PDF
+    const content = {}; 
     const tempFilePath = path.join('/tmp', 'Prescription.pdf');
 
-    // Create a new PDF document
     const doc = new PDFDocument();
     const writeStream = fs.createWriteStream(tempFilePath);
 
-    // Pipe the PDF content to the write stream
     doc.pipe(writeStream);
 
-    // Generate the PDF content
     createPdf(doc, content, clinic, doctors, template, appointment, patient);
 
-    // Finalize the PDF and close the document
     doc.end();
 
-    // Wait for the file to be fully written
     writeStream.on('finish', async () => {
       try {
-        // Upload the file to Google Cloud Storage
         await storage.bucket(bucketName).upload(tempFilePath, {
           destination: 'Prescription.pdf',
         });
 
-        // Get a signed URL for the uploaded file
         const [url] = await storage
           .bucket(bucketName)
           .file('Prescription.pdf')
           .getSignedUrl({
             action: 'read',
-            expires: Date.now() + 1000 * 60 * 10, // 10 minutes from now
+            expires: Date.now() + 1000 * 60 * 10, 
           });
 
-        // Send the signed URL to the client
         res.json({ success: true, url });
 
-        // Delete the file from Google Cloud Storage after sending it
         await storage.bucket(bucketName).file('Prescription.pdf').delete();
 
         console.log('File deleted from Google Cloud Storage.');
 
-        // Clean up the local temporary file
         fs.unlink(tempFilePath, (err) => {
           if (err) {
             console.error('Error deleting temporary file:', err);
