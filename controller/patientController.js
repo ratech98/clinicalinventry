@@ -1369,15 +1369,15 @@ console.log("appointment",appointment)
     if (appointment.prescription) {
       applyStyles(doc, getStyles('prescriptionDetails', 'Prescription Details'));
       doc.text('Prescription Details', appliedStyles.margin, currentY,{ underline: true });
-      currentY += 35;
+      currentY += 35; 
     
-      const prescriptionFields = appointment.prescription.toObject();
+      const prescriptionFields = appointment.prescription
       const keys = Object.keys(prescriptionFields)
         .filter(key => !key.startsWith('$') && key !== '_id' && key !== 'date'); 
     
       keys.forEach((key) => {
         const fieldValue = prescriptionFields[key]; 
-        const fieldLabel = key.replace(/_/g, ' ');
+        const fieldLabel = key.replace(/_/g, ' '); 
     
         const fieldStyle = getStyles('prescriptionDetails', key);
         applyStyles(doc, fieldStyle);
@@ -1386,17 +1386,16 @@ console.log("appointment",appointment)
         
         doc.text(`${fieldLabel}:`, appliedStyles.margin, currentY);
         currentY += doc.heightOfString(`${fieldLabel}:`) + 5; 
-        doc.text(displayValue, appliedStyles.margin + 80, currentY);
+        doc.text(displayValue, appliedStyles.margin + 80, currentY); 
     
-        // Update currentY for next field
         currentY += doc.heightOfString(displayValue) + 5;
       });
     } else {
-      // Handle case when no prescription data is available
       applyStyles(doc, getStyles('prescriptionDetails', 'No Prescription Data'));
       doc.text('No prescription data available.', appliedStyles.margin, currentY);
       currentY += doc.heightOfString('No prescription data available.') + 5;
     }
+    
     console.log(appointment.medicines)
     
     if (appointment.medicines && appointment.medicines.length > 0) {
@@ -1471,7 +1470,8 @@ console.log("appointment",appointment)
   doc.end();
 };
 
-
+const fs = require('fs');
+const path = require('path');
 
 
 const downloadpdf = async (req, res) => {
@@ -1505,22 +1505,56 @@ const downloadpdf = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Template not found', errorcode: 1032 });
     }
 
+    const tempDir = path.join(__dirname, 'temp');
+    const tempFilePath = path.join(tempDir, 'Prescription.pdf');
+
+    // Ensure the temp directory exists
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir);
+    }
+
     const doc = new PDFDocument();
-    
-    // Set headers to trigger a download
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename="Prescription.pdf"');
+    const writeStream = fs.createWriteStream(tempFilePath);
 
-    // Create the PDF and stream it to the response
-    createPdf(doc, { callback: (pdfData) => res.end(pdfData) }, clinic, doctors, template, appointment, patient);
+    doc.pipe(writeStream);
 
-    doc.pipe(res); // Pipe the PDF document to the response
+    createPdf(doc, { callback: () => {
+      doc.end();
+    }}, clinic, doctors, template, appointment, patient);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="Prescription.pdf"');
+
+      const readStream = fs.createReadStream(tempFilePath);
+      readStream.pipe(res);
+
+      // readStream.on('end', () => {
+      //   fs.unlink(tempFilePath, (err) => {
+      //     if (err) {
+      //       console.error('Error deleting temporary file:', err);
+      //     }
+      //   });
+      // });
+
+      // readStream.on('error', (err) => {
+      //   console.error('Error sending file:', err);
+      //   res.status(500).json({ success: false, error: 'Error sending file', errorcode: 1051 });
+      // });
+    // });
+
+    // writeStream.on('error', (err) => {
+    //   console.error('Error writing PDF file:', err);
+    //   res.status(500).json({ success: false, error: 'Error creating PDF file', errorcode: 1052 });
+    // });
 
   } catch (error) {
     console.error('Error generating PDF:', error);
     return res.status(500).json({ success: false, error: 'Internal server error', errorcode: 1050 });
   }
 };
+
+
+
 
 
 

@@ -15,7 +15,10 @@ const medicineSchema = new Schema({
 });
 
 const prescriptionSchema = new Schema({
- 
+  details: { 
+    type: Schema.Types.Mixed, 
+    default: {}
+  }
 });
 
 const appointmentSchema = new Schema({
@@ -26,7 +29,8 @@ const appointmentSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Doctor',
   },
-  prescription: prescriptionSchema,
+  prescription:{ type: Schema.Types.Mixed, 
+  default: {}},
   medicines: [medicineSchema],
   token_number: { type: Number },
   follow_up_from: {
