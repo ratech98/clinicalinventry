@@ -24,7 +24,7 @@ const getTemplatesByClinicId = async (req, res) => {
 };
 const getTemplatesByClinicIdAndSection = async (req, res) => {
   const clinicId = req.user._id;
-  const section = "prescriptionDetails";
+  const section = "header";
 
   try {
     const templates = await Template.find({
