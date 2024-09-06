@@ -942,6 +942,15 @@ console.log(clinicId,doctorId,dayOfWeek)
     if (unavailableSlot) {
       return res.status(400).json({ success: false, error: "Doctor is unavailable for this date and time at the selected clinic.", errorcode: 1042 });
     }
+    const existingAppointment = patient.appointment_history.find(appointment =>
+      appointment.appointment_date === appointment_date &&
+      appointment.time === time 
+      // appointment.doctor.toString() === doctorId
+    );
+
+    if (existingAppointment) {
+      return res.status(400).json({ success: false, error: "An appointment already exists for this patient with the same doctor, date, and time.", errorcode: 1043 });
+    }
 
     const allPatients = await PatientModel.find({
       'appointment_history.appointment_date': appointment_date,
@@ -1601,10 +1610,8 @@ console.log("appointment",appointment)
       
           console.log('Generating PDF...');
           
-          // Await PDF generation to complete
           await createPdf(doc, content, clinic, doctors, template, appointment, patient);
       
-          // doc.end();
       
           passThroughStream.pipe(gcsWriteStream);
       
