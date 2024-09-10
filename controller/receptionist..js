@@ -167,11 +167,13 @@ const sendReceptionistOtpForLogin = async (req, res) => {
     // if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
     //   return res.status(400).json({ success: false, message: errormesaages[1008], errorcode: 1008 });
     // }
-
+    if (email) {
+      var emailaddress = email.toLowerCase();
+       }
 
     const receptionist = await Receptionist.findOneAndUpdate(
-      { email },
-      { email, otp},
+      { email:emailaddress },
+      { email:emailaddress, otp},
     );
 
     if (!receptionist) {
@@ -195,7 +197,7 @@ const sendReceptionistOtpForLogin = async (req, res) => {
       otp: otp,
     };
     sendEmail(
-      email,
+      emailaddress,
       subject,
       templateFile,
       data,
@@ -216,6 +218,9 @@ const sendReceptionistOtp = async (req, res) => {
   const otp = generate4DigitOtp()
 
   try {
+    if (email) {
+      var emailaddress = email.toLowerCase();
+       }
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
       return res.status(400).json({ success: false,message: errormesaages[1008], errorcode: 1008 });
     }
@@ -223,15 +228,15 @@ const sendReceptionistOtp = async (req, res) => {
     if (existingReceptionistmobile) {
       return res.status(400).json({ success: false, message: errormesaages[1018], errorcode: 1018 });
     }
-    const existingReceptionist = await Receptionist.findOne({email });
+    const existingReceptionist = await Receptionist.findOne({email :emailaddress});
     if (existingReceptionist) {
       return res.status(400).json({ success: false, message: errormesaages[1053], errorcode: 1053 });
     }
     
 
     const receptionist = await Receptionist.findOneAndUpdate(
-      { email },
-      { mobile_number, otp, clinic: clinicId,email },
+      { email:emailaddress },
+      { mobile_number, otp, clinic: clinicId,email:emailaddress },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
     const clinic = await Clinic.findById(clinicId)
@@ -262,7 +267,7 @@ console.log("ifffffffffffffffffffffff")
       otp: otp,
     };
     sendEmail(
-      email,
+      emailaddress,
       subject,
       templateFile,
       data,
@@ -282,6 +287,9 @@ const verifyReceptionistOtp = async (req, res) => {
   console.log('otp', otp);
   
   try {
+    if (email) {
+      var emailaddress = email.toLowerCase();
+       }
     // if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
     //   return res.status(400).json({ success: false, message: errormesaages[1008], errorcode: 1008  });
     // }
@@ -289,7 +297,7 @@ const verifyReceptionistOtp = async (req, res) => {
       return res.status(400).json({ success: false,message: errormesaages[1015], errorcode: 1015 });
 
     }
-    const receptionist = await Receptionist.findOne({ email });
+    const receptionist = await Receptionist.findOne({ email:emailaddress });
 
     if (!receptionist) {
   console.log('otp');
@@ -540,7 +548,11 @@ const resendOtp = async (req, res) => {
   const OTP = generate4DigitOtp();
 
   try {
-    let receptionist = await Receptionist.findOne({ email });
+    if (email) {
+      var emailaddress = email.toLowerCase();
+       }
+       console.log("emailaddress",emailaddress)
+    let receptionist = await Receptionist.findOne({ email:emailaddress });
 
     if (!receptionist) {
       return res.status(404).json({ success: false, message:errormesaages[1004], errorcode: 1004 });
@@ -553,7 +565,7 @@ const resendOtp = async (req, res) => {
     const subject = 'Di application OTP Verification';
 
     const data = { otp: OTP };
-    sendEmail(email, subject, templateFile, data);
+    sendEmail(emailaddress, subject, templateFile, data);
 
     await receptionist.save();
 

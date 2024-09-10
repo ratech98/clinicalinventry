@@ -376,13 +376,17 @@ const sendPatientOtp = async (req, res) => {
   const { email,mobile_number } = req.body;
   const otp = generate4DigitOtp(); 
   try {
+
+    if (email) {
+      var emailaddress = email.toLowerCase();
+       }
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
       return res.status(400).json({ success: false,  message: errormesaages[1008], errorcode: 1008});
     }
     const { tenantDBConnection } = req;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const patient = await PatientModel.findOneAndUpdate(
-      { email },
+      { email:emailaddress },
       { otp ,mobile_number},
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
@@ -395,7 +399,7 @@ const sendPatientOtp = async (req, res) => {
       otp: otp,
     };
     sendEmail(
-      email,
+      emailaddress,
       subject,
       templateFile,
       data,
@@ -413,9 +417,12 @@ const verifyPatientOtp = async (req, res) => {
     // if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
     //   return res.status(400).json({ success: false,  message: errormesaages[1008], errorcode: 1008 });
     // }
+    if (email) {
+      var emailaddress = email.toLowerCase();
+       }
     const { tenantDBConnection } = req;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
-    const patient = await PatientModel.findOne({ email });
+    const patient = await PatientModel.findOne({ email:emailaddress });
     if (!patient) {
       return res.status(404).json({success:false, error: errormesaages[1021] ,errorcode:1021});
     }
@@ -440,7 +447,10 @@ const resendOtp = async (req, res) => {
   const OTP = generate4DigitOtp();
 
   try {
-    let patient = await PatientModel.findOne({ email });
+    if (email) {
+      var emailaddress = email.toLowerCase();
+       }
+    let patient = await PatientModel.findOne({ email:emailaddress });
 
     if (!patient) {
       return res.status(404).json({ success: false, message:errormesaages[1021], errorcode: 1021 });
@@ -453,7 +463,7 @@ const resendOtp = async (req, res) => {
     const subject = 'Di application Resend OTP Verification';
 
     const data = { otp: OTP };
-    sendEmail(email, subject, templateFile, data);
+    sendEmail(emailaddress, subject, templateFile, data);
 
     await patient.save();
 

@@ -470,12 +470,15 @@ const sendDoctorOtpForLogin = async (req, res) => {
    
 
   try {
- 
+    if (email) {
+      var emailaddress = email.toLowerCase();
+       }
+       console.log("emailaddressssssssssssssssss",emailaddress)
     const doctorData = await doctor.findOneAndUpdate(
-      { email },
+      { email:emailaddress },
       { $set: { otp } },
     );
-
+console.log(doctorData)
 
     if (!doctorData) {
       return res.status(404).json({ success: false,message: errormesaages[1002], errorcode: 1002 });
@@ -492,7 +495,7 @@ const sendDoctorOtpForLogin = async (req, res) => {
       otp: otp,
     };
     sendEmail(
-      email,
+      emailaddress,
       subject,
       templateFile,
       data,
@@ -528,6 +531,10 @@ const sendDoctorOtp = async (req, res) => {
   const otp = generate4DigitOtp() 
 
   try {
+    if (email) {
+      var emailaddress = email.toLowerCase();
+       }
+    
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
       return res.status(400).json({ success: false, message: errormesaages[1008], errorcode: 1008 });
     }
@@ -535,12 +542,12 @@ const sendDoctorOtp = async (req, res) => {
     if (existingdoctormobile) {
       return res.status(400).json({ success: false, message: errormesaages[1014], errorcode: 1014 });
     }
-    const existingdoctor= await doctor.findOne({email,'clinics.clinicId':clinicId  });
+    const existingdoctor= await doctor.findOne({emailaddress,'clinics.clinicId':clinicId  });
     if (existingdoctor) {
       return res.status(400).json({ success: false, message: errormesaages[1054], errorcode: 1054 });
     } 
 
-    let doctorData = await doctor.findOne({ email });
+    let doctorData = await doctor.findOne({ email :emailaddress});
 
     if (doctorData) {
       const clinicExists = doctorData.clinics.some(c => c.clinicId.toString() === clinicId);
@@ -552,7 +559,7 @@ const sendDoctorOtp = async (req, res) => {
     }
 
     doctorData.otp = otp;
-    doctorData.email=email
+    doctorData.email= emailaddress
     const clinic = await Clinic.findById(clinicId)
       .populate({
         path: 'subscription_details.subscription_id',
@@ -584,7 +591,7 @@ console.log("elseeeeeeeeeeeeeeeeeeeee")
       otp: otp,
     };
     sendEmail(
-      email,
+      emailaddress,
       subject,
       templateFile,
       data,
@@ -606,12 +613,15 @@ const verifyDoctorOtp = async (req, res) => {
     // if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
     //   return res.status(400).json({ success: false,  message: errormesaages[1008], errorcode: 1008 });
     // }
+    if (email) {
+      var emailaddress = email.toLowerCase();
+       }
     if(!otp||otp===""){
       return res.status(400).json({ success: false, message: errormesaages[1015], errorcode: 1015 });
 
     }
  
-    const doctorData = await doctor.findOne({ email:email });
+    const doctorData = await doctor.findOne({ email:emailaddress });
     console.log(email,doctorData)
     if (!doctorData) {
       return res.status(404).json({success:false,  message: errormesaages[1002], errorcode: 1002 });
@@ -881,7 +891,11 @@ const resendOtp = async (req, res) => {
   const OTP = generate4DigitOtp();
 
   try {
-    let doctors = await doctor.findOne({ email });
+
+    if (email) {
+      var emailaddress = email.toLowerCase();
+       }
+    let doctors = await doctor.findOne({ email:emailaddress });
 
     if (!doctors) {
       return res.status(404).json({ success: false, message:errormesaages[1002], errorcode: 1002 });
@@ -894,7 +908,7 @@ const resendOtp = async (req, res) => {
     const subject = 'Di application OTP Verification';
 
     const data = { otp: OTP };
-    sendEmail(email, subject, templateFile, data);
+    sendEmail(emailaddress, subject, templateFile, data);
 
     await doctors.save();
 

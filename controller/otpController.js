@@ -18,7 +18,11 @@ const sendOtp = async (req, res) => {
   const OTP = generate6DigitOtp();
 
   try {
-    let clinic = await Clinic.findOne({ email });
+    if (email) {
+   var   emailaddress = email.toLowerCase();
+    }
+  
+    let clinic = await Clinic.findOne({ email:emailaddress });
     if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim() === '') {
       return res.status(400).json({  success: false,  message: errormesaages[1008], errorcode: 1008  });
     }
@@ -34,7 +38,7 @@ const sendOtp = async (req, res) => {
         otp:OTP,
         otpVerified: false, 
         block: false,
-        email:email
+        email: emailaddress
       });
     }
     const templateFile = 'OTP.ejs';
@@ -69,7 +73,10 @@ const loginsendOtp = async (req, res) => {
   const otp = generate6DigitOtp()
 
   try {
-    let clinic = await Clinic.findOne({ email });
+    if (email) {
+      var emailaddress = email.toLowerCase();
+       }
+    let clinic = await Clinic.findOne({ email:emailaddress });
 
 console.log(clinic)
    
@@ -99,7 +106,7 @@ console.log(clinic)
       otp: otp,
     };
     sendEmail(
-      email,
+      emailaddress,
       subject,
       templateFile,
       data,
@@ -122,11 +129,16 @@ const verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
 
   try {
+
+    if (email) {
+      var emailaddress = email.toLowerCase();
+       }
+     
     if (!otp || otp.trim() === '') {
       return res.status(400).json({ success: false, message: errormesaages[1015], errorcode: 1015 });
     }
 
-    const clinic = await Clinic.findOne({ email: email });
+    const clinic = await Clinic.findOne({ email: emailaddress });
     console.log(clinic,email,otp)
     if (!clinic) {
       return res.status(404).json({ success: false, message: errormesaages[1001], errorcode: 1001 });
@@ -198,7 +210,10 @@ const resendOtp = async (req, res) => {
   const OTP = generate6DigitOtp();
 
   try {
-    let clinic = await Clinic.findOne({ email });
+    if (email) {
+      var emailaddress = email.toLowerCase();
+       }
+    let clinic = await Clinic.findOne({ email:emailaddress });
 
     if (!clinic) {
       return res.status(404).json({ success: false, message:errormesaages[1001], errorcode: 1001 });
@@ -211,7 +226,7 @@ const resendOtp = async (req, res) => {
     const subject = 'Di application OTP Verification';
 
     const data = { otp: OTP };
-    sendEmail(email, subject, templateFile, data);
+    sendEmail(emailaddress, subject, templateFile, data);
 
     await clinic.save();
 
