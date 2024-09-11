@@ -1878,20 +1878,17 @@ console.log("appointment",appointment)
     }
     
     if (appointment.follow_up_date) {
-      const followUpDate = new Date(appointment.follow_up_date);
-    
-      const formattedFollowUpDate = 
-        ('0' + followUpDate.getDate()).slice(-2) + '-' +
-        ('0' + (followUpDate.getMonth() + 1)).slice(-2) + '-' +
-        followUpDate.getFullYear();
+      const followUpDate = appointment.follow_up_date
+    console.log("followupdate",followUpDate)
+      
     
       applyStyles(doc, getStyles('appointmentDetails', 'Follow-Up Date'));
-      doc.text(`Follow-Up Date: ${formattedFollowUpDate}`, appliedStyles.margin, currentY, {
+      doc.text(`Follow-Up Date: ${followUpDate}`, appliedStyles.margin, currentY, {
         align: 'left', // Align it to the left side
         width: doc.page.width - 2 * appliedStyles.margin, // Set the width to align properly
       });
     
-      currentY += doc.heightOfString(`Follow-Up Date: ${formattedFollowUpDate}`) + 10; 
+      currentY += doc.heightOfString(`Follow-Up Date: ${followUpDate}`) + 10; 
     }
     console.log(appointment.medicines)
     
