@@ -85,7 +85,8 @@ const doctorSchema = new Schema({
   email:{
     type:String
   },
-  type:{type:String,default:"doctor"}
+  type:{type:String,default:"doctor"},
+  signature:{type:String}
 
 
 

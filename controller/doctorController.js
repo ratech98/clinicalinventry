@@ -66,6 +66,8 @@ const getDoctorById = async (req, res) => {
 };
 
 
+const sharp = require('sharp'); 
+
 const updateDoctor = async (req, res) => {
   try {
     const files = req.files;
@@ -85,6 +87,19 @@ const updateDoctor = async (req, res) => {
           }
 
           uploadedFiles[fieldName] = urls;
+        } else if (fieldName === "signature") {
+          const file = files[fieldName][0];
+          const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
+          const imagePath = `doctor_certificates/${Date.now()}_${sanitizedFilename}`;
+
+          const processedImageBuffer = await sharp(file.buffer)
+            .grayscale()
+            .removeAlpha() 
+            .toBuffer()
+
+          await gcsStorage.bucket(bucketName).file(imagePath).save(processedImageBuffer);
+
+          uploadedFiles[fieldName] = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
         } else {
           const file = files[fieldName][0];
           const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
@@ -109,6 +124,7 @@ const updateDoctor = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 const updateDoctorAvailability = async (req, res) => {
   const { doctorId, clinicId, date, timeSlot, available } = req.body;
