@@ -33,7 +33,7 @@ router.post('/followup/appointment',isAuth,connectTenantDB,addFollowUpAppointmen
 router.get('/patientsappointment/:doctor', isAuth,connectTenantDB,getPatientsWithTodayAppointments);
   
 router.post('/upload_diagnose_report/:patientId',isAuth,connectTenantDB, upload,upload_diagnose_report );
-// Route to get diagnose reports for a specific patient
+
 router.get('/diagnose_reports/:patientId',isAuth,connectTenantDB,get_diagnose_report );
 
 router.get('/followuplist',isAuth,connectTenantDB,getFollowUpList)

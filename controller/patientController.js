@@ -1004,9 +1004,10 @@ console.log(clinicId,doctorId,dayOfWeek)
 const addFollowUpAppointment = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
-    const { patientId, previousAppointmentId, appointment_date } = req.body;
+    const { patientId, previousAppointmentId, appointment_date ,follow_up_from} = req.body;
 
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
+    if(follow_up_from){
     const patient = await PatientModel.findById(patientId);
 
     if (!patient) {
@@ -1032,6 +1033,10 @@ const addFollowUpAppointment = async (req, res) => {
     await patient.save();
 
     res.status(200).json({ success: true, message: "Follow-up appointment updated successfully", patient });
+  }else{
+    res.status(200).json({ success: true, message: "Follow-up cancelled updated successfully" });
+
+  }
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
@@ -1158,23 +1163,23 @@ const getFollowUpList = async (req, res) => {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    const dayAfterTomorrow = new Date(today);
-    dayAfterTomorrow.setDate(today.getDate() + 2);
+
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + 90);
 
     const todayString = moment(today).format('DD-MM-YYYY');
-    const tomorrowString = moment(tomorrow).format('DD-MM-YYYY');
-    const dayAfterTomorrowString = moment(dayAfterTomorrow).format('DD-MM-YYYY');
+    const endDateString = moment(endDate).format('DD-MM-YYYY');
 
-    console.log('Dates:', { todayString, tomorrowString, dayAfterTomorrowString });
+    console.log('Date Range:', { todayString, endDateString });
 
-    // Step 1: Find patients with follow-ups in the next three days
     const patientsWithFollowUps = await PatientModel.find({
       'appointment_history': {
         $elemMatch: {
           follow_up_from: { $exists: true, $ne: null },
-          appointment_date: { $in: [todayString, tomorrowString, dayAfterTomorrowString] }
+          appointment_date: {
+            $gte: todayString,
+            $lte: endDateString
+          }
         }
       }
     });
@@ -1196,14 +1201,15 @@ const getFollowUpList = async (req, res) => {
         patient.bond === "myself"
       );
 
-      const filteredAppointments = followUpPatient.appointment_history.filter(appointment =>
-        [todayString, tomorrowString, dayAfterTomorrowString].includes(appointment.appointment_date) &&
-        appointment.follow_up_from
-      );
+      const filteredAppointments = followUpPatient.appointment_history.filter(appointment => {
+        const appointmentDate = moment(appointment.appointment_date, 'DD-MM-YYYY');
+        const isWithinNext90Days = appointmentDate.isBetween(moment(today), moment(endDate), 'days', '[]');
+        return isWithinNext90Days && appointment.follow_up_from;
+      });
 
       return {
         ...followUpPatient.toObject(),
-        relatedPatients: relatedPatientData.map(patient => patient.toObject()), 
+        relatedPatients: relatedPatientData.map(patient => patient.toObject()),
         appointment_history: filteredAppointments
       };
     });
@@ -1214,6 +1220,7 @@ const getFollowUpList = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 const createPdf = async (doc, content, clinic, doctors, template, appointment, patient, medicines, styles = {}) => {
   const buffers = [];

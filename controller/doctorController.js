@@ -781,7 +781,6 @@ const get_availability = async (req, res) => {
         let slotsMatch = true;
         let dayFilter = {};
 
-        // Check for date filter
         if (date) {
           const targetDate = new Date(date);
           dayFilter = {
@@ -792,18 +791,16 @@ const get_availability = async (req, res) => {
 
           const unavailableSlots = item.unavailable.find(u => u.date.toDateString() === dayFilter.date.toDateString());
           
-          // If any unavailable slots are found for the specific date, exclude the entire day's slots
           if (unavailableSlots) {
-            return false; // Exclude the entire day's availability
+            return false; 
           }
         } else if (day) {
           dayFilter = { day: new RegExp(day, 'i') };
           dayMatch = dayFilter.day.test(avail.day);
 
-          // Check if any slots are unavailable for the given day
           const unavailableSlotsForDay = item.unavailable.find(u => u.day === avail.day);
           if (unavailableSlotsForDay) {
-            return false; // Exclude the entire day's availability
+            return false;
           }
         }
 
@@ -832,7 +829,6 @@ const get_availability = async (req, res) => {
       }
     });
 
-    // Filter out empty availabilities
     clinicAvailabilities = clinicAvailabilities.filter(item => item.availabilities.length > 0);
     otherclinicAvailabilities = otherclinicAvailabilities.filter(item => item.availabilities.length > 0);
 
