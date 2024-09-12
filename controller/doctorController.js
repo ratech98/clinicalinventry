@@ -67,7 +67,6 @@ const getDoctorById = async (req, res) => {
 
 
 const sharp = require('sharp'); 
-const axios=require('ax')
 
 const updateDoctor = async (req, res) => {
   try {
