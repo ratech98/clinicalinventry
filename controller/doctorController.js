@@ -65,8 +65,9 @@ const getDoctorById = async (req, res) => {
   }
 };
 
-
-const sharp = require('sharp'); 
+const sharp = require('sharp');
+const { removeBackground } = require('@imgly/background-removal-node');
+const { Blob } = require('buffer');
 
 const updateDoctor = async (req, res) => {
   try {
@@ -77,7 +78,6 @@ const updateDoctor = async (req, res) => {
       if (Object.hasOwnProperty.call(files, fieldName)) {
         if (fieldName === "postgraduate_certificate") {
           const urls = [];
-
           for (const file of files[fieldName]) {
             const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
             const imagePath = `doctor_certificates/${Date.now()}_${sanitizedFilename}`;
@@ -85,19 +85,28 @@ const updateDoctor = async (req, res) => {
             const fileUrl = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
             urls.push(fileUrl);
           }
-
           uploadedFiles[fieldName] = urls;
         } else if (fieldName === "signature") {
           const file = files[fieldName][0];
           const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
           const imagePath = `doctor_certificates/${Date.now()}_${sanitizedFilename}`;
 
-          const processedImageBuffer = await sharp(file.buffer)
-            .grayscale()
-            .removeAlpha() 
-            .toBuffer()
+          // Convert the image buffer to a Blob
+          const imageBlob = new Blob([file.buffer], { type: file.mimetype });
 
-          await gcsStorage.bucket(bucketName).file(imagePath).save(processedImageBuffer);
+          // Remove the background using @imgly/background-removal-node
+          const backgroundRemovedBlob = await removeBackground(imageBlob);
+
+          // Convert the result Blob back to a buffer
+          const backgroundRemovedBuffer = Buffer.from(await backgroundRemovedBlob.arrayBuffer());
+
+          // Further processing with sharp (e.g., convert to grayscale)
+          const finalImageBuffer = await sharp(backgroundRemovedBuffer)
+            .grayscale()
+            .toBuffer();
+
+          // Save the processed image to Google Cloud Storage
+          await gcsStorage.bucket(bucketName).file(imagePath).save(finalImageBuffer);
 
           uploadedFiles[fieldName] = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
         } else {
@@ -124,6 +133,8 @@ const updateDoctor = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
 
 
 const updateDoctorAvailability = async (req, res) => {
