@@ -65,9 +65,9 @@ const getDoctorById = async (req, res) => {
   }
 };
 
-const sharp = require('sharp');
-const { removeBackground } = require('@imgly/background-removal-node');
-const { Blob } = require('buffer');
+
+const sharp = require('sharp'); 
+const axios=require('ax')
 
 const updateDoctor = async (req, res) => {
   try {
@@ -78,6 +78,7 @@ const updateDoctor = async (req, res) => {
       if (Object.hasOwnProperty.call(files, fieldName)) {
         if (fieldName === "postgraduate_certificate") {
           const urls = [];
+
           for (const file of files[fieldName]) {
             const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
             const imagePath = `doctor_certificates/${Date.now()}_${sanitizedFilename}`;
@@ -85,23 +86,19 @@ const updateDoctor = async (req, res) => {
             const fileUrl = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
             urls.push(fileUrl);
           }
+
           uploadedFiles[fieldName] = urls;
         } else if (fieldName === "signature") {
           const file = files[fieldName][0];
           const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
           const imagePath = `doctor_certificates/${Date.now()}_${sanitizedFilename}`;
 
-          const imageBlob = new Blob([file.buffer], { type: file.mimetype });
-
-          const backgroundRemovedBlob = await removeBackground(imageBlob);
-
-          const backgroundRemovedBuffer = Buffer.from(await backgroundRemovedBlob.arrayBuffer());
-
-          const finalImageBuffer = await sharp(backgroundRemovedBuffer)
+          const processedImageBuffer = await sharp(file.buffer)
             .grayscale()
-            .toBuffer();
+            .removeAlpha() 
+            .toBuffer()
 
-          await gcsStorage.bucket(bucketName).file(imagePath).save(finalImageBuffer);
+          await gcsStorage.bucket(bucketName).file(imagePath).save(processedImageBuffer);
 
           uploadedFiles[fieldName] = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
         } else {
@@ -130,7 +127,69 @@ const updateDoctor = async (req, res) => {
 };
 
 
+// const sharp = require('sharp');
+// const { removeBackground } = require('@imgly/background-removal-node');
+// const { Blob } = require('buffer');
 
+// const updateDoctor = async (req, res) => {
+//   try {
+//     const files = req.files;
+//     const uploadedFiles = {};
+
+//     for (const fieldName in files) {
+//       if (Object.hasOwnProperty.call(files, fieldName)) {
+//         if (fieldName === "postgraduate_certificate") {
+//           const urls = [];
+//           for (const file of files[fieldName]) {
+//             const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
+//             const imagePath = `doctor_certificates/${Date.now()}_${sanitizedFilename}`;
+//             await gcsStorage.bucket(bucketName).file(imagePath).save(file.buffer);
+//             const fileUrl = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
+//             urls.push(fileUrl);
+//           }
+//           uploadedFiles[fieldName] = urls;
+//         } else if (fieldName === "signature") {
+//           const file = files[fieldName][0];
+//           const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
+//           const imagePath = `doctor_certificates/${Date.now()}_${sanitizedFilename}`;
+
+//           const imageBlob = new Blob([file.buffer], { type: file.mimetype });
+
+//           const backgroundRemovedBlob = await removeBackground(imageBlob);
+
+//           const backgroundRemovedBuffer = Buffer.from(await backgroundRemovedBlob.arrayBuffer());
+
+//           const finalImageBuffer = await sharp(backgroundRemovedBuffer)
+//             .grayscale()
+//             .toBuffer();
+
+//           await gcsStorage.bucket(bucketName).file(imagePath).save(finalImageBuffer);
+
+//           uploadedFiles[fieldName] = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
+//         } else {
+//           const file = files[fieldName][0];
+//           const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
+//           const imagePath = `doctor_certificates/${Date.now()}_${sanitizedFilename}`;
+//           await gcsStorage.bucket(bucketName).file(imagePath).save(file.buffer);
+//           uploadedFiles[fieldName] = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
+//         }
+//       }
+//     }
+
+//     req.body.details = true;
+//     const updateData = { ...req.body, ...uploadedFiles };
+
+//     const doctors = await doctor.findByIdAndUpdate(req.params.id, updateData, { new: true });
+//     if (!doctors) {
+//       return res.status(400).json({ success: false, error: errormesaages[1002], errorcode: 1002 });
+//     }
+
+//     res.status(200).json({ success: true, message: "Doctor updated successfully", doctors });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: error.message });
+//   }
+// };
 
 const updateDoctorAvailability = async (req, res) => {
   const { doctorId, clinicId, date, timeSlot, available } = req.body;
