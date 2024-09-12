@@ -969,10 +969,14 @@ console.log(clinicId,doctorId,dayOfWeek)
 
     let tokenCount = 0;
     allPatients.forEach(patient => {
-      tokenCount += patient.appointment_history.filter(a => 
-        a.appointment_date === appointment_date && 
-        a.doctor.toString() === doctorId
-      ).length;
+      patient.appointment_history.forEach(appointment => {
+        if (
+          appointment.appointment_date === appointment_date && 
+          appointment.doctor.toString() === doctorId
+        ) {
+          tokenCount++;  
+        }
+      });
     });
 
     const newTokenNumber = tokenCount + 1;
