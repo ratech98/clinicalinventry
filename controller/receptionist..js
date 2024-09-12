@@ -496,20 +496,21 @@ console.log(doctorQuery)
         'appointment_history': {
           $elemMatch: {
             doctor: doctor._id,
-            // appointment_date: todayUTC
+            appointment_date: todayUTC
           }
         }
       });
+      console.log(todayAppointments)
       const tokenCount = todayAppointments.reduce((count, appointment) => {
         const todayAppointment = appointment.appointment_history.find(app => 
-          app.appointment_date === todayUTC && app.status === "PENDING"
+          app.status === "PENDING"
         );
         return todayAppointment ? count + 1 : count;
       }, 0);
 
       const finishedtokenCount = todayAppointments.reduce((count, appointment) => {
         const todayAppointment = appointment.appointment_history.find(app => 
-          app.appointment_date === todayUTC && app.status === "FINISHED"
+          app.status === "FINISHED"
         );
         return todayAppointment ? count + 1 : count;
       }, 0);
