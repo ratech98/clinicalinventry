@@ -91,21 +91,16 @@ const updateDoctor = async (req, res) => {
           const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
           const imagePath = `doctor_certificates/${Date.now()}_${sanitizedFilename}`;
 
-          // Convert the image buffer to a Blob
           const imageBlob = new Blob([file.buffer], { type: file.mimetype });
 
-          // Remove the background using @imgly/background-removal-node
           const backgroundRemovedBlob = await removeBackground(imageBlob);
 
-          // Convert the result Blob back to a buffer
           const backgroundRemovedBuffer = Buffer.from(await backgroundRemovedBlob.arrayBuffer());
 
-          // Further processing with sharp (e.g., convert to grayscale)
           const finalImageBuffer = await sharp(backgroundRemovedBuffer)
             .grayscale()
             .toBuffer();
 
-          // Save the processed image to Google Cloud Storage
           await gcsStorage.bucket(bucketName).file(imagePath).save(finalImageBuffer);
 
           uploadedFiles[fieldName] = `https://storage.googleapis.com/${bucketName}/${imagePath}`;
