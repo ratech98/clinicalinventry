@@ -1598,15 +1598,16 @@ const get_diagnose_report=async (req, res) => {
   }
 }
 
-
 const getFollowUpList = async (req, res) => {
   try {
     const { tenantDBConnection } = req;
     if (!tenantDBConnection) {
       return res.status(500).json({ success: false, error: 'Tenant DB connection is not set' });
     }
+
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
 
+    // Set today's date and the end date (90 days from today)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -1618,54 +1619,66 @@ const getFollowUpList = async (req, res) => {
 
     console.log('Date Range:', { todayString, endDateString });
 
-    const patientsWithFollowUps = await PatientModel.find({
+    // Find patients with follow-up appointments
+    const patients = await PatientModel.find({
       'appointment_history': {
         $elemMatch: {
           follow_up_from: { $exists: true, $ne: null },
-          appointment_date: {
-            $gte: todayString,
-            $lte: endDateString
-          }
+          follow_up_date: { $exists: true, $ne: null }
         }
       }
     });
 
-    console.log('Found patients with follow-ups:', patientsWithFollowUps.length);
+    console.log('Found patients with follow-ups:', patients.length);
 
-    const mobileNumbers = patientsWithFollowUps.map(patient => patient.mobile_number);
-
-    const relatedPatients = await PatientModel.find({
-      $or: [
-        { mobile_number: { $in: mobileNumbers } },
-        { bond: "myself" }
-      ]
-    });
-
-    const followUpList = patientsWithFollowUps.map(followUpPatient => {
-      const relatedPatientData = relatedPatients.filter(patient => 
-        patient.mobile_number === followUpPatient.mobile_number || 
-        patient.bond === "myself"
-      );
-
-      const filteredAppointments = followUpPatient.appointment_history.filter(appointment => {
-        const appointmentDate = moment(appointment.appointment_date, 'DD-MM-YYYY');
+    // Filter appointments in the patient's history that have follow-up dates within the next 90 days
+    const patientsWithFilteredAppointments = patients.map(patient => {
+      const filteredAppointments = patient.appointment_history.filter(appointment => {
+        const appointmentDate = moment(appointment.follow_up_date, 'DD-MM-YYYY');
         const isWithinNext90Days = appointmentDate.isBetween(moment(today), moment(endDate), 'days', '[]');
         return isWithinNext90Days && appointment.follow_up_from;
       });
 
       return {
-        ...followUpPatient.toObject(),
-        relatedPatients: relatedPatientData.map(patient => patient.toObject()),
-        appointment_history: filteredAppointments
+        ...patient.toObject(),
+        appointment_history: filteredAppointments // Only appointments within 90 days
       };
     });
 
+    const patientsWithFollowUps = patientsWithFilteredAppointments.filter(patient => patient.appointment_history.length > 0);
+
+    const mobileNumbers = patientsWithFollowUps.map(patient => patient.mobile_number);
+
+    const relatedPatients = await PatientModel.find(
+      {
+        $or: [
+          { mobile_number: { $in: mobileNumbers } },
+          { bond: "myself" }
+        ]
+      },
+    );
+
+    const followUpList = patientsWithFollowUps.map(followUpPatient => {
+      const relatedPatientData = relatedPatients.filter(patient =>
+        patient.mobile_number === followUpPatient.mobile_number && patient.bond === "myself"
+      );
+
+      return {
+        ...followUpPatient,
+        relatedPatients: relatedPatientData,
+      };
+    });
+
+    // Send the final follow-up list in the response
     res.status(200).json({ success: true, followUpList });
   } catch (error) {
     console.error('Error in getFollowUpList:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
+
 
 
 const createPdf = async (doc, content, clinic, doctors, template, appointment, patient, medicines, styles = {}) => {
