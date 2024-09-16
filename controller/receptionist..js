@@ -440,7 +440,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     const { search, page = 1, limit = 10 } = req.query;
 
     const todayUTC = moment().format('DD-MM-YYYY');    
-    const todayDay = new Date(todayUTC).getDay(); 
+    const todayDay = moment(todayUTC, 'DD-MM-YYYY').day(); // Get the day of the week
 
     const doctorQuery = {
       clinics: {
@@ -450,25 +450,27 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
           subscription: true
         }
       }
-    };    if (search) {
+    };
+
+    if (search) {
       doctorQuery.$or = [
         { specialist: { $regex: search, $options: 'i' } },
         { name: { $regex: search, $options: 'i' } }
       ];
     }
+
     const totalDoctors = await doctor.countDocuments(doctorQuery);
     const totalPages = Math.ceil(totalDoctors / limit);
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
-console.log(doctorQuery)
+
     const doctors = await doctor.find(doctorQuery).select('specialist name mobile_number')
       .limit(limit)
       .skip(startIndex);
-      console.log(doctors)
+
     if (!doctors.length) {
-      return res.status(200).json({success:true, doctorAvailability: []});
+      return res.status(200).json({ success: true, doctorAvailability: [] });
     }
- 
 
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
       const availabilityDoc = await Availability.findOne({
@@ -500,19 +502,17 @@ console.log(doctorQuery)
           }
         }
       });
-      console.log(todayAppointments)
+
       const tokenCount = todayAppointments.reduce((count, appointment) => {
-        const todayAppointment = appointment.appointment_history.find(app => 
-          app.status === "PENDING"
-        );
-        return todayAppointment ? count + 1 : count;
+        // Count each appointment with "PENDING" status
+        const pendingAppointments = appointment.appointment_history.filter(app => app.status === "PENDING");
+        return count + pendingAppointments.length;
       }, 0);
 
       const finishedtokenCount = todayAppointments.reduce((count, appointment) => {
-        const todayAppointment = appointment.appointment_history.find(app => 
-          app.status === "FINISHED"
-        );
-        return todayAppointment ? count + 1 : count;
+        // Count each appointment with "FINISHED" status
+        const finishedAppointments = appointment.appointment_history.filter(app => app.status === "FINISHED");
+        return count + finishedAppointments.length;
       }, 0);
 
       return {
@@ -543,6 +543,7 @@ console.log(doctorQuery)
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 const resendOtp = async (req, res) => {
   const { email } = req.body;
