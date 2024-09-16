@@ -1890,10 +1890,10 @@ console.log("appointment",appointment)
         const fieldValue = prescriptionFields[key]; 
 
         const fieldLabel = key.replace(/_/g, ' '); 
-        if (fieldLabel === "patientId"||"appointmentId") {
-          console.log(fieldLabel)
-          return; // Skip this field
-        }
+        // if (fieldLabel === "patientId"||"appointmentId") {
+        //   console.log(fieldLabel)
+        //   return; // Skip this field
+        // }
         const fieldStyle = getStyles('prescriptionDetails', key);
         applyStyles(doc, fieldStyle);
     
