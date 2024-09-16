@@ -115,12 +115,22 @@ const isAuth = async (req, res, next) => {
         _id: decoded.id,
         "clinics.clinicId": decoded._id 
       });
-      if (doctors && !doctors.clinics.some(clinic => clinic.clinicId.equals(decoded._id) && clinic.block)) {
-        return res.status(400).send({ success: false, message: errormesaages[1047], errorcode: 1047 });
-      }
-      if (doctors && !doctors.clinics.some(clinic => clinic.clinicId.equals(decoded._id) && clinic.subscription)) {
-        return res.status(400).send({ success: false, message: errormesaages[1049], errorcode: 1049 });
-      }
+   
+      const isBlocked = doctors.clinics.some(
+        (clinic) =>
+          clinic.clinicId.equals(decoded._id) && clinic.block === true
+      );
+      console.log(doctors,isBlocked)
+      if (isBlocked) {
+        return res.status(400).send({
+          success: false,
+          message: errormesaages[1047], // Ensure this is defined elsewhere in your code
+          errorcode: 1047,
+        });}
+        if (doctors && !doctors.clinics.some(clinic => clinic.clinicId.equals(decoded._id) && clinic.subscription)) {
+          return res.status(400).send({ success: false, message: errormesaages[1049], errorcode: 1049 });
+        }
+     
     
     }
     
