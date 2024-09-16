@@ -1845,9 +1845,9 @@ console.log("appointment",appointment)
         dateValue.getFullYear();
     
       // Format the time to 12-hour format with AM/PM
-      let hours = dateValue.getHours();
-      const minutes = ('0' + dateValue.getMinutes()).slice(-2);
-      const seconds = ('0' + dateValue.getSeconds()).slice(-2);
+      let hours = dateValue.getUTCHours(); // Use getUTCHours() if the time is in UTC
+      const minutes = ('0' + dateValue.getUTCMinutes()).slice(-2);
+      const seconds = ('0' + dateValue.getUTCSeconds()).slice(-2);
       const ampm = hours >= 12 ? 'PM' : 'AM';
     
       // Convert hours from 24-hour to 12-hour format
@@ -1861,7 +1861,7 @@ console.log("appointment",appointment)
         ampm;
     
       applyStyles(doc, getStyles('prescriptionDetails', 'Date'));
-    
+    console.log(formattedTime)
       // Print the date and time with labels, right-aligned
       doc.text(`Date: ${formattedDate} Time: ${formattedTime}`, appliedStyles.margin, currentY, {
         align: 'right',
@@ -1871,6 +1871,7 @@ console.log("appointment",appointment)
       // Move to the next line, adding a gap after the date and time
       currentY += doc.heightOfString(`Date: ${formattedDate} Time: ${formattedTime}`) + 10; 
     }
+    
     
     
     
