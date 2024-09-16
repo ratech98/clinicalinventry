@@ -124,9 +124,9 @@ const isAuth = async (req, res, next) => {
       if (isBlocked) {
         return res.status(400).send({
           success: false,
-          message: errormesaages[1047], // Ensure this is defined elsewhere in your code
+          message: errormesaages[1047], 
           errorcode: 1047,
-        });}
+        })}
         if (doctors && !doctors.clinics.some(clinic => clinic.clinicId.equals(decoded._id) && clinic.subscription)) {
           return res.status(400).send({ success: false, message: errormesaages[1049], errorcode: 1049 });
         }
@@ -136,7 +136,7 @@ const isAuth = async (req, res, next) => {
     
     if(decoded.type==="receptionist"){
       const receptionist=await Receptionist.findById(decoded.id)
-      if(receptionist.block){
+      if(receptionist.block === true){
         return res.status(400).send({success:false, message: errormesaages[1047],errorcode:1047 });
       } 
       if(receptionist.verify=== false){
