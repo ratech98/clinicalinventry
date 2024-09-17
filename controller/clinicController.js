@@ -159,7 +159,7 @@ const getClinicById = async (req, res) => {
           subscription: false,
         });
 
-        balancedue = doctorsUnsubscribed > 0 || receptionistsSubscribed > 0;
+        balancedue = (doctorsUnsubscribed > 0 || receptionistsSubscribed > 0)?true:false
         console.log("else");
       }
     }
@@ -219,7 +219,7 @@ const getClinicId = async (req, res) => {
           subscription: false,
         });
 
-        balancedue = doctorsUnsubscribed > 0 || receptionistsSubscribed > 0;
+        balancedue = (doctorsUnsubscribed > 0 || receptionistsSubscribed > 0)?true:false
         console.log("else");
       }
     }
