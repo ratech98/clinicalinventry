@@ -75,6 +75,7 @@ const getAllClinics = async (req, res) => {
 
         clinic._doc.remainingDays = remainingDays;
         clinic._doc.remainingHours = remainingHours;
+        clinic._doc.pendingDue = (remainingDays <= 0|| remainingDays <=0)?true:false
 
         const doctorsCount = await doctor.countDocuments({ 'clinics.clinicId': clinic._id });
         const receptionistsCount = await Receptionist.countDocuments({ clinic: clinic._id });
@@ -88,15 +89,15 @@ const getAllClinics = async (req, res) => {
       })
     );
 
-    // Apply pendingDue filter after calculating the remaining days and hours
     if (pendingDue !== undefined) {
       const isPendingDueTrue = pendingDue === 'true';
       clinics = clinics.filter((clinic) =>
         isPendingDueTrue ? clinic._doc.remainingDays <= 0 : clinic._doc.remainingDays > 0
+        
       );
+      
     }
 
-    // Now apply pagination on the filtered clinics
     const totalClinics = clinics.length;
     const totalPages = Math.ceil(totalClinics / limit);
     const startIndex = (page - 1) * limit;
@@ -567,7 +568,7 @@ const update_Subscription = async (req, res) => {
       const lastSubscription = clinic.subscription_details[clinic.subscription_details.length - 1];
       const lastEndDate = moment(lastSubscription.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
       const currentDate = moment();
-
+console.log(currentDate,lastEndDate)
       if (currentDate.isBefore(lastEndDate)) {
         return res.status(400).send({ success: false, message: 'Current subscription is still active. Cannot add a new subscription until it expires.' });
       }
