@@ -203,13 +203,20 @@ const getClinicId = async (req, res) => {
     const subscription = subscriptionDetails.length > 0 
       ? subscriptionDetails[subscriptionDetails.length - 1]  
       : null;
-
+    function parseDate(dateString) {
+      const [datePart, timePart] = dateString.split(' ');
+      const [day, month, year] = datePart.split('-').map(Number);
+      const [hours, minutes, seconds] = timePart.split(':').map(Number);
+      
+      return new Date(year, month - 1, day, hours, minutes, seconds);
+    }
     if (subscription) {
-      console.log("subscription", subscription);
-      if (!subscription.subscription_id || new Date(subscription.subscription_enddate) >= new Date()) {
+      console.log("subscription", subscription.subscription_enddate,new Date);
+      if (subscription.subscription_id === null) {
         balancedue = false;
         console.log("if");
-      } else {
+      }
+      else if (parseDate(subscription.subscription_enddate) >= new Date()) {
         const doctorsUnsubscribed = await doctor.countDocuments({
           'clinics.clinicId': req.params.id,
           'clinics.subscription': false,
@@ -218,9 +225,14 @@ const getClinicId = async (req, res) => {
           clinic: req.params.id,
           subscription: false,
         });
-
-        balancedue = (doctorsUnsubscribed > 0 || receptionistsSubscribed > 0)?true:false
-        console.log("else");
+        console.log("count", doctorsUnsubscribed, receptionistsSubscribed);
+      
+        balancedue = (doctorsUnsubscribed > 0 || receptionistsSubscribed > 0) ? true : false;
+        console.log("else if");
+      }
+      else{
+        balancedue=true
+        console.log("else")
       }
     }
     const doctorsCount = await doctor.countDocuments({ 'clinics.clinicId': req.params.id });
