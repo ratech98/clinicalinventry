@@ -440,7 +440,7 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
     const { search, page = 1, limit = 10 } = req.query;
 
     const todayUTC = moment().format('DD-MM-YYYY');    
-    const todayDay = moment(todayUTC, 'DD-MM-YYYY').day(); // Get the day of the week
+    const todayDay = moment(todayUTC, 'DD-MM-YYYY').day(); 
 
     const doctorQuery = {
       clinics: {
@@ -502,16 +502,16 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
           }
         }
       });
-
       const tokenCount = todayAppointments.reduce((count, appointment) => {
-        // Count each appointment with "PENDING" status
-        const pendingAppointments = appointment.appointment_history.filter(app => app.status === "PENDING");
+
+        const pendingAppointments = appointment.appointment_history.filter(app => app.appointment_date===todayUTC && app.status === "PENDING");
+        console.log(pendingAppointments)
+
         return count + pendingAppointments.length;
       }, 0);
 
       const finishedtokenCount = todayAppointments.reduce((count, appointment) => {
-        // Count each appointment with "FINISHED" status
-        const finishedAppointments = appointment.appointment_history.filter(app => app.status === "FINISHED");
+        const finishedAppointments = appointment.appointment_history.filter(app =>app.appointment_date===todayUTC &&  app.status === "FINISHED");
         return count + finishedAppointments.length;
       }, 0);
 
