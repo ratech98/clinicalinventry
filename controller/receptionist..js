@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const { signInToken } = require("../config/auth");
 const { errormesaages } = require("../errormessages");
 const { generate4DigitOtp } = require("../lib/generateOtp");
@@ -472,7 +473,9 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
       return res.status(200).json({ success: true, doctorAvailability: [] });
     }
 
+
     const doctorAvailabilityPromises = doctors.map(async (doctor) => {
+      console.log(doctor._id)
       const availabilityDoc = await Availability.findOne({
         doctorId: doctor._id,
         clinicId: id
@@ -502,16 +505,17 @@ const getDoctorsAndAvailabilityByClinic = async (req, res) => {
           }
         }
       });
+      // console.log(todayAppointments)
       const tokenCount = todayAppointments.reduce((count, appointment) => {
 
-        const pendingAppointments = appointment.appointment_history.filter(app => app.appointment_date===todayUTC && app.status === "PENDING");
+        const pendingAppointments = appointment.appointment_history.filter(app => app.appointment_date===todayUTC && app.status === "PENDING" && doctor._id.equals(app.doctor));
         console.log(pendingAppointments)
 
         return count + pendingAppointments.length;
       }, 0);
 
       const finishedtokenCount = todayAppointments.reduce((count, appointment) => {
-        const finishedAppointments = appointment.appointment_history.filter(app =>app.appointment_date===todayUTC &&  app.status === "FINISHED");
+        const finishedAppointments = appointment.appointment_history.filter(app =>app.appointment_date===todayUTC &&  app.status === "FINISHED" && doctor._id.equals(app.doctor));
         return count + finishedAppointments.length;
       }, 0);
 
