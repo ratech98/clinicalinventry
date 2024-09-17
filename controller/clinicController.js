@@ -211,11 +211,11 @@ const getClinicId = async (req, res) => {
         console.log("if");
       } else {
         const doctorsUnsubscribed = await doctor.countDocuments({
-          'clinics.clinicId': id,
+          'clinics.clinicId': req.params.id,
           'clinics.subscription': false,
         });
         const receptionistsSubscribed = await Receptionist.countDocuments({
-          clinic: id,
+          clinic: req.params.id,
           subscription: false,
         });
 
