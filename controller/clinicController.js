@@ -48,30 +48,35 @@ const getAllClinics = async (req, res) => {
         }
       });
 
-    // Calculate remaining days and hours for each clinic
     clinics = await Promise.all(
       clinics.map(async (clinic) => {
         const currentDate = moment();
         let remainingDays = 0;
         let remainingHours = 0;
 
-        clinic.subscription_details.forEach((subscriptionDetail) => {
-          const startDate = moment(subscriptionDetail.subscription_startdate, 'DD-MM-YYYY HH:mm:ss');
-          const endDate = moment(subscriptionDetail.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
+if (clinic.subscription_details && clinic.subscription_details.length > 0) {
+  const lastSubscriptionDetail = clinic.subscription_details[clinic.subscription_details.length - 1];
+  
+  const startDate = moment(lastSubscriptionDetail.subscription_startdate, 'DD-MM-YYYY HH:mm:ss');
+  const endDate = moment(lastSubscriptionDetail.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
 
-          if (endDate.isAfter(currentDate)) {
-            if (startDate.isAfter(currentDate)) {
-              remainingDays += endDate.diff(startDate, 'days');
-              remainingHours += endDate.diff(startDate, 'hours') % 24;
-            } else {
-              remainingDays += endDate.diff(currentDate, 'days');
-              remainingHours += endDate.diff(currentDate, 'hours') % 24;
-            }
-          } else {
-            remainingDays += endDate.diff(currentDate, 'days');
-            remainingHours += endDate.diff(currentDate, 'hours') % 24;
-          }
-        });
+  if (endDate.isAfter(currentDate)) {
+    if (startDate.isAfter(currentDate)) {
+      remainingDays += endDate.diff(startDate, 'days');
+      remainingHours += endDate.diff(startDate, 'hours') % 24;
+    } else {
+      remainingDays += endDate.diff(currentDate, 'days');
+      remainingHours += endDate.diff(currentDate, 'hours') % 24;
+    }
+  } else {
+    remainingDays += endDate.diff(currentDate, 'days');
+    remainingHours += endDate.diff(currentDate, 'hours') % 24;
+  }
+} else {
+  remainingDays = 0;
+  remainingHours = 0;
+}
+
 
         clinic._doc.remainingDays = remainingDays;
         clinic._doc.remainingHours = remainingHours;
