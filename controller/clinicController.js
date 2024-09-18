@@ -619,7 +619,7 @@ console.log(currentDate,lastEndDate)
         return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1043 });
       }
 
-      let currentDate = moment();
+      let currentDate = moment(subscription_startdate);
       let endDate;
       if (subscriptionDuration.duration === 'month') {
         endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'months');
@@ -630,6 +630,7 @@ console.log(currentDate,lastEndDate)
       } else {
         return res.status(400).send({ success: false, error: errormesaages[1045], errorcode: 1045 });
       }
+      console.log(currentDate,endDate) 
 
       const formattedStartDate = currentDate.format('DD-MM-YYYY HH:mm:ss');
       const formattedEndDate = endDate.format('DD-MM-YYYY HH:mm:ss');
