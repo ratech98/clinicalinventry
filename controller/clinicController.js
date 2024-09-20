@@ -141,14 +141,17 @@ function parseDate(dateString) {
 
 const getClinicById = async (req, res) => {
   try {
-    const id = req.user._id;
-    const clinic = await Clinic.findById(id).populate({
-      path: 'subscription_details.subscription_id',
-      populate: { path: 'title' },
-    });
+    const id=req.user._id
+    const clinic = await Clinic.findById(id)
+      .populate({
+        path: 'subscription_details.subscription_id',
+        populate: {
+          path: 'title',
+        }
+      });
 
     if (!clinic) {
-      return res.status(404).json({ error: errormesaages[1001], errorcode: 1001 });
+      return res.status(404).json({ error: 'Clinic not found', errorcode: 1001 });
     }
 
     let balancedue = false;
@@ -158,30 +161,40 @@ const getClinicById = async (req, res) => {
       : null;
 
     if (subscription) {
-      console.log("subscription", subscription);
-      if (subscription.subscription_id === null && parseDate(subscription.subscription_enddate) >= new Date()) {
-        balancedue = false;
-        console.log("if");
-      }
-  
-      else if (parseDate(subscription.subscription_enddate) >= new Date()) {
+      const currentDate = moment(); // Current date
+      console.log("Current date:", currentDate.toISOString());
+      const enddate = moment(subscription.subscription_enddate, 'DD-MM-YYYY HH:mm:ss'); // Parse with correct format
+      console.log("Subscription end date:", subscription.subscription_enddate);
+      console.log("Parsed end date:", enddate.toISOString());
+
+      if (subscription.subscription_id === null) {
+        console.log("Subscription ID is null.");
+
+        if (enddate.isSameOrAfter(currentDate)) {
+          balancedue = false;
+          console.log("Subscription is still active; no balance due.");
+        } else {
+          balancedue = true; // Subscription expired
+          console.log("Subscription expired; balance due is TRUE.");
+        }
+      } else {
+        // If subscription_id is not null, check for doctors/receptionists
+        console.log("Subscription ID is present; checking for unsubscribed users...");
+
         const doctorsUnsubscribed = await doctor.countDocuments({
-          'clinics.clinicId': req.params.id,
+          'clinics.clinicId': id,
           'clinics.subscription': false,
         });
         const receptionistsSubscribed = await Receptionist.countDocuments({
-          clinic: req.params.id,
+          clinic: id,
           subscription: false,
         });
-        console.log("count", doctorsUnsubscribed, receptionistsSubscribed);
-      
+
         balancedue = (doctorsUnsubscribed > 0 || receptionistsSubscribed > 0) ? true : false;
-        console.log("else if");
+        console.log("Balance due based on unsubscribed users:", balancedue);
       }
-      else{
-        balancedue=true
-        console.log("else")
-      }
+    } else {
+      console.log("No subscription found.");
     }
 
     const doctorsCount = await doctor.countDocuments({ 'clinics.clinicId': id });
@@ -193,13 +206,14 @@ const getClinicById = async (req, res) => {
       clinic,
       balancedue,
       doctorsCount,
-      receptionistsCount,
+      receptionistsCount
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error:  error.message});
+    res.status(500).json({ error: error.message });
   }
 };
+
 
 
 
@@ -215,7 +229,7 @@ const getClinicId = async (req, res) => {
       });
 
     if (!clinic) {
-      return res.status(404).json({ error: errormesaages[1001], errorcode: 1001 });
+      return res.status(404).json({ error: 'Clinic not found', errorcode: 1001 });
     }
 
     let balancedue = false;
@@ -223,14 +237,28 @@ const getClinicId = async (req, res) => {
     const subscription = subscriptionDetails.length > 0 
       ? subscriptionDetails[subscriptionDetails.length - 1]  
       : null;
- 
+
     if (subscription) {
-      console.log("subscription", subscription.subscription_enddate,new Date);
-      if (subscription.subscription_id === null && parseDate(subscription.subscription_enddate) >= new Date()) {
-        balancedue = false;
-        console.log("if");
-      }
-    else if (parseDate(subscription.subscription_enddate) >= new Date()) {
+      const currentDate = moment(); // Current date
+      console.log("Current date:", currentDate.toISOString());
+      const enddate = moment(subscription.subscription_enddate, 'DD-MM-YYYY HH:mm:ss'); // Parse with correct format
+      console.log("Subscription end date:", subscription.subscription_enddate);
+      console.log("Parsed end date:", enddate.toISOString());
+
+      if (subscription.subscription_id === null) {
+        console.log("Subscription ID is null.");
+
+        if (enddate.isSameOrAfter(currentDate)) {
+          balancedue = false;
+          console.log("Subscription is still active; no balance due.");
+        } else {
+          balancedue = true; // Subscription expired
+          console.log("Subscription expired; balance due is TRUE.");
+        }
+      } else {
+        // If subscription_id is not null, check for doctors/receptionists
+        console.log("Subscription ID is present; checking for unsubscribed users...");
+
         const doctorsUnsubscribed = await doctor.countDocuments({
           'clinics.clinicId': req.params.id,
           'clinics.subscription': false,
@@ -239,18 +267,17 @@ const getClinicId = async (req, res) => {
           clinic: req.params.id,
           subscription: false,
         });
-        console.log("count", doctorsUnsubscribed, receptionistsSubscribed);
-      
+
         balancedue = (doctorsUnsubscribed > 0 || receptionistsSubscribed > 0) ? true : false;
-        console.log("else if");
+        console.log("Balance due based on unsubscribed users:", balancedue);
       }
-      else{
-        balancedue=true
-        console.log("else")
-      }
+    } else {
+      console.log("No subscription found.");
     }
+
     const doctorsCount = await doctor.countDocuments({ 'clinics.clinicId': req.params.id });
     const receptionistsCount = await Receptionist.countDocuments({ clinic: req.params.id });
+
     res.json({
       success: true,
       message: "Clinic fetched successfully",
@@ -264,6 +291,8 @@ const getClinicId = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
 
 
 const updateClinic = async (req, res) => {
