@@ -1171,9 +1171,10 @@ console.log("formateddate",followUpDate,appointment_date)
       ellipsis: true
     });
     currentY += doc.heightOfString(clinicAddress, { width: maxWidthBeforeMidLine }) + 5;
-  
+    const clinicy=currentY
+  console.log("clinicy",clinicy)
     const verticalLineX = (clinicDetailsX + (doc.page.width - appliedStyles.margin - 100)) / 2;
-    const verticalLineEndY = currentY + 20; 
+    const verticalLineEndY = currentY ; 
     doc.moveTo(verticalLineX, logoTopY)
       .lineTo(verticalLineX, verticalLineEndY)
       .lineWidth(0.5)
@@ -1198,7 +1199,11 @@ console.log("formateddate",followUpDate,appointment_date)
     applyStyles(doc, getStyles('doctorDetails', 'Degree'));
     doc.text(` ${qualifications}`, doctorDetailsX, currentY, { align: 'right' });
     currentY += doc.heightOfString(qualifications || "MBBS") + 5;
-  
+    console.log("afterdoctor",currentY)
+if(currentY <clinicy){
+currentY=clinicy
+console.log("currenty",currentY)
+}
     currentY += 10;
     doc.moveTo(appliedStyles.margin, currentY)
       .lineTo(doc.page.width - appliedStyles.margin, currentY)
@@ -1366,16 +1371,17 @@ console.log(formattedTime)
       });
     
       doc.moveDown(); 
-    } else {
-      applyStyles(doc, getStyles('medicines', 'No Medicines Data'));
-      doc.text('No medicines data available.', appliedStyles.margin, currentY);
-      currentY += doc.heightOfString('No medicines data available.') + 5;
-    }
+    } 
+    // else {
+    //   applyStyles(doc, getStyles('medicines', 'No Medicines Data'));
+    //   doc.text('No medicines data available.', appliedStyles.margin, currentY);
+    //   currentY += doc.heightOfString('No medicines data available.') + 5;
+    // }
     
     const remainingSpace = doc.page.height - currentY - appliedStyles.margin;
-    if (remainingSpace < 100) { // Adjust based on signature and title height
+    if (remainingSpace < 100) { 
       doc.addPage();
-      currentY = appliedStyles.margin; // Reset Y to start from top of new page
+      currentY = appliedStyles.margin; 
     }
   
     if (doctors.signature) {
@@ -1787,9 +1793,10 @@ console.log("appointment",appointment)
     ellipsis: true
   });
   currentY += doc.heightOfString(clinicAddress, { width: maxWidthBeforeMidLine }) + 5;
-
+  const clinicy=currentY
+console.log("afterclinic",currentY)
   const verticalLineX = (clinicDetailsX + (doc.page.width - appliedStyles.margin - 100)) / 2;
-  const verticalLineEndY = currentY + 20; 
+  const verticalLineEndY = currentY ; 
   doc.moveTo(verticalLineX, logoTopY)
     .lineTo(verticalLineX, verticalLineEndY)
     .lineWidth(0.5)
@@ -1815,8 +1822,14 @@ console.log("appointment",appointment)
   doc.text(` ${qualifications}`, doctorDetailsX, currentY, { align: 'right' });
   currentY += doc.heightOfString(qualifications || "MBBS") + 5;
 
+  console.log("afterdoctor",currentY)
+if(currentY <clinicy){
+currentY=clinicy
+console.log("currenty",currentY)
+}
   // First Horizontal Line
   currentY += 10;
+
   doc.moveTo(appliedStyles.margin, currentY)
     .lineTo(doc.page.width - appliedStyles.margin, currentY)
     .lineWidth(0.5)
@@ -1915,7 +1928,7 @@ console.log("appointment",appointment)
       currentY += doc.heightOfString('No prescription data available.') + 5;
     }
     
-    if (appointment.follow_up_date) {
+    if (appointment.follow_up_date !=null|| undefined|| "") {
       const followUpDate = appointment.follow_up_date
     console.log("followupdate",followUpDate)
       
@@ -1990,11 +2003,12 @@ console.log("appointment",appointment)
       });
     
       doc.moveDown(); 
-    } else {
-      applyStyles(doc, getStyles('medicines', 'No Medicines Data'));
-      doc.text('No medicines data available.', appliedStyles.margin, currentY);
-      currentY += doc.heightOfString('No medicines data available.') + 5;
-    }
+    } 
+    // else {
+    //   applyStyles(doc, getStyles('medicines', 'No Medicines Data'));
+    //   doc.text('No medicines data available.', appliedStyles.margin, currentY);
+    //   currentY += doc.heightOfString('No medicines data available.') + 5;
+    // }
     
     const remainingSpace = doc.page.height - currentY - appliedStyles.margin;
     if (remainingSpace < 100) { // Adjust based on signature and title height
