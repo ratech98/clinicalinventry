@@ -1820,7 +1820,7 @@ console.log("afterclinic",currentY)
 
   applyStyles(doc, getStyles('doctorDetails', 'Degree'));
   doc.text(` ${qualifications}`, doctorDetailsX, currentY, { align: 'right' });
-  currentY += doc.heightOfString(qualifications || "MBBS") + 5;
+  currentY += doc.heightOfString(qualifications || "") + 5;
 
   console.log("afterdoctor",currentY)
 if(currentY <clinicy){

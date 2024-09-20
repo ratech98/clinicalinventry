@@ -155,6 +155,9 @@ const getClinicById = async (req, res) => {
         balancedue = false;
         console.log("if");
       }
+      else if(subscription.subscription_id === null&&parseDate(subscription.subscription_enddate) < new Date() ){
+        balancedue = true;
+      }
       else if (parseDate(subscription.subscription_enddate) >= new Date()) {
         const doctorsUnsubscribed = await doctor.countDocuments({
           'clinics.clinicId': req.params.id,
