@@ -134,7 +134,7 @@ const getAllPatientslist = async (req, res) => {
     const { mobile_number, appointment_date, page = 1, limit = 10 } = req.query;
     const PatientModel = tenantDBConnection.model('Patient', Patient.schema);
     const mainDBConnection = mongoose.connection;
-    let query = {};
+    let query = {otpVerified:true};
 
     if (mobile_number) {
       query.mobile_number = { $regex: mobile_number, $options: 'i' };
