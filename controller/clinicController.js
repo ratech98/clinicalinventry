@@ -127,7 +127,15 @@ if (clinic.subscription_details && clinic.subscription_details.length > 0) {
   }
 };
 
+function parseDate(dateString) {
+  const [datePart, timePart] = dateString.split(' ');
+  const [day, month, year] = datePart.split('-').map(Number);
+  const [hours, minutes, seconds] = timePart.split(':').map(Number);
+  
+  const date = new Date(year, month - 1, day, hours, minutes, seconds);
 
+  return date.toISOString();
+}
 
 
 
@@ -151,13 +159,11 @@ const getClinicById = async (req, res) => {
 
     if (subscription) {
       console.log("subscription", subscription);
-      if (subscription.subscription_id === null) {
+      if (subscription.subscription_id === null && parseDate(subscription.subscription_enddate) >= new Date()) {
         balancedue = false;
         console.log("if");
       }
-      else if(subscription.subscription_id === null&&parseDate(subscription.subscription_enddate) < new Date() ){
-        balancedue = true;
-      }
+  
       else if (parseDate(subscription.subscription_enddate) >= new Date()) {
         const doctorsUnsubscribed = await doctor.countDocuments({
           'clinics.clinicId': req.params.id,
@@ -217,20 +223,14 @@ const getClinicId = async (req, res) => {
     const subscription = subscriptionDetails.length > 0 
       ? subscriptionDetails[subscriptionDetails.length - 1]  
       : null;
-    function parseDate(dateString) {
-      const [datePart, timePart] = dateString.split(' ');
-      const [day, month, year] = datePart.split('-').map(Number);
-      const [hours, minutes, seconds] = timePart.split(':').map(Number);
-      
-      return new Date(year, month - 1, day, hours, minutes, seconds);
-    }
+ 
     if (subscription) {
       console.log("subscription", subscription.subscription_enddate,new Date);
-      if (subscription.subscription_id === null) {
+      if (subscription.subscription_id === null && parseDate(subscription.subscription_enddate) >= new Date()) {
         balancedue = false;
         console.log("if");
       }
-      else if (parseDate(subscription.subscription_enddate) >= new Date()) {
+    else if (parseDate(subscription.subscription_enddate) >= new Date()) {
         const doctorsUnsubscribed = await doctor.countDocuments({
           'clinics.clinicId': req.params.id,
           'clinics.subscription': false,
