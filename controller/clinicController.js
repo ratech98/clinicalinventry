@@ -614,21 +614,29 @@ const update_Subscription = async (req, res) => {
     const { subscription_id, transaction_id, subscription_startdate, subscription_enddate, amount } = req.body;
     const clinicId = req.params.id;
 
+    // Find the clinic
     const clinic = await Clinic.findById(clinicId);
     if (!clinic) {
       return res.status(404).send({ success: false, error: errormesaages[1001], errorcode: 1001 });
     }
 
+    // Check for existing subscription details
+    let lastEndDate;
     if (clinic.subscription_details.length > 0) {
       const lastSubscription = clinic.subscription_details[clinic.subscription_details.length - 1];
-      const lastEndDate = moment(lastSubscription.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
+      lastEndDate = moment(lastSubscription.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
       const currentDate = moment();
-console.log(currentDate,lastEndDate)
+      console.log("Current Date:", currentDate, "Last End Date:", lastEndDate);
+
       if (currentDate.isBefore(lastEndDate)) {
-        return res.status(400).send({ success: false, message: 'Current subscription is still active. Cannot add a new subscription until it expires.' });
+        return res.status(400).send({
+          success: false,
+          message: 'Current subscription is still active. Cannot add a new subscription until it expires.'
+        });
       }
     }
 
+    // Handle free trial subscriptions
     if (transaction_id === "free_trail") {
       const subscriptionDuration = await freetrail.findById(subscription_id);
       if (!subscriptionDuration) {
@@ -652,29 +660,35 @@ console.log(currentDate,lastEndDate)
       await doctor.updateMany({ "clinics.clinicId": clinicId }, { $set: { "clinics.$.subscription": true } }, { new: true });
 
     } else {
+      // Handle regular subscription duration
       const subscriptionDuration = await SubscriptionDuration.findById(subscription_id);
       if (!subscriptionDuration) {
         return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1043 });
       }
 
-      let currentDate = moment(subscription_startdate);
+      // If last subscription exists, use lastEndDate + 1 second, otherwise use current date
+      let startDate = lastEndDate ? lastEndDate.clone().add(1, 'seconds') : moment();
       let endDate;
+
+      // Calculate new end date based on subscription duration
       if (subscriptionDuration.duration === 'month') {
-        endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'months');
+        endDate = startDate.clone().add(subscriptionDuration.durationInNo, 'months');
       } else if (subscriptionDuration.duration === 'year') {
-        endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'years');
+        endDate = startDate.clone().add(subscriptionDuration.durationInNo, 'years');
       } else if (subscriptionDuration.duration === 'day') {
-        endDate = currentDate.clone().add(subscriptionDuration.durationInNo, 'days');
+        endDate = startDate.clone().add(subscriptionDuration.durationInNo, 'days');
       } else {
         return res.status(400).send({ success: false, error: errormesaages[1045], errorcode: 1045 });
       }
-      console.log(currentDate,endDate) 
 
-      const formattedStartDate = currentDate.format('DD-MM-YYYY HH:mm:ss');
+      console.log("Start Date:", startDate, "End Date:", endDate);
+
+      const formattedStartDate = startDate.format('DD-MM-YYYY HH:mm:ss');
       const formattedEndDate = endDate.format('DD-MM-YYYY HH:mm:ss');
       const receptionistsUnsubscribed = await Receptionist.countDocuments({ clinic: clinicId, subscription: false });
       const doctorsUnsubscribed = await doctor.countDocuments({ 'clinics.clinicId': clinicId, subscription: false });
 
+      // Update subscription details with new subscription info
       clinic.subscription_details.push({
         subscription_id,
         billinghistory: [{ transaction_id, amount, doctor: doctorsUnsubscribed, receptionist: receptionistsUnsubscribed }],
@@ -683,16 +697,20 @@ console.log(currentDate,lastEndDate)
       });
     }
 
+    // Save updated clinic information
     await clinic.save();
 
+    // Trigger notification
     createNotification("admin", clinic._id, `${clinic.clinic_name} paid for subscription, verify payment`);
 
+    // Send successful response
     res.status(200).send({ success: true, message: 'Subscription details updated successfully', clinic });
   } catch (error) {
     console.error('Error updating subscription details:', error);
     res.status(500).send({ success: false, error: error.message });
   }
 };
+
 
 
 
