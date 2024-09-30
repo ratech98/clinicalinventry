@@ -652,25 +652,22 @@ const update_Subscription = async (req, res) => {
       clinic.subscription_details.push({
         subscription_id: subscription_id,
         billinghistory: [{ transaction_id, amount: amount, doctor: doctorsUnsubscribed, receptionist: receptionistsUnsubscribed }],
-        subscription_startdate: subscription_startdate,
-        subscription_enddate: subscription_enddate
+        subscription_startdate: subscription_startdate.format('DD-MM-YYYY HH:mm:ss'),
+        subscription_enddate: subscription_enddate.format('DD-MM-YYYY HH:mm:ss')
       });
 
       await Receptionist.updateMany({ clinic: clinicId }, { subscription: true }, { new: true });
       await doctor.updateMany({ "clinics.clinicId": clinicId }, { $set: { "clinics.$.subscription": true } }, { new: true });
 
     } else {
-      // Handle regular subscription duration
       const subscriptionDuration = await SubscriptionDuration.findById(subscription_id);
       if (!subscriptionDuration) {
         return res.status(404).send({ success: false, error: errormesaages[1041], errorcode: 1043 });
       }
 
-      // If last subscription exists, use lastEndDate + 1 second, otherwise use current date
       let startDate = lastEndDate ? lastEndDate.clone().add(1, 'seconds') : moment();
       let endDate;
 
-      // Calculate new end date based on subscription duration
       if (subscriptionDuration.duration === 'month') {
         endDate = startDate.clone().add(subscriptionDuration.durationInNo, 'months');
       } else if (subscriptionDuration.duration === 'year') {
@@ -688,7 +685,6 @@ const update_Subscription = async (req, res) => {
       const receptionistsUnsubscribed = await Receptionist.countDocuments({ clinic: clinicId, subscription: false });
       const doctorsUnsubscribed = await doctor.countDocuments({ 'clinics.clinicId': clinicId, subscription: false });
 
-      // Update subscription details with new subscription info
       clinic.subscription_details.push({
         subscription_id,
         billinghistory: [{ transaction_id, amount, doctor: doctorsUnsubscribed, receptionist: receptionistsUnsubscribed }],
@@ -697,13 +693,10 @@ const update_Subscription = async (req, res) => {
       });
     }
 
-    // Save updated clinic information
     await clinic.save();
 
-    // Trigger notification
     createNotification("admin", clinic._id, `${clinic.clinic_name} paid for subscription, verify payment`);
 
-    // Send successful response
     res.status(200).send({ success: true, message: 'Subscription details updated successfully', clinic });
   } catch (error) {
     console.error('Error updating subscription details:', error);
