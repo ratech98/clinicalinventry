@@ -82,7 +82,8 @@ clinicSchema.pre('findOneAndUpdate', async function (next) {
       if (!docToUpdate.dbUri && docToUpdate.email) {
         const username = docToUpdate.email.split('@')[0];
         const currentdate = moment().format('DD-MM-YYYY');
-        const dbName = `Di_${username.toLowerCase().replace(/\s/g, '_')}_db`;
+        const dbName = `Di_${username.toLowerCase().replace(/[\s.]/g, '_')}_db`;
+
         console.log('Generated dbName:', dbName);
 
         const uri = `mongodb+srv://drprakashmptortho:drprakash03@cluster0.dhbjg.mongodb.net/${dbName}?retryWrites=true&w=majority&appName=Cluster0`;

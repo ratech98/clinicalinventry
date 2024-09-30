@@ -374,7 +374,7 @@ const verify_clinic=async (req, res) => {
     res.status(200).json({ success: true, message: 'Admin verified successfully', clinic });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: error });
+    res.status(500).json({ error: error.message });
   }
 }
 
@@ -762,40 +762,59 @@ const verify_subscription = async (req, res) => {
     const { id } = req.params;
     const { subscription } = req.body;
 
-    const clinic = await Clinic.findOneAndUpdate(
-      { _id: id },
-      { subscription },
-      { new: true }
-    );
+    const Clinics = await Clinic.findById(id);
 
-    if (!clinic) {
-      return res.status(404).json({ success: false, message: 'Clinic not found' });
+    const lastSubscription = Clinics.subscription_details[Clinics.subscription_details.length - 1];
+    const lastEndDate = moment(lastSubscription.subscription_enddate, 'DD-MM-YYYY HH:mm:ss');
+    const currentDate = moment();
+
+    console.log("Current Date:", currentDate, "Last End Date:", lastEndDate);
+
+    if (currentDate.isBefore(lastEndDate)) {
+      const clinic = await Clinic.findOneAndUpdate(
+        { _id: id },
+        { subscription },
+        { new: true }
+      );
+
+      if (!clinic) {
+        return res.status(404).json({ success: false, message: 'Clinic not found' });
+      }
+
+      createNotification("clinic", id, "Clinic subscription verified by admin successfully");
+
+      const receptionists = await Receptionist.updateMany(
+        { clinic: id },
+        { subscription },
+        { new: true }
+      );
+
+      const doctors = await doctor.updateMany(
+        { "clinics.clinicId": id },
+        { $set: { "clinics.$.subscription": subscription } },
+        { new: true }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: 'Clinic subscription verified successfully and updated for associated doctors and receptionists',
+        clinic,
+        updatedReceptionists: receptionists.modifiedCount,
+        updatedDoctors: doctors.modifiedCount
+      });
+
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "Subscription has expired. Please add a new subscription to verify."
+      });
+
+   
     }
 
-    createNotification("clinic", id, "Clinic subscription verified by admin successfully");
-
-    const receptionists = await Receptionist.updateMany(
-      { clinic: id },
-      { subscription },
-      { new: true }
-    );
-
-    const doctors = await doctor.updateMany(
-      { "clinics.clinicId": id },
-      { $set: { "clinics.$.subscription": subscription } },
-      { new: true }
-    );
-
-    res.status(200).json({ 
-      success: true, 
-      message: 'Clinic subscription verified successfully and updated for associated doctors and receptionists', 
-      clinic,
-      updatedReceptionists: receptionists.modifiedCount,
-      updatedDoctors: doctors.modifiedCount  
-    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: error.message });
   }
 };
 
