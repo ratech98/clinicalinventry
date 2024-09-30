@@ -764,8 +764,10 @@ const verify_subscription = async (req, res) => {
     const currentDate = moment();
 
     console.log("Current Date:", currentDate, "Last End Date:", lastEndDate);
+if(subscription=true){
+    
+  if (currentDate.isBefore(lastEndDate)) {
 
-    if (currentDate.isBefore(lastEndDate)) {
       const clinic = await Clinic.findOneAndUpdate(
         { _id: id },
         { subscription },
@@ -798,7 +800,8 @@ const verify_subscription = async (req, res) => {
         updatedDoctors: doctors.modifiedCount
       });
 
-    } else {
+    }
+   else {
       res.status(400).json({
         success: false,
         message: "Subscription has expired. Please add a new subscription to verify."
@@ -806,6 +809,43 @@ const verify_subscription = async (req, res) => {
 
    
     }
+  }else{
+
+    const clinic = await Clinic.findOneAndUpdate(
+      { _id: id },
+      { subscription },
+      { new: true }
+    );
+
+    if (!clinic) {
+      return res.status(404).json({ success: false, message: 'Clinic not found' });
+    }
+
+    createNotification("clinic", id, "Clinic subscription verified by admin successfully");
+
+    const receptionists = await Receptionist.updateMany(
+      { clinic: id },
+      { subscription },
+      { new: true }
+    );
+
+    const doctors = await doctor.updateMany(
+      { "clinics.clinicId": id },
+      { $set: { "clinics.$.subscription": subscription } },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Clinic subscription verified successfully and updated for associated doctors and receptionists',
+      clinic,
+      updatedReceptionists: receptionists.modifiedCount,
+      updatedDoctors: doctors.modifiedCount
+    });
+
+
+  }
+
 
   } catch (error) {
     console.error(error);
