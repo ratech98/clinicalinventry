@@ -764,7 +764,7 @@ const verify_subscription = async (req, res) => {
     const currentDate = moment();
 
     console.log("Current Date:", currentDate, "Last End Date:", lastEndDate);
-if(subscription=true){
+if(subscription===true){
     
   if (currentDate.isBefore(lastEndDate)) {
 
