@@ -648,14 +648,14 @@ const update_Subscription = async (req, res) => {
       const receptionistsUnsubscribed = await Receptionist.countDocuments({ clinic: clinicId, subscription: false });
 
       clinic.subscription = true;
-      const formattedStartDate = moment(subscription_startdate).format('DD-MM-YYYY HH:mm:ss');
-      const formattedEndDate = moment(subscription_enddate).format('DD-MM-YYYY HH:mm:ss');
+      // const formattedStartDate =subscription_startdate
+      // const formattedEndDate = subscription_enddate
       
       clinic.subscription_details.push({
         subscription_id: subscription_id,
         billinghistory: [{ transaction_id, amount: amount, doctor: doctorsUnsubscribed, receptionist: receptionistsUnsubscribed }],
-        subscription_startdate: formattedStartDate,
-        subscription_enddate: formattedEndDate
+        subscription_startdate: subscription_startdate,
+        subscription_enddate: subscription_enddate
       });
 
       await Receptionist.updateMany({ clinic: clinicId }, { subscription: true }, { new: true });
